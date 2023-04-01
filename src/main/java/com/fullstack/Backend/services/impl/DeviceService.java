@@ -1,7 +1,7 @@
 package com.fullstack.Backend.services.impl;
 
 import java.util.List;
-
+import java.util.ArrayList;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.fullstack.Backend.entities.Device;
@@ -15,7 +15,8 @@ public class DeviceService implements IDeviceService{
 	IDeviceRepository deviceRepository;
 	@Override
 	public List<Device> getAllDevices() {
-		return deviceRepository.getAllDevices();
+        List<Device> devices = deviceRepository.getAllDevices();
+		return devices;
 	}
 
 	@Override

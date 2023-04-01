@@ -50,7 +50,6 @@
 		<dependency>
 			<groupId>com.microsoft.sqlserver</groupId>
 			<artifactId>mssql-jdbc</artifactId>
-			<version>8.2.2.jre8</version>
 		</dependency>
 
 		<dependency>
@@ -64,7 +63,12 @@
 			<version>5.2.3.Final</version>
 		</dependency>
 
-	</dependencies>
+		<dependency>
+	            <groupId>org.hibernate.javax.persistence</groupId>
+	            <artifactId>hibernate-jpa-2.0-api</artifactId>
+	            <version>1.0.1.Final</version>
+	        </dependency>
+		</dependencies>
 
 	<build>
 		<plugins>

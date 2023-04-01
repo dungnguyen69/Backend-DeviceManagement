@@ -17,7 +17,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @Entity
 @Table(name = "Devices")
-public class Device extends BaseEntity{
+public class Device extends BaseEntity {
 	@Column(nullable = false)
 	private String name;
 
@@ -27,26 +27,38 @@ public class Device extends BaseEntity{
 	@OneToOne()
 	@JoinColumn(name = "platform_Id", referencedColumnName = "id")
 	private Platform platform;
+	@Column(name = "platform_Id", insertable = false, updatable = false)
+	private Long platform_Id;
 
 	@OneToOne()
 	@JoinColumn(name = "itemType_Id", referencedColumnName = "id")
 	private ItemType itemType;
-
+	@Column(name = "itemType_Id", insertable = false, updatable = false)
+	private Long itemType_Id;
+	
 	@OneToOne()
 	@JoinColumn(name = "ram_Id", referencedColumnName = "id")
 	private Ram ram;
-
+	@Column(name = "ram_Id", insertable = false, updatable = false)
+	private Long ram_Id;
+	
 	@OneToOne()
 	@JoinColumn(name = "screen_Id", referencedColumnName = "id")
 	private Screen screen;
-
+	@Column(name = "screen_Id", insertable = false, updatable = false)
+	private Long screen_Id;
+	
 	@OneToOne()
 	@JoinColumn(name = "storage_Id", referencedColumnName = "id")
 	private Storage storage;
-
+	@Column(name = "storage_Id", insertable = false, updatable = false)
+	private Long storage_Id;
+	
 	@ManyToOne
 	@JoinColumn(name = "owner_Id", referencedColumnName = "id")
 	private User owner;
+	@Column(name = "owner_Id", insertable = false, updatable = false)
+	private Long owner_Id;
 	
 	@Column(nullable = false)
 	private String inventoryNumber;
