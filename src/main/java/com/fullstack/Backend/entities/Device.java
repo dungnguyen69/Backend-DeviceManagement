@@ -59,7 +59,7 @@ public class Device extends BaseEntity {
 	private User owner;
 	@Column(name = "owner_Id", insertable = false, updatable = false)
 	private Long owner_Id;
-	
+
 	@Column(nullable = false)
 	private String inventoryNumber;
 

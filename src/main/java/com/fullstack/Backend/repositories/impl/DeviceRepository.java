@@ -10,7 +10,6 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
 
-
 @Repository
 public class DeviceRepository implements IDeviceRepository {
 
@@ -33,7 +32,7 @@ public class DeviceRepository implements IDeviceRepository {
 	}
 
 	@Override
-	public Device getDetailDevice(Long deviceId) {
+	public Device getDetailDevice(int deviceId) {
 		// TODO Auto-generated method stub
 		return null;
 	}
