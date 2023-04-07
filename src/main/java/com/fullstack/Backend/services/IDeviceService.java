@@ -1,15 +1,17 @@
 package com.fullstack.Backend.services;
 
-import java.util.List;
-
-import org.springframework.stereotype.Service;
-
+import com.fullstack.Backend.dto.device.DeviceAddDTO;
 import com.fullstack.Backend.entities.Device;
+import com.fullstack.Backend.responses.AddDeviceResponse;
+import com.fullstack.Backend.responses.DetailDeviceResponse;
+import com.fullstack.Backend.responses.DeviceInWarehouseResponse;
 
 public interface IDeviceService {
-	public List<Device> getAllDevices();
+	public DeviceInWarehouseResponse getAllDevices(int pageIndex, int pageSize, String sortBy, String sortDir);
 
-	public Device getDetailDevice(int deviceId);
+	public AddDeviceResponse addANewDevice(DeviceAddDTO device);
+	
+	public DetailDeviceResponse getDetailDevice(int deviceId);
 
 	public Device updateDevice();
 

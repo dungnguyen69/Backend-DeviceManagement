@@ -19,5 +19,5 @@ import lombok.Setter;
 @Table(name = "Storages")
 public class Storage extends BaseEntity{
 	@Column(nullable = false)
-	private int size;
+	private Long size;
 }

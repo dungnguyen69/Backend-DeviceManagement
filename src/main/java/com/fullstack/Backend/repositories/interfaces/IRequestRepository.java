@@ -1,10 +1,6 @@
 package com.fullstack.Backend.repositories.interfaces;
 
 import java.util.List;
-
-import org.springframework.data.jpa.repository.JpaRepository;
-
-import com.fullstack.Backend.entities.Device;
 import com.fullstack.Backend.entities.Request;
 
 public interface IRequestRepository {

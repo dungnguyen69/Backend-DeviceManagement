@@ -19,5 +19,5 @@ import lombok.Setter;
 @Table(name = "Rams")
 public class Ram extends BaseEntity{
 	@Column(nullable = false)
-	private int size;
+	private Long size;
 }

@@ -2,17 +2,19 @@ package com.fullstack.Backend.dto.device;
 
 import java.util.Date;
 
-import jakarta.validation.constraints.NotEmpty;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import org.hibernate.validator.constraints.UniqueElements;
 
-@Data
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Getter
+@Setter
 @NoArgsConstructor
-@AllArgsConstructor
-public class DeviceUpdateDTO {
-	private int id;
-	@NotEmpty
+public class DeviceAddDTO {
+	@NotEmpty(message = "Name is mandatory.")
 	private String name;
 	private int statusId;
 	private int platformId;
@@ -21,15 +23,12 @@ public class DeviceUpdateDTO {
 	private int screenId;
 	private int storageId;
 	private int ownerId;
-	@NotEmpty
+	@NotEmpty(message = "Inventory Number is mandatory.")
 	private String inventoryNumber;
-	@NotEmpty
+	@NotEmpty(message = "Serial Number is mandatory.")
 	private String serialNumber;
 	private int originId;
 	private int projectId;
 	private String comments;
-	@NotEmpty
 	private Date createdDate;
-	@NotEmpty
-	private Date updatedDate;
 }

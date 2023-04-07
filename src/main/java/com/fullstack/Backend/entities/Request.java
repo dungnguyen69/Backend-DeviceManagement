@@ -2,6 +2,7 @@ package com.fullstack.Backend.entities;
 
 import java.util.Date;
 import org.hibernate.annotations.CreationTimestamp;
+import jakarta.persistence.ForeignKey;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -26,19 +27,19 @@ public class Request extends BaseEntity{
 	private String requestId;
 
 	@ManyToOne
-	@JoinColumn(name = "requester_Id", nullable = false)
+	@JoinColumn(name = "requester_Id", nullable = false, foreignKey = @ForeignKey(name = "requester_Id_FK"))
 	private User requester;
 	
 	@ManyToOne
-	@JoinColumn(name = "currentKeeper_Id", nullable = false)
+	@JoinColumn(name = "currentKeeper_Id", nullable = false, foreignKey = @ForeignKey(name = "currentKeeper_Id_FK"))
 	private User currentKeeperRequest;
 	
 	@ManyToOne
-	@JoinColumn(name = "nextKeeper_Id", nullable = false)
+	@JoinColumn(name = "nextKeeper_Id", nullable = false, foreignKey = @ForeignKey(name = "nextKeeper_Id_FK"))
 	private User nextKeeperRequest;
 	
 	@ManyToOne
-	@JoinColumn(name = "device_Id", nullable = false)
+	@JoinColumn(name = "device_Id", nullable = false, foreignKey = @ForeignKey(name = "device_Id_FK"))
 	private Device  devices;
 	
 	@Column()
