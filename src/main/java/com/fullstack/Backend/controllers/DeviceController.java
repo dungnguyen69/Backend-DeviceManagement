@@ -3,6 +3,7 @@ package com.fullstack.Backend.controllers;
 import org.springframework.beans.factory.annotation.Autowired;
 import static org.springframework.http.HttpStatus.*;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -19,6 +20,7 @@ import com.fullstack.Backend.dto.device.DeviceFilterDTO;
 import com.fullstack.Backend.dto.device.DeviceUpdateDTO;
 import com.fullstack.Backend.exception.ResourceNotFoundException;
 import com.fullstack.Backend.responses.AddDeviceResponse;
+import com.fullstack.Backend.responses.DeleteDeviceResponse;
 import com.fullstack.Backend.responses.DetailDeviceResponse;
 import com.fullstack.Backend.responses.DeviceInWarehouseResponse;
 import com.fullstack.Backend.responses.FilterDeviceResponse;
@@ -43,21 +45,17 @@ public class DeviceController {
 			DeviceFilterDTO deviceFilterDTO) {
 		DeviceInWarehouseResponse deviceResponse = _deviceService.getAllDevicesWithPaging(pageNo, pageSize, sortBy,
 				sortDir, deviceFilterDTO);
-		if (deviceResponse.getTotalElements() != EMPTY_LIST) {
+		if (deviceResponse.getTotalElements() != EMPTY_LIST)
 			return new ResponseEntity<>(deviceResponse, OK);
-		} else {
-			return new ResponseEntity<>(NOT_FOUND);
-		}
+		return new ResponseEntity<>(NOT_FOUND);
 	}
 
 	@GetMapping("/warehouse/{id}")
 	public ResponseEntity<Object> getDetailDevice(@PathVariable(value = "id") int deviceId) {
 		DetailDeviceResponse deviceResponse = _deviceService.getDetailDevice(deviceId);
-		if (deviceResponse.getDetailDevice() != null) {
+		if (deviceResponse.getDetailDevice() != null)
 			return new ResponseEntity<>(deviceResponse, OK);
-		} else {
-			throw new ResourceNotFoundException("Device with Id is " + deviceId + " is not exist");
-		}
+		throw new ResourceNotFoundException("Device with Id is " + deviceId + " is not exist");
 	}
 
 	@PostMapping("/warehouse")
@@ -75,11 +73,20 @@ public class DeviceController {
 		return new ResponseEntity<>(deviceResponse, OK);
 	}
 
-	@GetMapping("/warehouse/suggest")
+	@GetMapping("/warehouse/suggestion")
 	@ResponseBody
 	public ResponseEntity<Object> getSuggestKeywordDevices(@RequestParam(name = "column") int fieldColumn,
 			@RequestParam(name = "keyword") String keyword, DeviceFilterDTO device) {
 		FilterDeviceResponse deviceResponse = _deviceService.getSuggestKeywordDevices(fieldColumn, keyword, device);
+		return new ResponseEntity<>(deviceResponse, OK);
+	}
+
+	@DeleteMapping("/warehouse/{id}")
+	@ResponseBody
+	public ResponseEntity<Object> deleteDevice(@PathVariable(value = "id") int deviceId) {
+		DeleteDeviceResponse deviceResponse = _deviceService.deleteADevice(deviceId);
+		if (!deviceResponse.getIsDeletionSuccessful())
+			return new ResponseEntity<>(NOT_FOUND);
 		return new ResponseEntity<>(deviceResponse, OK);
 	}
 }

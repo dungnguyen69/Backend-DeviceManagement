@@ -26,13 +26,13 @@ import com.fullstack.Backend.enums.Project;
 import com.fullstack.Backend.enums.Status;
 import com.fullstack.Backend.repositories.interfaces.IDeviceRepository;
 import com.fullstack.Backend.responses.AddDeviceResponse;
+import com.fullstack.Backend.responses.DeleteDeviceResponse;
 import com.fullstack.Backend.responses.DetailDeviceResponse;
 import com.fullstack.Backend.responses.DeviceInWarehouseResponse;
 import com.fullstack.Backend.responses.FilterDeviceResponse;
 import com.fullstack.Backend.responses.UpdateDeviceResponse;
 import com.fullstack.Backend.services.IDeviceService;
 import com.fullstack.Backend.services.IEmployeeService;
-import com.fullstack.Backend.specifications.DeviceSearchCriteria;
 import com.fullstack.Backend.specifications.DeviceSpecification;
 
 @Service
@@ -73,9 +73,9 @@ public class DeviceService implements IDeviceService {
 
 	@Override
 	public AddDeviceResponse addANewDevice(DeviceAddDTO deviceAddDTO) {
+		AddDeviceResponse addDeviceResponse = new AddDeviceResponse();
 		try {
 			User owner = _employeeService.findById(deviceAddDTO.getOwnerId());
-			AddDeviceResponse addDeviceResponse = new AddDeviceResponse();
 			Device device = new Device();
 			device.loadFromEntity(deviceAddDTO);
 			device.setOwner_Id(owner.getId());
@@ -83,32 +83,29 @@ public class DeviceService implements IDeviceService {
 			_deviceRepository.save(device);
 			addDeviceResponse.setNewDevice(device);
 			addDeviceResponse.setIsAddedSuccessful(true);
-			return addDeviceResponse;
 		} catch (Exception e) {
-			if (e instanceof NoSuchElementException) {
+			if (e instanceof NoSuchElementException)
 				throw new NoSuchElementException("Owner does not exist", e);
-			}
-			if (e instanceof DataIntegrityViolationException) {
+			if (e instanceof DataIntegrityViolationException)
 				throw new DataIntegrityViolationException(
 						((DataIntegrityViolationException) e).getMostSpecificCause().getLocalizedMessage(), e);
-			}
 		}
-		return null;
+		return addDeviceResponse;
 	}
 
 	@Override
 	public DetailDeviceResponse getDetailDevice(int deviceId) {
 		DetailDeviceResponse detailDeviceResponse = new DetailDeviceResponse();
 		Device deviceDetail = _deviceRepository.findById(deviceId);
-		if (deviceDetail != null) {
-			User owner = _employeeService.findById(deviceDetail.getOwner_Id());
-			DeviceUpdateDTO device = new DeviceUpdateDTO();
-			device.loadFromEntity(deviceDetail);
-			device.setOwnerId(owner.getId());
-			detailDeviceResponse.setDetailDevice(device);
-		} else {
+		if (deviceDetail == null) {
 			detailDeviceResponse.setDetailDevice(null);
+			return detailDeviceResponse;
 		}
+		User owner = _employeeService.findById(deviceDetail.getOwner_Id());
+		DeviceUpdateDTO device = new DeviceUpdateDTO();
+		device.loadFromEntity(deviceDetail);
+		device.setOwnerId(owner.getId());
+		detailDeviceResponse.setDetailDevice(device);
 		return detailDeviceResponse;
 	}
 
@@ -117,34 +114,33 @@ public class DeviceService implements IDeviceService {
 		UpdateDeviceResponse detailDeviceResponse = new UpdateDeviceResponse();
 		Device deviceDetail = _deviceRepository.findById(deviceId);
 		try {
-			if (deviceDetail != null) {
-				User owner = _employeeService.findById(deviceDetail.getOwner_Id());
-				deviceDetail.setName(device.getName().trim());
-				deviceDetail.setStatus(Status.values()[device.getStatusId()]);
-				deviceDetail.setSerialNumber(device.getSerialNumber().trim());
-				deviceDetail.setInventoryNumber(device.getInventoryNumber().trim());
-				deviceDetail.setProject(Project.values()[device.getProjectId()]);
-				deviceDetail.setOrigin(Origin.values()[device.getOriginId()]);
-				deviceDetail.setPlatform_Id(device.getPlatformId());
-				deviceDetail.setRam_Id(device.getRamId());
-				deviceDetail.setItem_type_Id(device.getItemTypeId());
-				deviceDetail.setStorage_Id(device.getStorageId());
-				deviceDetail.setScreen_Id(device.getScreenId());
-				deviceDetail.setComments(device.getComments());
-				deviceDetail.setOwner_Id(owner.getId());
-				deviceDetail.setUpdatedDate(new Date());
-				_deviceRepository.save(deviceDetail);
-				detailDeviceResponse.setUpdatedDevice(deviceDetail);
-			} else {
+			if (deviceDetail == null) {
 				detailDeviceResponse.setUpdatedDevice(null);
+				return detailDeviceResponse;
 			}
+			User owner = _employeeService.findById(deviceDetail.getOwner_Id());
+			deviceDetail.setName(device.getName().trim());
+			deviceDetail.setStatus(Status.values()[device.getStatusId()]);
+			deviceDetail.setSerialNumber(device.getSerialNumber().trim());
+			deviceDetail.setInventoryNumber(device.getInventoryNumber().trim());
+			deviceDetail.setProject(Project.values()[device.getProjectId()]);
+			deviceDetail.setOrigin(Origin.values()[device.getOriginId()]);
+			deviceDetail.setPlatform_Id(device.getPlatformId());
+			deviceDetail.setRam_Id(device.getRamId());
+			deviceDetail.setItem_type_Id(device.getItemTypeId());
+			deviceDetail.setStorage_Id(device.getStorageId());
+			deviceDetail.setScreen_Id(device.getScreenId());
+			deviceDetail.setComments(device.getComments());
+			deviceDetail.setOwner_Id(owner.getId());
+			deviceDetail.setUpdatedDate(new Date());
+			_deviceRepository.save(deviceDetail);
+			detailDeviceResponse.setUpdatedDevice(deviceDetail);
 		} catch (Exception e) {
-			if (e instanceof NoSuchElementException) {
+			if (e instanceof NoSuchElementException)
 				throw new NoSuchElementException("Owner does not exist", e);
-			} else if (e instanceof DataIntegrityViolationException) {
+			if (e instanceof DataIntegrityViolationException)
 				throw new DataIntegrityViolationException(
 						((DataIntegrityViolationException) e).getMostSpecificCause().getLocalizedMessage(), e);
-			}
 		}
 		return detailDeviceResponse;
 	}
@@ -152,63 +148,55 @@ public class DeviceService implements IDeviceService {
 	@Override
 	public FilterDeviceResponse getSuggestKeywordDevices(int fieldColumn, String keyword,
 			DeviceFilterDTO deviceFilter) {
+		formatFilter(deviceFilter);
+		List<String> keywordList = new ArrayList<>();
 		final DeviceSpecification specification = new DeviceSpecification(deviceFilter);
 		List<Device> devices = _deviceRepository.findAll(specification);
-		List<String> keywordList = new ArrayList<>();
 		switch (fieldColumn) {
 		case DEVICE_NAME_COLUMN:
-			if (keyword != null) {
+			if (keyword != null)
 				keywordList = devices.stream().map(cell -> cell.getName())
 						.filter(cell -> cell.toLowerCase().contains(keyword)).distinct().collect(Collectors.toList());
-			}
 			break;
 		case DEVICE_PLATFORM_NAME_COLUMN:
-			if (keyword != null) {
+			if (keyword != null)
 				keywordList = devices.stream().map(cell -> cell.getPlatform().getName())
 						.filter(cell -> cell.toLowerCase().contains(keyword)).distinct().collect(Collectors.toList());
-			}
 			break;
 		case DEVICE_PLATFORM_VERSION_COLUMN:
-			if (keyword != null) {
+			if (keyword != null)
 				keywordList = devices.stream().map(cell -> cell.getPlatform().getVersion())
 						.filter(cell -> cell.toLowerCase().contains(keyword)).distinct().collect(Collectors.toList());
-			}
 			break;
 		case DEVICE_RAM_COLUMN:
-			if (keyword != null) {
+			if (keyword != null)
 				keywordList = devices.stream().map(cell -> cell.getRam().getSize().toString())
 						.filter(cell -> cell.toLowerCase().contains(keyword)).distinct().collect(Collectors.toList());
-			}
 			break;
 		case DEVICE_SCREEN_COLUMN:
-			if (keyword != null) {
+			if (keyword != null)
 				keywordList = devices.stream().map(cell -> cell.getScreen().getSize().toString())
 						.filter(cell -> cell.toLowerCase().contains(keyword)).distinct().collect(Collectors.toList());
-			}
 			break;
 		case DEVICE_STORAGE_COLUMN:
-			if (keyword != null) {
+			if (keyword != null)
 				keywordList = devices.stream().map(cell -> cell.getStorage().getSize().toString())
 						.filter(cell -> cell.toLowerCase().contains(keyword)).distinct().collect(Collectors.toList());
-			}
 			break;
 		case DEVICE_OWNER_COLUMN:
-			if (keyword != null) {
+			if (keyword != null)
 				keywordList = devices.stream().map(cell -> cell.getOwner().getUserName())
 						.filter(cell -> cell.toLowerCase().contains(keyword)).distinct().collect(Collectors.toList());
-			}
 			break;
 		case DEVICE_INVENTORY_NUMBER_COLUMN:
-			if (keyword != null) {
+			if (keyword != null)
 				keywordList = devices.stream().map(cell -> cell.getInventoryNumber())
 						.filter(cell -> cell.toLowerCase().contains(keyword)).distinct().collect(Collectors.toList());
-			}
 			break;
 		case DEVICE_SERIAL_NUMBER_COLUMN:
-			if (keyword != null) {
+			if (keyword != null)
 				keywordList = devices.stream().map(cell -> cell.getSerialNumber())
 						.filter(cell -> cell.toLowerCase().contains(keyword)).distinct().collect(Collectors.toList());
-			}
 			break;
 		}
 		FilterDeviceResponse response = new FilterDeviceResponse();
@@ -218,32 +206,44 @@ public class DeviceService implements IDeviceService {
 
 	@Override
 	public void formatFilter(DeviceFilterDTO deviceFilterDTO) {
-		if (deviceFilterDTO.getName() != null) {
+		if (deviceFilterDTO.getName() != null)
 			deviceFilterDTO.setName(deviceFilterDTO.getName().trim().toLowerCase());
-		}
-		if (deviceFilterDTO.getPlatformName() != null) {
+
+		if (deviceFilterDTO.getPlatformName() != null)
 			deviceFilterDTO.setPlatformName(deviceFilterDTO.getPlatformName().trim().toLowerCase());
-		}
-		if (deviceFilterDTO.getPlatformVersion() != null) {
+
+		if (deviceFilterDTO.getPlatformVersion() != null)
 			deviceFilterDTO.setPlatformVersion(deviceFilterDTO.getPlatformVersion().trim().toLowerCase());
-		}
-		if (deviceFilterDTO.getRam() != null) {
+
+		if (deviceFilterDTO.getRam() != null)
 			deviceFilterDTO.setRam(deviceFilterDTO.getRam().trim().toLowerCase());
-		}
-		if (deviceFilterDTO.getScreen() != null) {
+
+		if (deviceFilterDTO.getScreen() != null)
 			deviceFilterDTO.setScreen(deviceFilterDTO.getScreen().trim().toLowerCase());
-		}
-		if (deviceFilterDTO.getStorage() != null) {
+
+		if (deviceFilterDTO.getStorage() != null)
 			deviceFilterDTO.setStorage(deviceFilterDTO.getStorage().trim().toLowerCase());
-		}
-		if (deviceFilterDTO.getInventoryNumber() != null) {
+
+		if (deviceFilterDTO.getInventoryNumber() != null)
 			deviceFilterDTO.setInventoryNumber(deviceFilterDTO.getInventoryNumber().trim().toLowerCase());
-		}
-		if (deviceFilterDTO.getSerialNumber() != null) {
+
+		if (deviceFilterDTO.getSerialNumber() != null)
 			deviceFilterDTO.setSerialNumber(deviceFilterDTO.getSerialNumber().trim().toLowerCase());
-		}
-		if (deviceFilterDTO.getOwner() != null) {
+
+		if (deviceFilterDTO.getOwner() != null)
 			deviceFilterDTO.setOwner(deviceFilterDTO.getOwner().trim().toLowerCase());
+
+	}
+
+	@Override
+	public DeleteDeviceResponse deleteADevice(int deviceId) {
+		DeleteDeviceResponse response = new DeleteDeviceResponse();
+		if (_deviceRepository.findById(deviceId) == null) {
+			response.setIsDeletionSuccessful(false);
+			return response;
 		}
+		_deviceRepository.deleteById((long) deviceId);
+		response.setIsDeletionSuccessful(true);
+		return response;
 	}
 }

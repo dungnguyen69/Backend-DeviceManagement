@@ -1,12 +1,11 @@
 package com.fullstack.Backend.services;
 
-import java.util.List;
 
 import com.fullstack.Backend.dto.device.DeviceAddDTO;
 import com.fullstack.Backend.dto.device.DeviceFilterDTO;
 import com.fullstack.Backend.dto.device.DeviceUpdateDTO;
-import com.fullstack.Backend.entities.Device;
 import com.fullstack.Backend.responses.AddDeviceResponse;
+import com.fullstack.Backend.responses.DeleteDeviceResponse;
 import com.fullstack.Backend.responses.DetailDeviceResponse;
 import com.fullstack.Backend.responses.DeviceInWarehouseResponse;
 import com.fullstack.Backend.responses.FilterDeviceResponse;
@@ -27,4 +26,6 @@ public interface IDeviceService {
 	public void formatFilter(DeviceFilterDTO deviceFilterDTO);
 
 	public FilterDeviceResponse getSuggestKeywordDevices(int fieldColumn, String keyword, DeviceFilterDTO deviceFilter);
+
+	public DeleteDeviceResponse deleteADevice(int deviceId);
 }
