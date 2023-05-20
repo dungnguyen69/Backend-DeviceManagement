@@ -13,6 +13,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+
 import org.springframework.web.bind.MethodArgumentNotValidException;
 
 @Order(1)
@@ -29,8 +30,20 @@ public class ControllerExceptionHandler extends ResponseEntityExceptionHandler {
 //		return message;
 //	}
 
+	// If mandatory fields like name, inventory number, serial number are empty
 	@Override
 	protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex,
+			HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+		final List<String> errors = new ArrayList<String>();
+		for (final FieldError error : ex.getBindingResult().getFieldErrors()) {
+			errors.add(error.getField() + ": " + error.getDefaultMessage());
+		}
+		ErrorMessage message = new ErrorMessage(HttpStatus.BAD_REQUEST.value(), new Date(), errors,
+				request.getDescription(false));
+		return new ResponseEntity<Object>(message, HttpStatus.BAD_REQUEST);
+	}
+	
+	protected ResponseEntity<Object> handleMethodArgument(MethodArgumentNotValidException ex,
 			HttpHeaders headers, HttpStatusCode status, WebRequest request) {
 		final List<String> errors = new ArrayList<String>();
 		for (final FieldError error : ex.getBindingResult().getFieldErrors()) {

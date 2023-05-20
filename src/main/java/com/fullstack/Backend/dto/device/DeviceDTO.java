@@ -51,6 +51,10 @@ public class DeviceDTO {
 	public Date UpdatedDate;
 
 	public void loadFromEntity(Device device) {
+		if (device.getOwner() == null)
+			this.Owner = "";
+		else
+			this.Owner = device.getOwner().getUserName();
 		this.Id = device.getId();
 		this.DeviceName = device.getName();
 		this.ItemType = device.getItemType().getName();
@@ -65,7 +69,6 @@ public class DeviceDTO {
 		this.Comments = device.getComments();
 		this.Project = device.getProject().name();
 		this.Origin = device.getOrigin().name();
-		this.Owner = device.getOwner().getUserName();
 		this.CreatedDate = device.getCreatedDate();
 		this.UpdatedDate = device.getUpdatedDate();
 	}

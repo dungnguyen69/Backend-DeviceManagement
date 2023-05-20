@@ -25,7 +25,7 @@ public class DeviceUpdateDTO {
 	private int ramId;
 	private int screenId;
 	private int storageId;
-	private int ownerId;
+	private String ownerId;
 	@NotEmpty
 	private String inventoryNumber;
 	@NotEmpty
@@ -37,6 +37,7 @@ public class DeviceUpdateDTO {
 	private Date updatedDate;
 
 	public void loadFromEntity(Device device) {
+		this.id = device.getId();
 		this.name = device.getName();
 		this.itemTypeId = device.getItem_type_Id();
 		this.statusId = Status.valueOf(device.getStatus().toString()).ordinal();

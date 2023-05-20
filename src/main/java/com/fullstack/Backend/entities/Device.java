@@ -1,5 +1,7 @@
 package com.fullstack.Backend.entities;
 
+import java.util.Date;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fullstack.Backend.dto.device.DeviceAddDTO;
 import com.fullstack.Backend.enums.Origin;
@@ -17,14 +19,18 @@ import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.Builder;
 
-@Data
+@Getter
+@Setter
+@Builder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity()
-@Table(name = "Devices", uniqueConstraints = @UniqueConstraint(columnNames = "inventoryNumber", name = "inventoryNumber"))
+@Table(name = "Devices", uniqueConstraints = @UniqueConstraint(columnNames = "serialNumber", name = "serialNumber"))
 public class Device extends BaseEntity {
 	@Column(nullable = false)
 	private String name;
@@ -92,7 +98,7 @@ public class Device extends BaseEntity {
 	@Column()
 	private String comments;
 
-	public void loadFromEntity(DeviceAddDTO deviceAddDTO) {
+	public void loadToEntity(DeviceAddDTO deviceAddDTO) {
 		this.name = deviceAddDTO.getName();
 		this.item_type_Id = deviceAddDTO.getItemTypeId();
 		this.status = Status.values()[deviceAddDTO.getStatusId()];
@@ -105,5 +111,7 @@ public class Device extends BaseEntity {
 		this.comments = deviceAddDTO.getComments();
 		this.project = Project.values()[deviceAddDTO.getProjectId()];
 		this.origin = Origin.values()[deviceAddDTO.getOriginId()];
+		this.owner_Id = deviceAddDTO.getOwnerId();
+		this.setCreatedDate(new Date());
 	}
 }

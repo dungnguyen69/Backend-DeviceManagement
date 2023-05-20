@@ -1,6 +1,10 @@
 package com.fullstack.Backend.services.impl;
 
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import com.fullstack.Backend.entities.User;
@@ -13,13 +17,21 @@ public class EmployeeService implements IEmployeeService {
 	@Autowired
 	IEmployeeRepository _employeeRepository;
 
+	@Async
 	@Override
-	public User findById(int id) {
-		return _employeeRepository.findById(id).get();
+	public CompletableFuture<User> findById(int id) {
+		return CompletableFuture.completedFuture(_employeeRepository.findById(id).get());
 	}
 
+	@Async
 	@Override
-	public User findByUsername(String username) {
-		return _employeeRepository.findByUserName(username);
+	public CompletableFuture<User> findByUsername(String username) {
+		return CompletableFuture.completedFuture(_employeeRepository.findByUserName(username));
+	}
+
+	@Async
+	@Override
+	public CompletableFuture<List<User>> getUserList() {
+		return CompletableFuture.completedFuture(_employeeRepository.findAll());
 	}
 }

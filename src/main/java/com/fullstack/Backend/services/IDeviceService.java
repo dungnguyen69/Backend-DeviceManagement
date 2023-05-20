@@ -1,5 +1,13 @@
 package com.fullstack.Backend.services;
 
+import java.io.IOException;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.fullstack.Backend.dto.device.DeviceAddDTO;
 import com.fullstack.Backend.dto.device.DeviceFilterDTO;
@@ -11,21 +19,30 @@ import com.fullstack.Backend.responses.DeviceInWarehouseResponse;
 import com.fullstack.Backend.responses.FilterDeviceResponse;
 import com.fullstack.Backend.responses.UpdateDeviceResponse;
 
+import jakarta.servlet.http.HttpServletResponse;
+
 public interface IDeviceService {
-	public DeviceInWarehouseResponse getAllDevicesWithPaging(int pageIndex, int pageSize, String sortBy, String sortDir,
-			DeviceFilterDTO deviceFilterDTO);
+	public CompletableFuture<DeviceInWarehouseResponse> showDevicesWithPaging(int pageIndex, int pageSize,
+			String sortBy, String sortDir, DeviceFilterDTO deviceFilterDTO);
 
-	public AddDeviceResponse addANewDevice(DeviceAddDTO device);
+	public CompletableFuture<AddDeviceResponse> addANewDevice(DeviceAddDTO device);
 
-	public DetailDeviceResponse getDetailDevice(int deviceId);
+	public CompletableFuture<DetailDeviceResponse> getDetailDevice(int deviceId)
+			throws InterruptedException, ExecutionException;
 
-	public UpdateDeviceResponse updateDevice(int deviceId, DeviceUpdateDTO device);
-
-//	public List<Device> filterDevice(DeviceFilterDTO deviceFilterDTO, List<Device> devices);
+	public CompletableFuture<UpdateDeviceResponse> updateDevice(int deviceId, DeviceUpdateDTO device);
 
 	public void formatFilter(DeviceFilterDTO deviceFilterDTO);
 
-	public FilterDeviceResponse getSuggestKeywordDevices(int fieldColumn, String keyword, DeviceFilterDTO deviceFilter);
+	public CompletableFuture<FilterDeviceResponse> getSuggestKeywordDevices(int fieldColumn, String keyword,
+			DeviceFilterDTO deviceFilter);
 
-	public DeleteDeviceResponse deleteADevice(int deviceId);
+	public CompletableFuture<DeleteDeviceResponse> deleteADevice(int deviceId);
+
+	public void exportToExcel(HttpServletResponse response) throws IOException;
+
+	public void downloadTemplate(HttpServletResponse response)
+			throws IOException, InterruptedException, ExecutionException;
+
+	public CompletableFuture<ResponseEntity<Object>> importToDb(MultipartFile file) throws IOException;
 }

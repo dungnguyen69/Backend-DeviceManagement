@@ -6,5 +6,4 @@ import com.fullstack.Backend.entities.Request;
 
 public interface IRequestService {
 	 
-	 
 }
