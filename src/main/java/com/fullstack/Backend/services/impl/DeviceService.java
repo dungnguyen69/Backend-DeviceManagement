@@ -451,11 +451,13 @@ public class DeviceService implements IDeviceService {
 	public CompletableFuture<FilterDeviceResponse> getSuggestKeywordDevices(int fieldColumn, String keyword,
 			DeviceFilterDTO deviceFilter) {
 		DeviceSuggestionSpecification specification = new DeviceSuggestionSpecification();
-		// Get all devices based upon the keyword and fieldCol
+		// Get all information of devices based upon the keyword and fieldCol
 		List<Device> devices = _deviceRepository.findAll(specification.outputSuggestion(fieldColumn, keyword));
+		// Keyword List AKA outcome
 		List<String> keywordList = new ArrayList<>();
 		formatFilter(deviceFilter);
-		// Filter devices with deviceFilter
+
+		// Filter devices out with deviceFilter
 		if (deviceFilter.getName() != null) {
 			devices = devices.stream().filter(device -> device.getName().toLowerCase().equals(deviceFilter.getName()))
 					.collect(Collectors.toList());
@@ -521,7 +523,7 @@ public class DeviceService implements IDeviceService {
 					.collect(Collectors.toList());
 		}
 
-		// Fetch one column
+		// Fetch only one column
 		for (Device device : devices) {
 			switch (fieldColumn) {
 			case DEVICE_NAME_COLUMN:

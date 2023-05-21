@@ -35,8 +35,6 @@ public class DeviceSpecification implements Specification<Device> {
 		this.criteria = criteria;
 	}
 
-	
-
 	@Override
 	public Predicate toPredicate(Root<Device> root, CriteriaQuery<?> query, CriteriaBuilder builder) {
 		final List<Predicate> predicates = new ArrayList<>();
