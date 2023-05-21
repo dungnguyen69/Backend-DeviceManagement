@@ -1,12 +1,10 @@
 package com.fullstack.Backend.services;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.fullstack.Backend.dto.device.DeviceAddDTO;
@@ -34,9 +32,6 @@ public interface IDeviceService {
 
 	public void formatFilter(DeviceFilterDTO deviceFilterDTO);
 
-	public CompletableFuture<FilterDeviceResponse> getSuggestKeywordDevices(int fieldColumn, String keyword,
-			DeviceFilterDTO deviceFilter);
-
 	public CompletableFuture<DeleteDeviceResponse> deleteADevice(int deviceId);
 
 	public void exportToExcel(HttpServletResponse response) throws IOException;
@@ -45,4 +40,7 @@ public interface IDeviceService {
 			throws IOException, InterruptedException, ExecutionException;
 
 	public CompletableFuture<ResponseEntity<Object>> importToDb(MultipartFile file) throws IOException;
+
+	public CompletableFuture<FilterDeviceResponse> getSuggestKeywordDevices(int fieldColumn, String keyword,
+			DeviceFilterDTO deviceFilter);
 }

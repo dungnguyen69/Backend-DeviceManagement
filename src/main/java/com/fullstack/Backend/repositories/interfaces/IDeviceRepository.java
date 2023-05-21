@@ -1,5 +1,7 @@
 package com.fullstack.Backend.repositories.interfaces;
 
+import java.util.List;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -11,6 +13,10 @@ public interface IDeviceRepository extends JpaRepository<Device, Long>, JpaSpeci
 
 	public Device findById(int deviceId);
 	
+<<<<<<< Updated upstream
 	@Query(value = FIND_DEVICE_BY_SERIALNUMBER, nativeQuery = true)
 	public Device findBySerialNumber(String serialNumber);
+=======
+	public List<Device> findByNameLike(String name);
+>>>>>>> Stashed changes
 }

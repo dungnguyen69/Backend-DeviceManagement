@@ -68,6 +68,7 @@ import com.fullstack.Backend.utils.DropDownListsDTO;
 import com.fullstack.Backend.utils.ImportError;
 import com.fullstack.Backend.responses.ImportDeviceResponse;
 import jakarta.servlet.http.HttpServletResponse;
+import com.fullstack.Backend.specifications.DeviceSuggestionSpecification;
 
 @Service
 public class DeviceService implements IDeviceService {
@@ -194,66 +195,6 @@ public class DeviceService implements IDeviceService {
 
 		}
 		return CompletableFuture.completedFuture(detailDeviceResponse);
-	}
-
-	@Async()
-	@Override
-	public CompletableFuture<FilterDeviceResponse> getSuggestKeywordDevices(int fieldColumn, String keyword,
-			DeviceFilterDTO deviceFilter) {
-		formatFilter(deviceFilter);
-		List<String> keywordList = new ArrayList<>();
-		final DeviceSpecification specification = new DeviceSpecification(deviceFilter);
-		List<Device> devices = _deviceRepository.findAll(specification);
-		switch (fieldColumn) {
-		case DEVICE_NAME_COLUMN:
-			if (keyword != null)
-				keywordList = devices.stream().map(cell -> cell.getName())
-						.filter(cell -> cell.toLowerCase().contains(keyword)).distinct().collect(Collectors.toList());
-			break;
-		case DEVICE_PLATFORM_NAME_COLUMN:
-			if (keyword != null)
-				keywordList = devices.stream().map(cell -> cell.getPlatform().getName())
-						.filter(cell -> cell.toLowerCase().contains(keyword)).distinct().collect(Collectors.toList());
-			break;
-		case DEVICE_PLATFORM_VERSION_COLUMN:
-			if (keyword != null)
-				keywordList = devices.stream().map(cell -> cell.getPlatform().getVersion())
-						.filter(cell -> cell.toLowerCase().contains(keyword)).distinct().collect(Collectors.toList());
-			break;
-		case DEVICE_RAM_COLUMN:
-			if (keyword != null)
-				keywordList = devices.stream().map(cell -> cell.getRam().getSize().toString())
-						.filter(cell -> cell.toLowerCase().contains(keyword)).distinct().collect(Collectors.toList());
-			break;
-		case DEVICE_SCREEN_COLUMN:
-			if (keyword != null)
-				keywordList = devices.stream().map(cell -> cell.getScreen().getSize().toString())
-						.filter(cell -> cell.toLowerCase().contains(keyword)).distinct().collect(Collectors.toList());
-			break;
-		case DEVICE_STORAGE_COLUMN:
-			if (keyword != null)
-				keywordList = devices.stream().map(cell -> cell.getStorage().getSize().toString())
-						.filter(cell -> cell.toLowerCase().contains(keyword)).distinct().collect(Collectors.toList());
-			break;
-		case DEVICE_OWNER_COLUMN:
-			if (keyword != null)
-				keywordList = devices.stream().map(cell -> cell.getOwner().getUserName())
-						.filter(cell -> cell.toLowerCase().contains(keyword)).distinct().collect(Collectors.toList());
-			break;
-		case DEVICE_INVENTORY_NUMBER_COLUMN:
-			if (keyword != null)
-				keywordList = devices.stream().map(cell -> cell.getInventoryNumber())
-						.filter(cell -> cell.toLowerCase().contains(keyword)).distinct().collect(Collectors.toList());
-			break;
-		case DEVICE_SERIAL_NUMBER_COLUMN:
-			if (keyword != null)
-				keywordList = devices.stream().map(cell -> cell.getSerialNumber())
-						.filter(cell -> cell.toLowerCase().contains(keyword)).distinct().collect(Collectors.toList());
-			break;
-		}
-		FilterDeviceResponse response = new FilterDeviceResponse();
-		response.setKeywordList(keywordList);
-		return CompletableFuture.completedFuture(response);
 	}
 
 	@Override
@@ -503,5 +444,117 @@ public class DeviceService implements IDeviceService {
 		message = "Please upload an excel file!";
 		ImportDeviceResponse importDevice = new ImportDeviceResponse(message);
 		return CompletableFuture.completedFuture(new ResponseEntity<>(importDevice, NOT_FOUND));
+	}
+
+	@Async()
+	@Override
+	public CompletableFuture<FilterDeviceResponse> getSuggestKeywordDevices(int fieldColumn, String keyword,
+			DeviceFilterDTO deviceFilter) {
+		DeviceSuggestionSpecification specification = new DeviceSuggestionSpecification();
+		// Get all devices based upon the keyword and fieldCol
+		List<Device> devices = _deviceRepository.findAll(specification.outputSuggestion(fieldColumn, keyword));
+		List<String> keywordList = new ArrayList<>();
+		formatFilter(deviceFilter);
+		// Filter devices with deviceFilter
+		if (deviceFilter.getName() != null) {
+			devices = devices.stream().filter(device -> device.getName().toLowerCase().equals(deviceFilter.getName()))
+					.collect(Collectors.toList());
+		}
+		if (deviceFilter.getStatus() != null) {
+			devices = devices.stream()
+					.filter(device -> device.getStatus().name().toLowerCase().equals(deviceFilter.getStatus()))
+					.collect(Collectors.toList());
+		}
+		if (deviceFilter.getPlatformName() != null) {
+			devices = devices.stream().filter(
+					device -> device.getPlatform().getName().toLowerCase().equals(deviceFilter.getPlatformName()))
+					.collect(Collectors.toList());
+		}
+		if (deviceFilter.getPlatformVersion() != null) {
+			devices = devices.stream().filter(
+					device -> device.getPlatform().getVersion().toLowerCase().equals(deviceFilter.getPlatformVersion()))
+					.collect(Collectors.toList());
+		}
+		if (deviceFilter.getItemType() != null) {
+			devices = devices.stream()
+					.filter(device -> device.getItemType().getName().toLowerCase().equals(deviceFilter.getItemType()))
+					.collect(Collectors.toList());
+		}
+		if (deviceFilter.getRam() != null) {
+			devices = devices.stream()
+					.filter(device -> device.getRam().getSize().toString().toLowerCase().equals(deviceFilter.getRam()))
+					.collect(Collectors.toList());
+		}
+		if (deviceFilter.getScreen() != null) {
+			devices = devices.stream().filter(
+					device -> device.getStorage().getSize().toString().toLowerCase().equals(deviceFilter.getScreen()))
+					.collect(Collectors.toList());
+		}
+		if (deviceFilter.getStorage() != null) {
+			devices = devices.stream().filter(
+					device -> device.getStorage().getSize().toString().toLowerCase().equals(deviceFilter.getStorage()))
+					.collect(Collectors.toList());
+		}
+		if (deviceFilter.getOwner() != null) {
+			devices = devices.stream()
+					.filter(device -> device.getOwner().getUserName().toLowerCase().equals(deviceFilter.getOwner()))
+					.collect(Collectors.toList());
+		}
+		if (deviceFilter.getOrigin() != null) {
+			devices = devices.stream()
+					.filter(device -> device.getOrigin().name().toLowerCase().equals(deviceFilter.getOrigin()))
+					.collect(Collectors.toList());
+		}
+		if (deviceFilter.getInventoryNumber() != null) {
+			devices = devices.stream().filter(
+					device -> device.getInventoryNumber().toLowerCase().equals(deviceFilter.getInventoryNumber()))
+					.collect(Collectors.toList());
+		}
+		if (deviceFilter.getSerialNumber() != null) {
+			devices = devices.stream()
+					.filter(device -> device.getSerialNumber().toLowerCase().equals(deviceFilter.getSerialNumber()))
+					.collect(Collectors.toList());
+		}
+		if (deviceFilter.getProject() != null) {
+			devices = devices.stream()
+					.filter(device -> device.getProject().name().toLowerCase().equals(deviceFilter.getProject()))
+					.collect(Collectors.toList());
+		}
+
+		// Fetch one column
+		for (Device device : devices) {
+			switch (fieldColumn) {
+			case DEVICE_NAME_COLUMN:
+				keywordList.add(device.getName());
+				break;
+			case DEVICE_PLATFORM_NAME_COLUMN:
+				keywordList.add(device.getPlatform().getName());
+				break;
+			case DEVICE_PLATFORM_VERSION_COLUMN:
+				keywordList.add(device.getPlatform().getVersion());
+				break;
+			case DEVICE_RAM_COLUMN:
+				keywordList.add(device.getRam().getSize().toString());
+				break;
+			case DEVICE_SCREEN_COLUMN:
+				keywordList.add(device.getScreen().getSize().toString());
+				break;
+			case DEVICE_STORAGE_COLUMN:
+				keywordList.add(device.getStorage().getSize().toString());
+				break;
+			case DEVICE_OWNER_COLUMN:
+				keywordList.add(device.getOwner().getUserName());
+				break;
+			case DEVICE_INVENTORY_NUMBER_COLUMN:
+				keywordList.add(device.getInventoryNumber());
+				break;
+			case DEVICE_SERIAL_NUMBER_COLUMN:
+				keywordList.add(device.getSerialNumber());
+				break;
+			}
+		}
+		FilterDeviceResponse response = new FilterDeviceResponse();
+		response.setKeywordList(keywordList);
+		return CompletableFuture.completedFuture(response);
 	}
 }

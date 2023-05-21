@@ -67,7 +67,8 @@ public class DeviceController {
 
 	@PostMapping("/warehouse")
 	@ResponseBody
-	public ResponseEntity<Object> addANewDevice(@Valid @RequestBody DeviceAddDTO device) throws InterruptedException, ExecutionException {
+	public ResponseEntity<Object> addANewDevice(@Valid @RequestBody DeviceAddDTO device)
+			throws InterruptedException, ExecutionException {
 		CompletableFuture<AddDeviceResponse> deviceResponse = _deviceService.addANewDevice(device);
 		return new ResponseEntity<>(deviceResponse.get(), OK);
 	}
@@ -85,14 +86,17 @@ public class DeviceController {
 	@GetMapping("/warehouse/suggestion")
 	@ResponseBody
 	public ResponseEntity<Object> getSuggestKeywordDevices(@RequestParam(name = "column") int fieldColumn,
-			@RequestParam(name = "keyword") String keyword, DeviceFilterDTO device) throws InterruptedException, ExecutionException {
-		CompletableFuture<FilterDeviceResponse> deviceResponse = _deviceService.getSuggestKeywordDevices(fieldColumn, keyword, device);
+			@RequestParam(name = "keyword") String keyword, DeviceFilterDTO device)
+			throws InterruptedException, ExecutionException {
+		CompletableFuture<FilterDeviceResponse> deviceResponse = _deviceService.getSuggestKeywordDevices(fieldColumn,
+				keyword, device);
 		return new ResponseEntity<>(deviceResponse.get(), OK);
 	}
 
 	@DeleteMapping("/warehouse/{id}")
 	@ResponseBody
-	public ResponseEntity<Object> deleteDevice(@PathVariable(value = "id") int deviceId) throws InterruptedException, ExecutionException {
+	public ResponseEntity<Object> deleteDevice(@PathVariable(value = "id") int deviceId)
+			throws InterruptedException, ExecutionException {
 		CompletableFuture<DeleteDeviceResponse> deviceResponse = _deviceService.deleteADevice(deviceId);
 		if (!deviceResponse.get().getIsDeletionSuccessful())
 			return new ResponseEntity<>(NOT_FOUND);
@@ -105,7 +109,7 @@ public class DeviceController {
 		_deviceService.exportToExcel(response);
 	}
 
-	@GetMapping("/warehouse/downloadTemplate")
+	@GetMapping("/warehouse/download-template")
 	@ResponseBody
 	public void downloadTemplateImport(HttpServletResponse response)
 			throws IOException, InterruptedException, ExecutionException {

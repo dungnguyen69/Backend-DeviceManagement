@@ -1,7 +1,18 @@
 package com.fullstack.Backend.specifications;
 
+import static com.fullstack.Backend.constant.constant.DEVICE_INVENTORY_NUMBER_COLUMN;
+import static com.fullstack.Backend.constant.constant.DEVICE_NAME_COLUMN;
+import static com.fullstack.Backend.constant.constant.DEVICE_OWNER_COLUMN;
+import static com.fullstack.Backend.constant.constant.DEVICE_PLATFORM_NAME_COLUMN;
+import static com.fullstack.Backend.constant.constant.DEVICE_PLATFORM_VERSION_COLUMN;
+import static com.fullstack.Backend.constant.constant.DEVICE_RAM_COLUMN;
+import static com.fullstack.Backend.constant.constant.DEVICE_SCREEN_COLUMN;
+import static com.fullstack.Backend.constant.constant.DEVICE_SERIAL_NUMBER_COLUMN;
+import static com.fullstack.Backend.constant.constant.DEVICE_STORAGE_COLUMN;
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.data.jpa.domain.Specification;
 
@@ -23,6 +34,8 @@ public class DeviceSpecification implements Specification<Device> {
 	public DeviceSpecification(DeviceFilterDTO criteria) {
 		this.criteria = criteria;
 	}
+
+	
 
 	@Override
 	public Predicate toPredicate(Root<Device> root, CriteriaQuery<?> query, CriteriaBuilder builder) {
