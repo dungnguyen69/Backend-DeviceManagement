@@ -1,7 +1,6 @@
 package com.fullstack.Backend.responses;
 
-import java.util.List;
-
+import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -10,5 +9,5 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class FilterDeviceResponse {
-	List<String> keywordList;
+	Set<String> keywordList;
 }

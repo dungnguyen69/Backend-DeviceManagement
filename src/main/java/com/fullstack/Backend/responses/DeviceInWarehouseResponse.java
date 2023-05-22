@@ -13,8 +13,12 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class DeviceInWarehouseResponse {
 	private List<DeviceDTO> devicesList;
-    private int pageNo;
-    private int pageSize;
-    private long totalElements;
-    private int totalPages;
+	private List<String> statusList;
+	private List<String> originList;
+	private List<String> projectList;
+	private List<String> itemTypeList;
+	private int pageNo;
+	private int pageSize;
+	private long totalElements;
+	private int totalPages;
 }

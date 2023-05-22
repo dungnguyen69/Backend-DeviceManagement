@@ -4,7 +4,8 @@ import java.util.Date;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
+import java.util.*;
+import java.util.Collections;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.concurrent.CompletableFuture;
@@ -36,6 +37,7 @@ import com.fullstack.Backend.dto.device.DeviceAddDTO;
 import com.fullstack.Backend.dto.device.DeviceDTO;
 import com.fullstack.Backend.dto.device.DeviceFilterDTO;
 import com.fullstack.Backend.dto.device.DeviceUpdateDTO;
+import com.fullstack.Backend.dto.device.DropDownListsDTO;
 import com.fullstack.Backend.entities.Device;
 import com.fullstack.Backend.entities.ItemType;
 import com.fullstack.Backend.entities.Platform;
@@ -64,7 +66,6 @@ import com.fullstack.Backend.specifications.DeviceSpecification;
 import com.fullstack.Backend.utils.DeviceExcelExporter;
 import com.fullstack.Backend.utils.DeviceExcelImporter;
 import com.fullstack.Backend.utils.DeviceExcelTemplate;
-import com.fullstack.Backend.utils.DropDownListsDTO;
 import com.fullstack.Backend.utils.ImportError;
 import com.fullstack.Backend.responses.ImportDeviceResponse;
 import jakarta.servlet.http.HttpServletResponse;
@@ -97,26 +98,69 @@ public class DeviceService implements IDeviceService {
 	@Async
 	@Override
 	public CompletableFuture<DeviceInWarehouseResponse> showDevicesWithPaging(int pageIndex, int pageSize,
-			String sortBy, String sortDir, DeviceFilterDTO deviceFilterDTO) {
+			String sortBy, String sortDir, DeviceFilterDTO deviceFilterDTO)
+			throws InterruptedException, ExecutionException {
 		Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ? Sort.by(sortBy).ascending()
 				: Sort.by(sortBy).descending();
-		Pageable pageable = PageRequest.of(pageIndex, pageSize, sort);
 		formatFilter(deviceFilterDTO);
 		final DeviceSpecification specification = new DeviceSpecification(deviceFilterDTO);
-		Page<Device> devices = _deviceRepository.findAll(specification, pageable);
+//		Pageable pageable = PageRequest.of(pageIndex, pageSize, sort);
+//		Page<Device> devices = _deviceRepository.findAll(specification, pageable);
+		CompletableFuture<List<Device>> devices = getPage(_deviceRepository.findAll(specification, sort), pageIndex,
+				pageSize);
+//		devices = getPage(devices, pageIndex, pageSize);
 		List<DeviceDTO> deviceList = new ArrayList<DeviceDTO>();
-		for (var device : devices) {
+		for (var device : devices.get()) {
 			DeviceDTO deviceDTO = new DeviceDTO();
 			deviceDTO.loadFromEntity(device);
 			deviceList.add(deviceDTO);
 		}
+		List<String> statusList = deviceList.stream().map(c -> c.getStatus()).distinct().collect(Collectors.toList());
+		List<String> originList = deviceList.stream().map(c -> c.getOrigin()).distinct().collect(Collectors.toList());
+		List<String> projectList = deviceList.stream().map(c -> c.getProject()).distinct().collect(Collectors.toList());
+		List<String> itemTypeList = deviceList.stream().map(c -> c.getItemType()).distinct()
+				.collect(Collectors.toList());
 		DeviceInWarehouseResponse deviceResponse = new DeviceInWarehouseResponse();
 		deviceResponse.setDevicesList(deviceList);
 		deviceResponse.setPageNo(pageIndex);
 		deviceResponse.setPageSize(pageSize);
-		deviceResponse.setTotalElements(devices.getTotalElements());
-		deviceResponse.setTotalPages(devices.getTotalPages());
+		deviceResponse.setTotalElements(deviceList.size());
+		deviceResponse.setTotalPages(GetTotalPages(pageSize, deviceList.size()));
+		deviceResponse.setStatusList(statusList);
+		deviceResponse.setOriginList(originList);
+		deviceResponse.setProjectList(projectList);
+		deviceResponse.setItemTypeList(itemTypeList);
 		return CompletableFuture.completedFuture(deviceResponse);
+	}
+
+	@Async
+	@Override
+	public CompletableFuture<List<Device>> getPage(List<Device> sourceList, int pageIndex, int pageSize) {
+		if (pageSize <= 0 || pageIndex <= 0) {
+			throw new IllegalArgumentException("invalid page size: " + pageSize);
+		}
+
+		int fromIndex = (pageIndex - 1) * pageSize;
+		if (sourceList == null || sourceList.size() <= fromIndex) {
+			return CompletableFuture.completedFuture(Collections.emptyList());
+		}
+		// toIndex exclusive
+		return CompletableFuture
+				.completedFuture(sourceList.subList(fromIndex, Math.min(fromIndex + pageSize, sourceList.size())));
+	}
+
+	@Async
+	@Override
+	public int GetTotalPages(int pageSize, int listSize) {
+		if (listSize == 0) {
+			return 1;
+		}
+
+		if (listSize % pageSize == 0) {
+			return listSize / pageSize;
+		}
+
+		return (listSize / pageSize) + 1;
 	}
 
 	@Async
@@ -448,15 +492,7 @@ public class DeviceService implements IDeviceService {
 
 	@Async()
 	@Override
-	public CompletableFuture<FilterDeviceResponse> getSuggestKeywordDevices(int fieldColumn, String keyword,
-			DeviceFilterDTO deviceFilter) {
-		DeviceSuggestionSpecification specification = new DeviceSuggestionSpecification();
-		// Get all information of devices based upon the keyword and fieldCol
-		List<Device> devices = _deviceRepository.findAll(specification.outputSuggestion(fieldColumn, keyword));
-		// Keyword List AKA outcome
-		List<String> keywordList = new ArrayList<>();
-		formatFilter(deviceFilter);
-
+	public CompletableFuture<List<Device>> fetchFilteredDevice(DeviceFilterDTO deviceFilter, List<Device> devices) {
 		// Filter devices out with deviceFilter
 		if (deviceFilter.getName() != null) {
 			devices = devices.stream().filter(device -> device.getName().toLowerCase().equals(deviceFilter.getName()))
@@ -522,6 +558,22 @@ public class DeviceService implements IDeviceService {
 					.filter(device -> device.getProject().name().toLowerCase().equals(deviceFilter.getProject()))
 					.collect(Collectors.toList());
 		}
+		return CompletableFuture.completedFuture(devices);
+	}
+
+	@Async()
+	@Override
+	public CompletableFuture<FilterDeviceResponse> getSuggestKeywordDevices(int fieldColumn, String keyword,
+			DeviceFilterDTO deviceFilter) throws InterruptedException, ExecutionException {
+		DeviceSuggestionSpecification specification = new DeviceSuggestionSpecification();
+		// Get all information of devices based upon the keyword and fieldCol
+		Pageable topTwenty = PageRequest.of(0, 10);
+		List<Device> devices = _deviceRepository
+				.findAll(specification.outputSuggestion(fieldColumn, keyword), topTwenty).getContent();
+		// Keyword List AKA outcome
+		Set<String> keywordList = new HashSet<>();
+		formatFilter(deviceFilter);
+		devices = fetchFilteredDevice(deviceFilter, devices).get();
 
 		// Fetch only one column
 		for (Device device : devices) {

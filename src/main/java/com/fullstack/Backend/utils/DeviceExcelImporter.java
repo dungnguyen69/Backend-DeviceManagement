@@ -80,28 +80,6 @@ public class DeviceExcelImporter {
 		outputStream.close();
 	}
 
-	private Object getValue(Cell cell) {
-		switch (cell.getCellType()) {
-		case STRING:
-			return cell.getStringCellValue();
-		case NUMERIC:
-			return String.valueOf((int) cell.getNumericCellValue());
-		case BOOLEAN:
-			return cell.getBooleanCellValue();
-		case ERROR:
-			return cell.getErrorCellValue();
-		case FORMULA:
-			return cell.getCellFormula();
-		case BLANK:
-			return null;
-		case _NONE:
-			return null;
-		default:
-			break;
-		}
-		return null;
-	}
-
 	private void isFileFormatValid() {
 		sheet = workbook.createSheet("Import Result");
 		CellStyle cellStyle = workbook.createCellStyle(); // Cells

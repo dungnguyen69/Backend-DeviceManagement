@@ -1,4 +1,4 @@
-package com.fullstack.Backend.utils;
+package com.fullstack.Backend.dto.device;
 
 import lombok.Getter;
 import lombok.Setter;
