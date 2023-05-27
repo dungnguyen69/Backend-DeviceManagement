@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import com.fullstack.Backend.entities.Ram;
 import com.fullstack.Backend.repositories.interfaces.IRamRepository;
 import com.fullstack.Backend.services.IRamService;
+import com.fullstack.Backend.utils.dropdowns.RamList;
 
 @Service
 public class RamService implements IRamService {
@@ -29,4 +30,8 @@ public class RamService implements IRamService {
 		return CompletableFuture.completedFuture(_ramRepository.findRamSize());
 	}
 
+	@Override
+	public CompletableFuture<List<RamList>> fetchRams() {
+		return CompletableFuture.completedFuture(_ramRepository.fetchRams());
+	}
 }

@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import com.fullstack.Backend.entities.Storage;
 import com.fullstack.Backend.repositories.interfaces.IStorageRepository;
 import com.fullstack.Backend.services.IStorageService;
+import com.fullstack.Backend.utils.dropdowns.StorageList;
 
 @Service
 public class StorageService implements IStorageService {
@@ -26,5 +27,8 @@ public class StorageService implements IStorageService {
 	public CompletableFuture<List<String>> getStorageList() {
 		return CompletableFuture.completedFuture(_storageRepository.findStorageSize());
 	}
-
+	@Override
+	public CompletableFuture<List<StorageList>> fetchStorage() {
+		return CompletableFuture.completedFuture(_storageRepository.fetchStorage());
+	}
 }

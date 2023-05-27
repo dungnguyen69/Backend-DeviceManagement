@@ -16,6 +16,7 @@ import java.util.stream.Stream;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.xmlbeans.impl.xb.xmlconfig.NamespaceList.Member2.Item;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
@@ -53,6 +54,7 @@ import com.fullstack.Backend.responses.AddDeviceResponse;
 import com.fullstack.Backend.responses.DeleteDeviceResponse;
 import com.fullstack.Backend.responses.DetailDeviceResponse;
 import com.fullstack.Backend.responses.DeviceInWarehouseResponse;
+import com.fullstack.Backend.responses.DropdownValuesResponse;
 import com.fullstack.Backend.responses.FilterDeviceResponse;
 import com.fullstack.Backend.responses.UpdateDeviceResponse;
 import com.fullstack.Backend.services.IDeviceService;
@@ -67,6 +69,14 @@ import com.fullstack.Backend.utils.DeviceExcelExporter;
 import com.fullstack.Backend.utils.DeviceExcelImporter;
 import com.fullstack.Backend.utils.DeviceExcelTemplate;
 import com.fullstack.Backend.utils.ImportError;
+import com.fullstack.Backend.utils.dropdowns.ItemTypeList;
+import com.fullstack.Backend.utils.dropdowns.OriginList;
+import com.fullstack.Backend.utils.dropdowns.PlatformList;
+import com.fullstack.Backend.utils.dropdowns.ProjectList;
+import com.fullstack.Backend.utils.dropdowns.RamList;
+import com.fullstack.Backend.utils.dropdowns.ScreenList;
+import com.fullstack.Backend.utils.dropdowns.StatusList;
+import com.fullstack.Backend.utils.dropdowns.StorageList;
 import com.fullstack.Backend.responses.ImportDeviceResponse;
 import jakarta.servlet.http.HttpServletResponse;
 import com.fullstack.Backend.specifications.DeviceSuggestionSpecification;
@@ -104,22 +114,22 @@ public class DeviceService implements IDeviceService {
 				: Sort.by(sortBy).descending();
 		formatFilter(deviceFilterDTO);
 		final DeviceSpecification specification = new DeviceSpecification(deviceFilterDTO);
-//		Pageable pageable = PageRequest.of(pageIndex, pageSize, sort);
-//		Page<Device> devices = _deviceRepository.findAll(specification, pageable);
-		CompletableFuture<List<Device>> devices = getPage(_deviceRepository.findAll(specification, sort), pageIndex,
-				pageSize);
-//		devices = getPage(devices, pageIndex, pageSize);
+		List<Device> devices = _deviceRepository.findAll(specification, sort);
+		List<String> statusList = devices.stream().map(c -> c.getStatus().name()).distinct()
+				.collect(Collectors.toList());
+		List<String> originList = devices.stream().map(c -> c.getOrigin().name()).distinct()
+				.collect(Collectors.toList());
+		List<String> projectList = devices.stream().map(c -> c.getProject().name()).distinct()
+				.collect(Collectors.toList());
+		List<String> itemTypeList = devices.stream().map(c -> c.getItemType().getName()).distinct()
+				.collect(Collectors.toList());
 		List<DeviceDTO> deviceList = new ArrayList<DeviceDTO>();
-		for (var device : devices.get()) {
+		devices = getPage(devices, pageIndex, pageSize).get();
+		for (var device : devices) {
 			DeviceDTO deviceDTO = new DeviceDTO();
 			deviceDTO.loadFromEntity(device);
 			deviceList.add(deviceDTO);
 		}
-		List<String> statusList = deviceList.stream().map(c -> c.getStatus()).distinct().collect(Collectors.toList());
-		List<String> originList = deviceList.stream().map(c -> c.getOrigin()).distinct().collect(Collectors.toList());
-		List<String> projectList = deviceList.stream().map(c -> c.getProject()).distinct().collect(Collectors.toList());
-		List<String> itemTypeList = deviceList.stream().map(c -> c.getItemType()).distinct()
-				.collect(Collectors.toList());
 		DeviceInWarehouseResponse deviceResponse = new DeviceInWarehouseResponse();
 		deviceResponse.setDevicesList(deviceList);
 		deviceResponse.setPageNo(pageIndex);
@@ -139,12 +149,10 @@ public class DeviceService implements IDeviceService {
 		if (pageSize <= 0 || pageIndex <= 0) {
 			throw new IllegalArgumentException("invalid page size: " + pageSize);
 		}
-
 		int fromIndex = (pageIndex - 1) * pageSize;
 		if (sourceList == null || sourceList.size() <= fromIndex) {
 			return CompletableFuture.completedFuture(Collections.emptyList());
 		}
-		// toIndex exclusive
 		return CompletableFuture
 				.completedFuture(sourceList.subList(fromIndex, Math.min(fromIndex + pageSize, sourceList.size())));
 	}
@@ -155,11 +163,9 @@ public class DeviceService implements IDeviceService {
 		if (listSize == 0) {
 			return 1;
 		}
-
 		if (listSize % pageSize == 0) {
 			return listSize / pageSize;
 		}
-
 		return (listSize / pageSize) + 1;
 	}
 
@@ -278,7 +284,6 @@ public class DeviceService implements IDeviceService {
 		DeleteDeviceResponse response = new DeleteDeviceResponse();
 		if (_deviceRepository.findById(deviceId) == null)
 			return CompletableFuture.completedFuture(response);
-
 		_deviceRepository.deleteById((long) deviceId);
 		response.setIsDeletionSuccessful(true);
 		return CompletableFuture.completedFuture(response);
@@ -290,7 +295,6 @@ public class DeviceService implements IDeviceService {
 		response.setContentType("application/octet-stream"); // ?
 		DateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"); // format for date
 		String currentDateTime = dateFormatter.format(new Date()); // attain current date
-
 		String headerKey = "Content-Disposition"; // ?
 		String headerValue = "attachment; filename=ExportDevices_" + currentDateTime + ".xlsx";
 		response.setHeader(headerKey, headerValue);
@@ -566,12 +570,11 @@ public class DeviceService implements IDeviceService {
 	public CompletableFuture<FilterDeviceResponse> getSuggestKeywordDevices(int fieldColumn, String keyword,
 			DeviceFilterDTO deviceFilter) throws InterruptedException, ExecutionException {
 		DeviceSuggestionSpecification specification = new DeviceSuggestionSpecification();
+		Pageable topTwenty = PageRequest.of(0, 20);
+		Set<String> keywordList = new HashSet<>();
 		// Get all information of devices based upon the keyword and fieldCol
-		Pageable topTwenty = PageRequest.of(0, 10);
 		List<Device> devices = _deviceRepository
 				.findAll(specification.outputSuggestion(fieldColumn, keyword), topTwenty).getContent();
-		// Keyword List AKA outcome
-		Set<String> keywordList = new HashSet<>();
 		formatFilter(deviceFilter);
 		devices = fetchFilteredDevice(deviceFilter, devices).get();
 
@@ -610,5 +613,67 @@ public class DeviceService implements IDeviceService {
 		FilterDeviceResponse response = new FilterDeviceResponse();
 		response.setKeywordList(keywordList);
 		return CompletableFuture.completedFuture(response);
+	}
+
+	@Async()
+	@Override
+	public CompletableFuture<DropdownValuesResponse> getDropDownValues()
+			throws InterruptedException, ExecutionException {
+		CompletableFuture<List<ItemTypeList>> itemTypeList = _itemTypeService.fetchItemTypes();
+		CompletableFuture<List<RamList>> ramList = _ramService.fetchRams();
+		CompletableFuture<List<PlatformList>> platformList = _platformService.fetchPlatform();
+		CompletableFuture<List<ScreenList>> screenList = _screenService.fetchScreen();
+		CompletableFuture<List<StorageList>> storageList = _storageService.fetchStorage();
+
+		
+		List<StatusList> statusList = GetStatusList().get();
+		List<ProjectList> projectList = GetProjectList().get();
+		List<OriginList> originList = GetOriginList().get();
+		DropdownValuesResponse response = new DropdownValuesResponse();
+		
+		response.setItemTypeList(itemTypeList.get());
+		response.setRamList(ramList.get());
+		response.setPlatformList(platformList.get());
+		response.setScreenList(screenList.get());
+		response.setStorageList(storageList.get());
+		response.setStatusList(statusList);
+		response.setProjectList(projectList);
+		response.setOriginList(originList);
+		return CompletableFuture.completedFuture(response);
+	}
+
+	@Async()
+	public CompletableFuture<List<StatusList>> GetStatusList() {
+		Status[] statusCode = Status.values();
+		List<StatusList> statusList = new ArrayList<StatusList>();
+
+		for (int i = 0; i < statusCode.length; i++) {
+			StatusList item = new StatusList(i, statusCode[i].toString());
+			statusList.add(item);
+		}
+
+		return CompletableFuture.completedFuture(statusList);
+	}
+
+	@Async()
+	public CompletableFuture<List<ProjectList>> GetProjectList() {
+		Project[] projectCode = Project.values();
+		List<ProjectList> projectList = new ArrayList<ProjectList>();
+		for (int i = 0; i < projectCode.length; i++) {
+			ProjectList item = new ProjectList(i, projectCode[i].toString());
+			projectList.add(item);
+		}
+		return CompletableFuture.completedFuture(projectList);
+	}
+
+	@Async()
+	public CompletableFuture<List<OriginList>> GetOriginList() {
+		Origin[] originCode = Origin.values();
+		List<OriginList> originList = new ArrayList<OriginList>();
+		for (int i = 0; i < originCode.length; i++) {
+			OriginList item = new OriginList(i, originCode[i].toString());
+			originList.add(item);
+		}
+		return CompletableFuture.completedFuture(originList);
 	}
 }

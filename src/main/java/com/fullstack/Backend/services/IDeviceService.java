@@ -17,14 +17,19 @@ import com.fullstack.Backend.responses.AddDeviceResponse;
 import com.fullstack.Backend.responses.DeleteDeviceResponse;
 import com.fullstack.Backend.responses.DetailDeviceResponse;
 import com.fullstack.Backend.responses.DeviceInWarehouseResponse;
+import com.fullstack.Backend.responses.DropdownValuesResponse;
 import com.fullstack.Backend.responses.FilterDeviceResponse;
 import com.fullstack.Backend.responses.UpdateDeviceResponse;
+import com.fullstack.Backend.utils.dropdowns.OriginList;
+import com.fullstack.Backend.utils.dropdowns.ProjectList;
+import com.fullstack.Backend.utils.dropdowns.StatusList;
 
 import jakarta.servlet.http.HttpServletResponse;
 
 public interface IDeviceService {
 	public CompletableFuture<DeviceInWarehouseResponse> showDevicesWithPaging(int pageIndex, int pageSize,
-			String sortBy, String sortDir, DeviceFilterDTO deviceFilterDTO) throws InterruptedException, ExecutionException;
+			String sortBy, String sortDir, DeviceFilterDTO deviceFilterDTO)
+			throws InterruptedException, ExecutionException;
 
 	public CompletableFuture<AddDeviceResponse> addANewDevice(DeviceAddDTO device);
 
@@ -47,10 +52,18 @@ public interface IDeviceService {
 	public CompletableFuture<FilterDeviceResponse> getSuggestKeywordDevices(int fieldColumn, String keyword,
 			DeviceFilterDTO deviceFilter) throws InterruptedException, ExecutionException;
 
-	public CompletableFuture<List<Device>> getPage(List<Device> sourceList, int page, int pageSize);
+	public int GetTotalPages(int pageSize, int listSize);
 
-	public int  GetTotalPages(int pageSize, int listSize);
+	public CompletableFuture<List<Device>> fetchFilteredDevice(DeviceFilterDTO deviceFilter, List<Device> devices);
 
-	public CompletableFuture<List<Device>> fetchFilteredDevice(DeviceFilterDTO deviceFilter,
-			List<Device> devices);
+	public CompletableFuture<List<Device>> getPage(List<Device> sourceList, int pageIndex, int pageSize);
+
+	public CompletableFuture<DropdownValuesResponse> getDropDownValues()
+			throws InterruptedException, ExecutionException;
+
+	public CompletableFuture<List<StatusList>> GetStatusList();
+
+	public CompletableFuture<List<ProjectList>> GetProjectList();
+
+	public CompletableFuture<List<OriginList>> GetOriginList();
 }

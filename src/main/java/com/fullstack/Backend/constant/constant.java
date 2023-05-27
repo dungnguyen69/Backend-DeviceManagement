@@ -34,6 +34,12 @@ public class constant {
 	public static final int DEVICE_KEEPER = 12;
 	public static final int DEVICE_COMMENTS = 13;
 
+	public static final int APPROVED = 0;
+	public static final int REJECTED = 1;
+	public static final int CANCELLED = 2;
+	public static final int TRANSFERRED = 3;
+	public static final int PENDING = 4;
+	
 	public static final String SERVER_LOCATION = "src/main/resources/templates";
 	public static final String TEMPLATE_IMPORT = "Template_Import_Device";
 	public static final String EXTENSION = ".xlsx";

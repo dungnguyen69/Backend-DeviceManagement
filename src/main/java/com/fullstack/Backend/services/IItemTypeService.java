@@ -5,10 +5,12 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 import com.fullstack.Backend.entities.ItemType;
+import com.fullstack.Backend.utils.dropdowns.ItemTypeList;
 
 public interface IItemTypeService {
 	public CompletableFuture<ItemType> findByName(String name);
 
 	public CompletableFuture<List<String>> getItemTypeList();
 
+	public CompletableFuture<List<ItemTypeList>> fetchItemTypes();
 }

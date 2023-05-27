@@ -29,6 +29,7 @@ import com.fullstack.Backend.responses.AddDeviceResponse;
 import com.fullstack.Backend.responses.DeleteDeviceResponse;
 import com.fullstack.Backend.responses.DetailDeviceResponse;
 import com.fullstack.Backend.responses.DeviceInWarehouseResponse;
+import com.fullstack.Backend.responses.DropdownValuesResponse;
 import com.fullstack.Backend.responses.FilterDeviceResponse;
 import com.fullstack.Backend.responses.UpdateDeviceResponse;
 import com.fullstack.Backend.services.IDeviceService;
@@ -121,5 +122,12 @@ public class DeviceController {
 	public CompletableFuture<ResponseEntity<Object>> importFile(@RequestParam("file") MultipartFile file)
 			throws IOException, InterruptedException, ExecutionException {
 		return _deviceService.importToDb(file);
+	}
+
+	@GetMapping("/warehouse/drop-down-values")
+	@ResponseBody
+	public CompletableFuture<DropdownValuesResponse> getDropdownValues()
+			throws IOException, InterruptedException, ExecutionException {
+		return _deviceService.getDropDownValues();
 	}
 }

@@ -1,13 +1,14 @@
 package com.fullstack.Backend.entities;
 
 import java.util.Date;
-import org.hibernate.annotations.CreationTimestamp;
+
+import com.fullstack.Backend.enums.RequestStatus;
+
 import jakarta.persistence.ForeignKey;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
@@ -41,6 +42,10 @@ public class Request extends BaseEntity{
 	@ManyToOne
 	@JoinColumn(name = "device_Id", nullable = false, foreignKey = @ForeignKey(name = "device_Id_FK"))
 	private Device  devices;
+
+	@Column(nullable = false)
+	@Enumerated(EnumType.ORDINAL)
+	private RequestStatus requestStatus ;
 	
 	@Column()
 	private Date approvalDate;

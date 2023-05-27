@@ -9,5 +9,5 @@ import lombok.Setter;
 @AllArgsConstructor
 public class ProjectList {
 	private int id;
-	private String projectName;
+	private String name;
 }

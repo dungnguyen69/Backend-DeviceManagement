@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import com.fullstack.Backend.entities.Screen;
 import com.fullstack.Backend.repositories.interfaces.IScreenRepository;
 import com.fullstack.Backend.services.IScreenService;
+import com.fullstack.Backend.utils.dropdowns.ScreenList;
 
 @Service
 public class ScreenService implements IScreenService {
@@ -27,6 +28,11 @@ public class ScreenService implements IScreenService {
 	@Override
 	public CompletableFuture<List<String>> getScreenList() {
 		return CompletableFuture.completedFuture(_screenRepository.findScreenSize());
+	}
+
+	@Override
+	public CompletableFuture<List<ScreenList>> fetchScreen() {
+		return CompletableFuture.completedFuture(_screenRepository.fetchScreen());
 	}
 
 }

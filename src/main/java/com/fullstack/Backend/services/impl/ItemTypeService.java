@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import com.fullstack.Backend.entities.ItemType;
 import com.fullstack.Backend.repositories.interfaces.IItemTypeRepository;
 import com.fullstack.Backend.services.IItemTypeService;
+import com.fullstack.Backend.utils.dropdowns.ItemTypeList;
 
 @Service
 public class ItemTypeService implements IItemTypeService {
@@ -26,6 +27,11 @@ public class ItemTypeService implements IItemTypeService {
 	@Override
 	public CompletableFuture<List<String>> getItemTypeList() {
 		return CompletableFuture.completedFuture(_itemTypeRepository.findItemtypeNames());
+	}
+
+	@Override
+	public CompletableFuture<List<ItemTypeList>> fetchItemTypes() {
+		return CompletableFuture.completedFuture(_itemTypeRepository.fetchItemTypes());
 	}
 
 }

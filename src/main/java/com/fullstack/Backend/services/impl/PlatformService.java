@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import com.fullstack.Backend.entities.Platform;
 import com.fullstack.Backend.repositories.interfaces.IPlatformRepository;
 import com.fullstack.Backend.services.IPlatformService;
+import com.fullstack.Backend.utils.dropdowns.PlatformList;
 
 @Service
 public class PlatformService implements IPlatformService {
@@ -36,6 +37,10 @@ public class PlatformService implements IPlatformService {
 	@Override
 	public CompletableFuture<Platform> findByNameAndVersion(String name, String version) {
 		return CompletableFuture.completedFuture(_platformRepository.findByNameAndVersion(name, version));
+	}
+	@Override
+	public CompletableFuture<List<PlatformList>> fetchPlatform() {
+		return CompletableFuture.completedFuture(_platformRepository.fetchPlatform());
 	}
 
 }
