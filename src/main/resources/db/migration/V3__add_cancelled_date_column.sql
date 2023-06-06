@@ -1,0 +1,1 @@
+ALTER TABLE requests ADD cancelled_date datetime NULL;
