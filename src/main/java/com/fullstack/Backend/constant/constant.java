@@ -8,6 +8,7 @@ public class constant {
 	public static final int EMPTY_LIST = 0;
 	public static final Boolean SUCCESSFUL = true;
 
+	// For keyword suggestion
 	public static final int DEVICE_NAME_COLUMN = 0;
 	public static final int DEVICE_PLATFORM_NAME_COLUMN = 1;
 	public static final int DEVICE_PLATFORM_VERSION_COLUMN = 2;
@@ -18,6 +19,11 @@ public class constant {
 	public static final int DEVICE_INVENTORY_NUMBER_COLUMN = 7;
 	public static final int DEVICE_SERIAL_NUMBER_COLUMN = 8;
 
+	public static final int REQUEST_REQUEST_ID_COLUMN = 0;
+	public static final int REQUEST_DEVICE_NAME_COLUMN = 1;
+	public static final int REQUEST_REQUESTER_COLUMN = 2;
+	public static final int REQUEST_CURRENT_KEEPER_COLUMN = 3;
+	public static final int REQUEST_NEXT_KEEPER_COLUMN = 4;
 	// For import
 	public static final int DEVICE_NAME = 0;
 	public static final int DEVICE_STATUS = 1;
