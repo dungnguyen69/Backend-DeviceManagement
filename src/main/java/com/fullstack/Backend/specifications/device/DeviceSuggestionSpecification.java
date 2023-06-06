@@ -1,4 +1,4 @@
-package com.fullstack.Backend.specifications;
+package com.fullstack.Backend.specifications.device;
 
 import static com.fullstack.Backend.constant.constant.DEVICE_INVENTORY_NUMBER_COLUMN;
 import static com.fullstack.Backend.constant.constant.DEVICE_NAME_COLUMN;

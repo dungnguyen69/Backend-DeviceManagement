@@ -1,21 +1,9 @@
-package com.fullstack.Backend.specifications;
-
-import static com.fullstack.Backend.constant.constant.DEVICE_INVENTORY_NUMBER_COLUMN;
-import static com.fullstack.Backend.constant.constant.DEVICE_NAME_COLUMN;
-import static com.fullstack.Backend.constant.constant.DEVICE_OWNER_COLUMN;
-import static com.fullstack.Backend.constant.constant.DEVICE_PLATFORM_NAME_COLUMN;
-import static com.fullstack.Backend.constant.constant.DEVICE_PLATFORM_VERSION_COLUMN;
-import static com.fullstack.Backend.constant.constant.DEVICE_RAM_COLUMN;
-import static com.fullstack.Backend.constant.constant.DEVICE_SCREEN_COLUMN;
-import static com.fullstack.Backend.constant.constant.DEVICE_SERIAL_NUMBER_COLUMN;
-import static com.fullstack.Backend.constant.constant.DEVICE_STORAGE_COLUMN;
+package com.fullstack.Backend.specifications.device;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
-import java.util.stream.Collectors;
-
 import org.springframework.data.jpa.domain.Specification;
-
 import com.fullstack.Backend.dto.device.DeviceFilterDTO;
 import com.fullstack.Backend.entities.Device;
 import com.fullstack.Backend.enums.Origin;
@@ -97,6 +85,14 @@ public class DeviceSpecification implements Specification<Device> {
 		if (criteria.getProject() != null) {
 			final Predicate name = builder.equal(root.<String>get("project"), Project.valueOf(criteria.getProject()));
 			predicates.add(name);
+		}
+		if (criteria.getBookingDate() != null) {
+			final Predicate returnedDate = builder.greaterThanOrEqualTo(root.<Date>get("bookingDate"), criteria.getBookingDate());
+			predicates.add(returnedDate);
+		}
+		if (criteria.getReturnDate() != null) {
+			final Predicate transferredDate = builder.lessThanOrEqualTo(root.<Date>get("returnDate"), criteria.getReturnDate());
+			predicates.add(transferredDate);
 		}
 		return builder.and(predicates.toArray(new Predicate[predicates.size()]));
 	}

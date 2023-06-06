@@ -1,4 +1,4 @@
-package com.fullstack.Backend.responses;
+package com.fullstack.Backend.responses.device;
 
 import com.fullstack.Backend.entities.Device;
 

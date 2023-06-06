@@ -1,4 +1,4 @@
-package com.fullstack.Backend.responses;
+package com.fullstack.Backend.responses.device;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
