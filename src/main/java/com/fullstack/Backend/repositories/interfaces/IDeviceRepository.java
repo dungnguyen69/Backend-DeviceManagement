@@ -10,26 +10,12 @@ import com.fullstack.Backend.entities.Device;
 import com.fullstack.Backend.utils.dropdowns.ItemTypeList;
 
 public interface IDeviceRepository extends JpaRepository<Device, Long>, JpaSpecificationExecutor<Device> {
-	public static final String FIND_DEVICE_BY_SERIALNUMBER = "SELECT * FROM devices WHERE serial_number = ?";
-	public static final String RETURN_ITEMTYPE_LIST = "SELECT DISTINCT it.id, it.name FROM devices d JOIN item_types it WHERE d.item_type_id = it.id";
+    public static final String FIND_DEVICE_BY_SERIALNUMBER = "SELECT * FROM devices WHERE serial_number = ?";
 
-	public Device findById(int deviceId);
+    public Device findById(int deviceId);
 
-	// For update device information when importing
-	@Query(value = FIND_DEVICE_BY_SERIALNUMBER, nativeQuery = true)
-	public Device findBySerialNumber(String serialNumber);
-
-	// Join tables and return a list
-	@Query(value = RETURN_ITEMTYPE_LIST, nativeQuery = true)
-	public List<ItemTypeList> fetchItemTypeList(String serialNumber);
-
-	@Query(value = RETURN_ITEMTYPE_LIST, nativeQuery = true)
-	public Device fetchStatusList(String serialNumber);
-
-	@Query(value = RETURN_ITEMTYPE_LIST, nativeQuery = true)
-	public Device fetchProjectList(String serialNumber);
-
-	@Query(value = RETURN_ITEMTYPE_LIST, nativeQuery = true)
-	public Device fetchOriginList(String serialNumber);
+    // For update device information when importing
+    @Query(value = FIND_DEVICE_BY_SERIALNUMBER, nativeQuery = true)
+    public Device findBySerialNumber(String serialNumber);
 
 }

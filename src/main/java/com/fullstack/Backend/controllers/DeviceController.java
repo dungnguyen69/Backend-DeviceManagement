@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,13 +26,13 @@ import com.fullstack.Backend.dto.device.DeviceAddDTO;
 import com.fullstack.Backend.dto.device.DeviceFilterDTO;
 import com.fullstack.Backend.dto.device.DeviceUpdateDTO;
 import com.fullstack.Backend.exception.ResourceNotFoundException;
-import com.fullstack.Backend.responses.AddDeviceResponse;
-import com.fullstack.Backend.responses.DeleteDeviceResponse;
-import com.fullstack.Backend.responses.DetailDeviceResponse;
-import com.fullstack.Backend.responses.DeviceInWarehouseResponse;
-import com.fullstack.Backend.responses.DropdownValuesResponse;
-import com.fullstack.Backend.responses.FilterDeviceResponse;
-import com.fullstack.Backend.responses.UpdateDeviceResponse;
+import com.fullstack.Backend.responses.device.AddDeviceResponse;
+import com.fullstack.Backend.responses.device.DeleteDeviceResponse;
+import com.fullstack.Backend.responses.device.DetailDeviceResponse;
+import com.fullstack.Backend.responses.device.DeviceInWarehouseResponse;
+import com.fullstack.Backend.responses.device.DropdownValuesResponse;
+import com.fullstack.Backend.responses.device.KeywordSuggestionResponse;
+import com.fullstack.Backend.responses.device.UpdateDeviceResponse;
 import com.fullstack.Backend.services.IDeviceService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -49,7 +50,7 @@ public class DeviceController {
 			@RequestParam(defaultValue = DEFAULT_PAGE_SIZE, required = false) int pageSize,
 			@RequestParam(defaultValue = DEFAULT_SORT_BY, required = false) String sortBy,
 			@RequestParam(defaultValue = DEFAULT_SORT_DIRECTION, required = false) String sortDir,
-			DeviceFilterDTO deviceFilterDTO) throws InterruptedException, ExecutionException {
+			@DateTimeFormat(pattern = "yyyy-MM-dd") DeviceFilterDTO deviceFilterDTO) throws InterruptedException, ExecutionException {
 		CompletableFuture<DeviceInWarehouseResponse> deviceResponse = _deviceService.showDevicesWithPaging(pageNo,
 				pageSize, sortBy, sortDir, deviceFilterDTO);
 		if (deviceResponse.get().getTotalElements() != EMPTY_LIST)
@@ -89,7 +90,7 @@ public class DeviceController {
 	public ResponseEntity<Object> getSuggestKeywordDevices(@RequestParam(name = "column") int fieldColumn,
 			@RequestParam(name = "keyword") String keyword, DeviceFilterDTO device)
 			throws InterruptedException, ExecutionException {
-		CompletableFuture<FilterDeviceResponse> deviceResponse = _deviceService.getSuggestKeywordDevices(fieldColumn,
+		CompletableFuture<KeywordSuggestionResponse> deviceResponse = _deviceService.getSuggestKeywordDevices(fieldColumn,
 				keyword, device);
 		return new ResponseEntity<>(deviceResponse.get(), OK);
 	}

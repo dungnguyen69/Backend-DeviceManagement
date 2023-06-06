@@ -5,6 +5,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.Date;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -23,19 +25,6 @@ public class DeviceFilterDTO {
 	private String serialNumber;
 	private String origin;
 	private String project;
-	public void formatFilter() {
-		this.name = this.name.trim().toLowerCase();
-		this.status = this.status.trim().toLowerCase();
-		this.platformName = this.platformName.trim().toLowerCase();
-		this.platformVersion = this.platformVersion.trim().toLowerCase();
-		this.itemType = this.itemType.trim().toLowerCase();
-		this.ram = this.ram.trim().toLowerCase();
-		this.screen = this.screen.trim().toLowerCase();
-		this.storage = this.storage.trim().toLowerCase();
-		this.owner = this.owner.trim().toLowerCase();
-		this.inventoryNumber = this.inventoryNumber.trim().toLowerCase();
-		this.serialNumber = this.serialNumber.trim().toLowerCase();
-		this.origin = this.origin.trim().toLowerCase();
-		this.project = this.project.trim().toLowerCase();
-	}
+	private Date bookingDate;
+	private Date returnDate;
 }

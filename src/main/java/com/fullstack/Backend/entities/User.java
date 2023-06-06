@@ -32,13 +32,13 @@ public class User extends BaseEntity{
 	@Column(nullable = false)
 	private String password;
 	
-	@Column(nullable = false)
+	@Column(nullable = false)//setter: only string
 	private String firstName;
 	
-	@Column(nullable = false)
+	@Column(nullable = false)//setter: only string
 	private String lastName;
 	
-	@Column(nullable = false)
+	@Column(nullable = false)//setter: only email
 	private String email;
 	
 	@Column(nullable = false)
@@ -50,10 +50,10 @@ public class User extends BaseEntity{
 	@OneToMany(mappedBy = "owner", fetch = FetchType.EAGER)
 	private Set<Device> devices;
 
-	@OneToMany(mappedBy="currentKeeperRequest", fetch = FetchType.EAGER)
+	@OneToMany(mappedBy="currentKeeper", fetch = FetchType.EAGER)
     private Collection<Request> currentKeepers;
 
-    @OneToMany(mappedBy="nextKeeperRequest", fetch = FetchType.EAGER)
+    @OneToMany(mappedBy="nextKeeper", fetch = FetchType.EAGER)
     private Collection<Request> nextKeepers;
     
 	@OneToOne()

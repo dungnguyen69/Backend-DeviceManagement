@@ -9,17 +9,16 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.fullstack.Backend.dto.device.DeviceAddDTO;
-import com.fullstack.Backend.dto.device.DeviceDTO;
 import com.fullstack.Backend.dto.device.DeviceFilterDTO;
 import com.fullstack.Backend.dto.device.DeviceUpdateDTO;
 import com.fullstack.Backend.entities.Device;
-import com.fullstack.Backend.responses.AddDeviceResponse;
-import com.fullstack.Backend.responses.DeleteDeviceResponse;
-import com.fullstack.Backend.responses.DetailDeviceResponse;
-import com.fullstack.Backend.responses.DeviceInWarehouseResponse;
-import com.fullstack.Backend.responses.DropdownValuesResponse;
-import com.fullstack.Backend.responses.FilterDeviceResponse;
-import com.fullstack.Backend.responses.UpdateDeviceResponse;
+import com.fullstack.Backend.responses.device.AddDeviceResponse;
+import com.fullstack.Backend.responses.device.DeleteDeviceResponse;
+import com.fullstack.Backend.responses.device.DetailDeviceResponse;
+import com.fullstack.Backend.responses.device.DeviceInWarehouseResponse;
+import com.fullstack.Backend.responses.device.DropdownValuesResponse;
+import com.fullstack.Backend.responses.device.KeywordSuggestionResponse;
+import com.fullstack.Backend.responses.device.UpdateDeviceResponse;
 import com.fullstack.Backend.utils.dropdowns.OriginList;
 import com.fullstack.Backend.utils.dropdowns.ProjectList;
 import com.fullstack.Backend.utils.dropdowns.StatusList;
@@ -49,10 +48,10 @@ public interface IDeviceService {
 
 	public CompletableFuture<ResponseEntity<Object>> importToDb(MultipartFile file) throws IOException;
 
-	public CompletableFuture<FilterDeviceResponse> getSuggestKeywordDevices(int fieldColumn, String keyword,
-			DeviceFilterDTO deviceFilter) throws InterruptedException, ExecutionException;
+	public CompletableFuture<KeywordSuggestionResponse> getSuggestKeywordDevices(int fieldColumn, String keyword,
+                                                                                 DeviceFilterDTO deviceFilter) throws InterruptedException, ExecutionException;
 
-	public int GetTotalPages(int pageSize, int listSize);
+	public int getTotalPages(int pageSize, int listSize);
 
 	public CompletableFuture<List<Device>> fetchFilteredDevice(DeviceFilterDTO deviceFilter, List<Device> devices);
 
@@ -61,9 +60,9 @@ public interface IDeviceService {
 	public CompletableFuture<DropdownValuesResponse> getDropDownValues()
 			throws InterruptedException, ExecutionException;
 
-	public CompletableFuture<List<StatusList>> GetStatusList();
+	public CompletableFuture<List<StatusList>> getStatusList();
 
-	public CompletableFuture<List<ProjectList>> GetProjectList();
+	public CompletableFuture<List<ProjectList>> getProjectList();
 
-	public CompletableFuture<List<OriginList>> GetOriginList();
+	public CompletableFuture<List<OriginList>> getOriginList();
 }
