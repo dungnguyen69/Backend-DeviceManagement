@@ -1,6 +1,7 @@
 package com.fullstack.Backend.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
+
 import static org.springframework.http.HttpStatus.*;
 
 import java.io.IOException;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import static com.fullstack.Backend.constant.constant.*;
+
 import com.fullstack.Backend.dto.device.DeviceAddDTO;
 import com.fullstack.Backend.dto.device.DeviceFilterDTO;
 import com.fullstack.Backend.dto.device.DeviceUpdateDTO;
@@ -41,94 +43,98 @@ import jakarta.validation.Valid;
 @RequestMapping("/api/devices")
 public class DeviceController {
 
-	@Autowired
-	IDeviceService _deviceService;
+    @Autowired
+    IDeviceService _deviceService;
 
-	@GetMapping("/warehouse")
-	public ResponseEntity<Object> showDevicesWithPaging(
-			@RequestParam(defaultValue = DEFAULT_PAGE_NUMBER, required = false) int pageNo,
-			@RequestParam(defaultValue = DEFAULT_PAGE_SIZE, required = false) int pageSize,
-			@RequestParam(defaultValue = DEFAULT_SORT_BY, required = false) String sortBy,
-			@RequestParam(defaultValue = DEFAULT_SORT_DIRECTION, required = false) String sortDir,
-			@DateTimeFormat(pattern = "yyyy-MM-dd") DeviceFilterDTO deviceFilterDTO) throws InterruptedException, ExecutionException {
-		CompletableFuture<DeviceInWarehouseResponse> deviceResponse = _deviceService.showDevicesWithPaging(pageNo,
-				pageSize, sortBy, sortDir, deviceFilterDTO);
-		if (deviceResponse.get().getTotalElements() != EMPTY_LIST)
-			return new ResponseEntity<>(deviceResponse.get(), OK);
-		return new ResponseEntity<>(NO_CONTENT);
-	}
+    @GetMapping("/warehouse")
+    public ResponseEntity<Object> showDevicesWithPaging(
+            @RequestParam(defaultValue = DEFAULT_PAGE_NUMBER, required = false) int pageNo,
+            @RequestParam(defaultValue = DEFAULT_PAGE_SIZE, required = false) int pageSize,
+            @RequestParam(defaultValue = DEFAULT_SORT_BY, required = false) String sortBy,
+            @RequestParam(defaultValue = DEFAULT_SORT_DIRECTION, required = false) String sortDir,
+            @DateTimeFormat(pattern = "yyyy-MM-dd") DeviceFilterDTO deviceFilterDTO) throws InterruptedException, ExecutionException {
+        CompletableFuture<DeviceInWarehouseResponse> deviceResponse = _deviceService.showDevicesWithPaging(pageNo,
+                pageSize, sortBy, sortDir, deviceFilterDTO);
+        if (deviceResponse.get().getTotalElements() != EMPTY_LIST)
+            return new ResponseEntity<>(deviceResponse.get(), OK);
+        return new ResponseEntity<>(NO_CONTENT);
+    }
 
-	@GetMapping("/warehouse/{id}")
-	public ResponseEntity<Object> getDetailDevice(@PathVariable(value = "id") int deviceId)
-			throws InterruptedException, ExecutionException {
-		CompletableFuture<DetailDeviceResponse> deviceResponse = _deviceService.getDetailDevice(deviceId);
-		if (deviceResponse.get().getDetailDevice() != null)
-			return new ResponseEntity<>(deviceResponse.get(), OK);
-		throw new ResourceNotFoundException("Device with Id is " + deviceId + " is not exist");
-	}
+    @GetMapping("/warehouse/{id}")
+    public ResponseEntity<Object> getDetailDevice(@PathVariable(value = "id") int deviceId)
+            throws InterruptedException, ExecutionException {
+        CompletableFuture<DetailDeviceResponse> deviceResponse = _deviceService.getDetailDevice(deviceId);
+        if (deviceResponse.get().getDetailDevice() != null)
+            return new ResponseEntity<>(deviceResponse.get(), OK);
+        throw new ResourceNotFoundException("Device with Id is " + deviceId + " is not exist");
+    }
 
-	@PostMapping("/warehouse")
-	@ResponseBody
-	public ResponseEntity<Object> addANewDevice(@Valid @RequestBody DeviceAddDTO device)
-			throws InterruptedException, ExecutionException {
-		CompletableFuture<AddDeviceResponse> deviceResponse = _deviceService.addANewDevice(device);
-		return new ResponseEntity<>(deviceResponse.get(), OK);
-	}
+    @PostMapping("/warehouse")
+    @ResponseBody
+    public ResponseEntity<Object> addANewDevice(@Valid @RequestBody DeviceAddDTO device)
+            throws InterruptedException, ExecutionException {
+        CompletableFuture<AddDeviceResponse> deviceResponse = _deviceService.addANewDevice(device);
+        return new ResponseEntity<>(deviceResponse.get(), OK);
+    }
 
-	@PutMapping("/warehouse/{id}")
-	@ResponseBody
-	public ResponseEntity<Object> updateDevice(@PathVariable(value = "id") int deviceId,
-			@Valid @RequestBody DeviceUpdateDTO device) throws InterruptedException, ExecutionException {
-		CompletableFuture<UpdateDeviceResponse> deviceResponse = _deviceService.updateDevice(deviceId, device);
-		if (deviceResponse.get().getUpdatedDevice() == null)
-			throw new ResourceNotFoundException("Device with Id is " + deviceId + " is not exist");
-		return new ResponseEntity<>(deviceResponse.get(), OK);
-	}
+    @PutMapping("/warehouse/{id}")
+    @ResponseBody
+    public ResponseEntity<Object> updateDevice(@PathVariable(value = "id") int deviceId,
+                                               @Valid @RequestBody DeviceUpdateDTO device) throws InterruptedException, ExecutionException {
+        CompletableFuture<UpdateDeviceResponse> deviceResponse = _deviceService.updateDevice(deviceId, device);
+        if (deviceResponse.get().getUpdatedDevice() == null)
+            throw new ResourceNotFoundException("Device with Id is " + deviceId + " is not exist");
+        return new ResponseEntity<>(deviceResponse.get(), OK);
+    }
 
-	@GetMapping("/warehouse/suggestion")
-	@ResponseBody
-	public ResponseEntity<Object> getSuggestKeywordDevices(@RequestParam(name = "column") int fieldColumn,
-			@RequestParam(name = "keyword") String keyword, DeviceFilterDTO device)
-			throws InterruptedException, ExecutionException {
-		CompletableFuture<KeywordSuggestionResponse> deviceResponse = _deviceService.getSuggestKeywordDevices(fieldColumn,
-				keyword, device);
-		return new ResponseEntity<>(deviceResponse.get(), OK);
-	}
+    @GetMapping("/warehouse/suggestion")
+    @ResponseBody
+    public ResponseEntity<Object> getSuggestKeywordDevices(@RequestParam(name = "column") int fieldColumn,
+                                                           @RequestParam(name = "keyword") String keyword, DeviceFilterDTO device)
+            throws InterruptedException, ExecutionException {
 
-	@DeleteMapping("/warehouse/{id}")
-	@ResponseBody
-	public ResponseEntity<Object> deleteDevice(@PathVariable(value = "id") int deviceId)
-			throws InterruptedException, ExecutionException {
-		CompletableFuture<DeleteDeviceResponse> deviceResponse = _deviceService.deleteADevice(deviceId);
-		if (!deviceResponse.get().getIsDeletionSuccessful())
-			return new ResponseEntity<>(NOT_FOUND);
-		return new ResponseEntity<>(deviceResponse.get(), OK);
-	}
+        if (keyword.trim().isBlank())
+            return ResponseEntity.status(NOT_FOUND).body("Keyword must be non-null");
 
-	@GetMapping("/warehouse/export/excel")
-	@ResponseBody
-	public void exportToExcel(HttpServletResponse response) throws IOException {
-		_deviceService.exportToExcel(response);
-	}
+        CompletableFuture<KeywordSuggestionResponse> deviceResponse = _deviceService.getSuggestKeywordDevices(fieldColumn,
+                keyword, device);
+        return new ResponseEntity<>(deviceResponse.get(), OK);
+    }
 
-	@GetMapping("/warehouse/download-template")
-	@ResponseBody
-	public void downloadTemplateImport(HttpServletResponse response)
-			throws IOException, InterruptedException, ExecutionException {
-		_deviceService.downloadTemplate(response);
-	}
+    @DeleteMapping("/warehouse/{id}")
+    @ResponseBody
+    public ResponseEntity<Object> deleteDevice(@PathVariable(value = "id") int deviceId)
+            throws InterruptedException, ExecutionException {
+        CompletableFuture<DeleteDeviceResponse> deviceResponse = _deviceService.deleteADevice(deviceId);
+        if (!deviceResponse.get().getIsDeletionSuccessful())
+            return new ResponseEntity<>(NOT_FOUND);
+        return new ResponseEntity<>(deviceResponse.get(), OK);
+    }
 
-	@PostMapping("/warehouse/import")
-	@ResponseBody
-	public CompletableFuture<ResponseEntity<Object>> importFile(@RequestParam("file") MultipartFile file)
-			throws IOException, InterruptedException, ExecutionException {
-		return _deviceService.importToDb(file);
-	}
+    @GetMapping("/warehouse/export/excel")
+    @ResponseBody
+    public void exportToExcel(HttpServletResponse response) throws IOException {
+        _deviceService.exportToExcel(response);
+    }
 
-	@GetMapping("/warehouse/drop-down-values")
-	@ResponseBody
-	public CompletableFuture<DropdownValuesResponse> getDropdownValues()
-			throws IOException, InterruptedException, ExecutionException {
-		return _deviceService.getDropDownValues();
-	}
+    @GetMapping("/warehouse/download-template")
+    @ResponseBody
+    public void downloadTemplateImport(HttpServletResponse response)
+            throws IOException, InterruptedException, ExecutionException {
+        _deviceService.downloadTemplate(response);
+    }
+
+    @PostMapping("/warehouse/import")
+    @ResponseBody
+    public CompletableFuture<ResponseEntity<Object>> importFile(@RequestParam("file") MultipartFile file)
+            throws IOException, InterruptedException, ExecutionException {
+        return _deviceService.importToDb(file);
+    }
+
+    @GetMapping("/warehouse/drop-down-values")
+    @ResponseBody
+    public CompletableFuture<DropdownValuesResponse> getDropdownValues()
+            throws IOException, InterruptedException, ExecutionException {
+        return _deviceService.getDropDownValues();
+    }
 }

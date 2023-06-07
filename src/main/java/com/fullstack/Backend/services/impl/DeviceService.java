@@ -123,6 +123,7 @@ public class DeviceService implements IDeviceService {
                 .collect(Collectors.toList());
         List<DeviceDTO> deviceList = new ArrayList<DeviceDTO>();
         devices = getPage(devices, pageIndex, pageSize).get();
+
         for (var device : devices) {
             DeviceDTO deviceDTO = new DeviceDTO();
             deviceDTO.loadFromEntity(device);
