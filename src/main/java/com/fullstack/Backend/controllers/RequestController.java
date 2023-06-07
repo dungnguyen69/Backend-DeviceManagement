@@ -1,6 +1,9 @@
 package com.fullstack.Backend.controllers;
+
+import com.fullstack.Backend.dto.device.DeviceFilterDTO;
 import com.fullstack.Backend.dto.request.RequestFilterDTO;
 import com.fullstack.Backend.dto.request.SubmitBookingRequestDTO;
+import com.fullstack.Backend.responses.device.KeywordSuggestionResponse;
 import com.fullstack.Backend.responses.request.ShowRequestsResponse;
 import com.fullstack.Backend.responses.request.SubmitBookingResponse;
 import com.fullstack.Backend.services.IRequestService;
@@ -14,8 +17,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 import static com.fullstack.Backend.constant.constant.*;
-import static org.springframework.http.HttpStatus.NO_CONTENT;
-import static org.springframework.http.HttpStatus.OK;
+import static org.springframework.http.HttpStatus.*;
 
 @RestController
 @RequestMapping("/api/requests")
@@ -44,6 +46,20 @@ public class RequestController {
             @Valid @RequestBody SubmitBookingRequestDTO requests)
             throws InterruptedException, ExecutionException {
         CompletableFuture<SubmitBookingResponse> response = _requestService.submitBookingRequest(requests);
+        return new ResponseEntity<>(response.get(), OK);
+    }
+
+    @GetMapping("/{id}/suggestion")
+    @ResponseBody
+    public ResponseEntity<Object> getSuggestKeywordRequests(@PathVariable(value = "id") int employeeId,
+                                                            @RequestParam(name = "column") int fieldColumn,
+                                                            @RequestParam(name = "keyword") String keyword, RequestFilterDTO request)
+            throws InterruptedException, ExecutionException {
+        if (keyword.trim().isBlank())
+            return ResponseEntity.status(NOT_FOUND).body("Keyword must be non-null");
+
+        CompletableFuture<KeywordSuggestionResponse> response = _requestService.getSuggestKeywordRequests(employeeId, fieldColumn,
+                keyword, request);
         return new ResponseEntity<>(response.get(), OK);
     }
 

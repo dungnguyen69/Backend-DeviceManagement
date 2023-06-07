@@ -3,6 +3,7 @@ package com.fullstack.Backend.services;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+
 import com.fullstack.Backend.dto.request.RequestFilterDTO;
 import com.fullstack.Backend.dto.request.SubmitBookingRequestDTO;
 import com.fullstack.Backend.entities.Request;
@@ -26,6 +27,6 @@ public interface IRequestService {
 
     public CompletableFuture<List<Request>> fetchFilteredRequest(RequestFilterDTO requestFilter, List<Request> requests);
 
-    public CompletableFuture<KeywordSuggestionResponse> getSuggestKeywordRequests(int fieldColumn, String keyword,
+    public CompletableFuture<KeywordSuggestionResponse> getSuggestKeywordRequests(int employeeId, int fieldColumn, String keyword,
                                                                                   RequestFilterDTO requestFilter) throws InterruptedException, ExecutionException;
 }
