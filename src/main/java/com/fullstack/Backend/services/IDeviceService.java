@@ -8,9 +8,9 @@ import java.util.concurrent.ExecutionException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.fullstack.Backend.dto.device.DeviceAddDTO;
-import com.fullstack.Backend.dto.device.DeviceFilterDTO;
-import com.fullstack.Backend.dto.device.DeviceUpdateDTO;
+import com.fullstack.Backend.dto.device.AddDeviceDTO;
+import com.fullstack.Backend.dto.device.FilterDeviceDTO;
+import com.fullstack.Backend.dto.device.UpdateDeviceDTO;
 import com.fullstack.Backend.entities.Device;
 import com.fullstack.Backend.responses.device.AddDeviceResponse;
 import com.fullstack.Backend.responses.device.DeleteDeviceResponse;
@@ -27,17 +27,17 @@ import jakarta.servlet.http.HttpServletResponse;
 
 public interface IDeviceService {
 	public CompletableFuture<DeviceInWarehouseResponse> showDevicesWithPaging(int pageIndex, int pageSize,
-			String sortBy, String sortDir, DeviceFilterDTO deviceFilterDTO)
+			String sortBy, String sortDir, FilterDeviceDTO deviceFilterDTO)
 			throws InterruptedException, ExecutionException;
 
-	public CompletableFuture<AddDeviceResponse> addANewDevice(DeviceAddDTO device);
+	public CompletableFuture<AddDeviceResponse> addANewDevice(AddDeviceDTO device);
 
 	public CompletableFuture<DetailDeviceResponse> getDetailDevice(int deviceId)
 			throws InterruptedException, ExecutionException;
 
-	public CompletableFuture<UpdateDeviceResponse> updateDevice(int deviceId, DeviceUpdateDTO device);
+	public CompletableFuture<UpdateDeviceResponse> updateDevice(int deviceId, UpdateDeviceDTO device);
 
-	public void formatFilter(DeviceFilterDTO deviceFilterDTO);
+	public void formatFilter(FilterDeviceDTO deviceFilterDTO);
 
 	public CompletableFuture<DeleteDeviceResponse> deleteADevice(int deviceId);
 
@@ -49,11 +49,11 @@ public interface IDeviceService {
 	public CompletableFuture<ResponseEntity<Object>> importToDb(MultipartFile file) throws IOException;
 
 	public CompletableFuture<KeywordSuggestionResponse> getSuggestKeywordDevices(int fieldColumn, String keyword,
-                                                                                 DeviceFilterDTO deviceFilter) throws InterruptedException, ExecutionException;
+                                                                                 FilterDeviceDTO deviceFilter) throws InterruptedException, ExecutionException;
 
 	public int getTotalPages(int pageSize, int listSize);
 
-	public CompletableFuture<List<Device>> fetchFilteredDevice(DeviceFilterDTO deviceFilter, List<Device> devices);
+	public CompletableFuture<List<Device>> fetchFilteredDevice(FilterDeviceDTO deviceFilter, List<Device> devices);
 
 	public CompletableFuture<List<Device>> getPage(List<Device> sourceList, int pageIndex, int pageSize);
 

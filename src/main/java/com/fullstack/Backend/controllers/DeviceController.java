@@ -24,9 +24,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import static com.fullstack.Backend.constant.constant.*;
 
-import com.fullstack.Backend.dto.device.DeviceAddDTO;
-import com.fullstack.Backend.dto.device.DeviceFilterDTO;
-import com.fullstack.Backend.dto.device.DeviceUpdateDTO;
+import com.fullstack.Backend.dto.device.AddDeviceDTO;
+import com.fullstack.Backend.dto.device.FilterDeviceDTO;
+import com.fullstack.Backend.dto.device.UpdateDeviceDTO;
 import com.fullstack.Backend.exception.ResourceNotFoundException;
 import com.fullstack.Backend.responses.device.AddDeviceResponse;
 import com.fullstack.Backend.responses.device.DeleteDeviceResponse;
@@ -52,7 +52,7 @@ public class DeviceController {
             @RequestParam(defaultValue = DEFAULT_PAGE_SIZE, required = false) int pageSize,
             @RequestParam(defaultValue = DEFAULT_SORT_BY, required = false) String sortBy,
             @RequestParam(defaultValue = DEFAULT_SORT_DIRECTION, required = false) String sortDir,
-            @DateTimeFormat(pattern = "yyyy-MM-dd") DeviceFilterDTO deviceFilterDTO) throws InterruptedException, ExecutionException {
+            @DateTimeFormat(pattern = "yyyy-MM-dd") FilterDeviceDTO deviceFilterDTO) throws InterruptedException, ExecutionException {
         CompletableFuture<DeviceInWarehouseResponse> deviceResponse = _deviceService.showDevicesWithPaging(pageNo,
                 pageSize, sortBy, sortDir, deviceFilterDTO);
         if (deviceResponse.get().getTotalElements() != EMPTY_LIST)
@@ -71,7 +71,7 @@ public class DeviceController {
 
     @PostMapping("/warehouse")
     @ResponseBody
-    public ResponseEntity<Object> addANewDevice(@Valid @RequestBody DeviceAddDTO device)
+    public ResponseEntity<Object> addANewDevice(@Valid @RequestBody AddDeviceDTO device)
             throws InterruptedException, ExecutionException {
         CompletableFuture<AddDeviceResponse> deviceResponse = _deviceService.addANewDevice(device);
         return new ResponseEntity<>(deviceResponse.get(), OK);
@@ -80,7 +80,7 @@ public class DeviceController {
     @PutMapping("/warehouse/{id}")
     @ResponseBody
     public ResponseEntity<Object> updateDevice(@PathVariable(value = "id") int deviceId,
-                                               @Valid @RequestBody DeviceUpdateDTO device) throws InterruptedException, ExecutionException {
+                                               @Valid @RequestBody UpdateDeviceDTO device) throws InterruptedException, ExecutionException {
         CompletableFuture<UpdateDeviceResponse> deviceResponse = _deviceService.updateDevice(deviceId, device);
         if (deviceResponse.get().getUpdatedDevice() == null)
             throw new ResourceNotFoundException("Device with Id is " + deviceId + " is not exist");
@@ -90,7 +90,7 @@ public class DeviceController {
     @GetMapping("/warehouse/suggestion")
     @ResponseBody
     public ResponseEntity<Object> getSuggestKeywordDevices(@RequestParam(name = "column") int fieldColumn,
-                                                           @RequestParam(name = "keyword") String keyword, DeviceFilterDTO device)
+                                                           @RequestParam(name = "keyword") String keyword, FilterDeviceDTO device)
             throws InterruptedException, ExecutionException {
 
         if (keyword.trim().isBlank())

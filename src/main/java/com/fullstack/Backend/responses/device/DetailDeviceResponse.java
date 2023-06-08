@@ -1,6 +1,6 @@
 package com.fullstack.Backend.responses.device;
 
-import com.fullstack.Backend.dto.device.DeviceUpdateDTO;
+import com.fullstack.Backend.dto.device.UpdateDeviceDTO;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -10,5 +10,5 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class DetailDeviceResponse {
-	DeviceUpdateDTO detailDevice;
+	UpdateDeviceDTO detailDevice;
 }

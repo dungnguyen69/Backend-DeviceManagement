@@ -3,7 +3,7 @@ package com.fullstack.Backend.entities;
 import java.util.Date;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fullstack.Backend.dto.device.DeviceAddDTO;
+import com.fullstack.Backend.dto.device.AddDeviceDTO;
 import com.fullstack.Backend.enums.Origin;
 import com.fullstack.Backend.enums.Project;
 import com.fullstack.Backend.enums.Status;
@@ -98,26 +98,26 @@ public class Device extends BaseEntity {
     @Column()
     private String comments;
 
-    @Column(nullable = false)
+    @Column()
     private Date bookingDate;
 
-    @Column(nullable = false)
+    @Column()
     private Date returnDate;
 
-    public void loadToEntity(DeviceAddDTO deviceAddDTO) {
-        this.name = deviceAddDTO.getName();
-        this.item_type_Id = deviceAddDTO.getItemTypeId();
-        this.status = Status.values()[deviceAddDTO.getStatusId()];
-        this.platform_Id = deviceAddDTO.getPlatformId();
-        this.ram_Id = deviceAddDTO.getRamId();
-        this.screen_Id = deviceAddDTO.getScreenId();
-        this.storage_Id = deviceAddDTO.getStorageId();
-        this.inventoryNumber = deviceAddDTO.getInventoryNumber();
-        this.serialNumber = deviceAddDTO.getSerialNumber();
-        this.comments = deviceAddDTO.getComments();
-        this.project = Project.values()[deviceAddDTO.getProjectId()];
-        this.origin = Origin.values()[deviceAddDTO.getOriginId()];
-        this.owner_Id = deviceAddDTO.getOwnerId();
+    public void loadToEntity(AddDeviceDTO addDeviceDTO) {
+        this.name = addDeviceDTO.getName();
+        this.item_type_Id = addDeviceDTO.getItemTypeId();
+        this.status = Status.values()[addDeviceDTO.getStatusId()];
+        this.platform_Id = addDeviceDTO.getPlatformId();
+        this.ram_Id = addDeviceDTO.getRamId();
+        this.screen_Id = addDeviceDTO.getScreenId();
+        this.storage_Id = addDeviceDTO.getStorageId();
+        this.inventoryNumber = addDeviceDTO.getInventoryNumber();
+        this.serialNumber = addDeviceDTO.getSerialNumber();
+        this.comments = addDeviceDTO.getComments();
+        this.project = Project.values()[addDeviceDTO.getProjectId()];
+        this.origin = Origin.values()[addDeviceDTO.getOriginId()];
+        this.owner_Id = addDeviceDTO.getOwnerId();
         this.setCreatedDate(new Date());
     }
 }
