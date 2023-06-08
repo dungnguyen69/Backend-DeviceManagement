@@ -9,7 +9,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-public class DeviceAddDTO {
+public class AddDeviceDTO {
 	@NotEmpty(message = "Name is mandatory.")
 	private String name;
 	private int statusId;

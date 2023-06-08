@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class DeviceUpdateDTO {
+public class UpdateDeviceDTO {
 	private int id;
 	@NotEmpty
 	private String name;

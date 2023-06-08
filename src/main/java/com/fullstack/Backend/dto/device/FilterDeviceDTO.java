@@ -11,7 +11,7 @@ import java.util.Date;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class DeviceFilterDTO {
+public class FilterDeviceDTO {
 	private String name;
 	private String status;
 	private String platformName;
