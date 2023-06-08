@@ -18,7 +18,7 @@ import java.util.Date;
 public class KeeperOrder extends BaseEntity {
     @OneToOne
     @JoinColumn(name = "device_Id", nullable = false, foreignKey = @ForeignKey(name = "device_Id_FK"))
-    private Device devices;
+    private Device device;
 
     @OneToOne
     @JoinColumn(name = "keeper_Id", nullable = false, foreignKey = @ForeignKey(name = "keeper_Id_FK"))

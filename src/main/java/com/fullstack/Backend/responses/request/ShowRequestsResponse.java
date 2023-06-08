@@ -1,6 +1,6 @@
 package com.fullstack.Backend.responses.request;
 
-import com.fullstack.Backend.dto.keeper_order.RequestDTO;
+import com.fullstack.Backend.dto.request.RequestDTO;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

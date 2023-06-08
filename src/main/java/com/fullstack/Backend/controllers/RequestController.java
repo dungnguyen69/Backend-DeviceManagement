@@ -1,8 +1,8 @@
 package com.fullstack.Backend.controllers;
 
-import com.fullstack.Backend.dto.device.DeviceFilterDTO;
 import com.fullstack.Backend.dto.request.RequestFilterDTO;
 import com.fullstack.Backend.dto.request.SubmitBookingRequestDTO;
+import com.fullstack.Backend.dto.request.UpdateStatusRequestDTO;
 import com.fullstack.Backend.responses.device.KeywordSuggestionResponse;
 import com.fullstack.Backend.responses.request.ShowRequestsResponse;
 import com.fullstack.Backend.responses.request.SubmitBookingResponse;
@@ -63,4 +63,11 @@ public class RequestController {
         return new ResponseEntity<>(response.get(), OK);
     }
 
+    @PutMapping("/status-update")
+    @ResponseBody
+    public ResponseEntity<Object> getSuggestKeywordRequests(UpdateStatusRequestDTO request)
+            throws InterruptedException, ExecutionException {
+        CompletableFuture<Boolean> response = _requestService.updateRequestStatus(request);
+        return new ResponseEntity<>(response.get(), OK);
+    }
 }

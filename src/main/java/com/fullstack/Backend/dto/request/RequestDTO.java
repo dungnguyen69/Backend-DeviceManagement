@@ -1,4 +1,4 @@
-package com.fullstack.Backend.dto.keeper_order;
+package com.fullstack.Backend.dto.request;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fullstack.Backend.entities.Request;

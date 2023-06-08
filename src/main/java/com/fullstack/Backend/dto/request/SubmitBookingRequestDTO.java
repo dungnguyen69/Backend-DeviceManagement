@@ -30,23 +30,5 @@ public class SubmitBookingRequestDTO {
         private Date bookingDate;
 
         private Date returnDate;
-
-        private String deviceName;
-
-        private String platformName;
-
-        private String platformVersion;
-
-        private String itemType;
-
-        private String ramSize;
-
-        private String screenSize;
-
-        private String storageSize;
-
-        private String inventoryNumber;
-
-        private String serialNumber;
     }
 }
