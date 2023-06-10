@@ -65,9 +65,8 @@ public class RequestController {
 
     @PutMapping("/status-update")
     @ResponseBody
-    public ResponseEntity<Object> getSuggestKeywordRequests(UpdateStatusRequestDTO request)
+    public CompletableFuture<ResponseEntity<Object>> getSuggestKeywordRequests(UpdateStatusRequestDTO request)
             throws InterruptedException, ExecutionException {
-        CompletableFuture<Boolean> response = _requestService.updateRequestStatus(request);
-        return new ResponseEntity<>(response.get(), OK);
+        return _requestService.updateRequestStatus(request);
     }
 }

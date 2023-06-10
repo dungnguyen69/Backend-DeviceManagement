@@ -11,6 +11,7 @@ import com.fullstack.Backend.entities.Request;
 import com.fullstack.Backend.responses.device.KeywordSuggestionResponse;
 import com.fullstack.Backend.responses.request.ShowRequestsResponse;
 import com.fullstack.Backend.responses.request.SubmitBookingResponse;
+import org.springframework.http.ResponseEntity;
 
 public interface IRequestService {
     public CompletableFuture<SubmitBookingResponse> submitBookingRequest(SubmitBookingRequestDTO requests)
@@ -31,5 +32,5 @@ public interface IRequestService {
     public CompletableFuture<KeywordSuggestionResponse> getSuggestKeywordRequests(int employeeId, int fieldColumn, String keyword,
                                                                                   RequestFilterDTO requestFilter) throws InterruptedException, ExecutionException;
 
-    public CompletableFuture<Boolean> updateRequestStatus(UpdateStatusRequestDTO updateStatusRequestDTO) throws InterruptedException, ExecutionException;
+    public CompletableFuture<ResponseEntity<Object>> updateRequestStatus(UpdateStatusRequestDTO updateStatusRequestDTO) throws InterruptedException, ExecutionException;
 }
