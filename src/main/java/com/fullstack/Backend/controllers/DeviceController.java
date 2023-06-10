@@ -28,13 +28,11 @@ import com.fullstack.Backend.dto.device.AddDeviceDTO;
 import com.fullstack.Backend.dto.device.FilterDeviceDTO;
 import com.fullstack.Backend.dto.device.UpdateDeviceDTO;
 import com.fullstack.Backend.exception.ResourceNotFoundException;
-import com.fullstack.Backend.responses.device.AddDeviceResponse;
 import com.fullstack.Backend.responses.device.DeleteDeviceResponse;
 import com.fullstack.Backend.responses.device.DetailDeviceResponse;
 import com.fullstack.Backend.responses.device.DeviceInWarehouseResponse;
 import com.fullstack.Backend.responses.device.DropdownValuesResponse;
 import com.fullstack.Backend.responses.device.KeywordSuggestionResponse;
-import com.fullstack.Backend.responses.device.UpdateDeviceResponse;
 import com.fullstack.Backend.services.IDeviceService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -71,44 +69,32 @@ public class DeviceController {
 
     @PostMapping("/warehouse")
     @ResponseBody
-    public ResponseEntity<Object> addANewDevice(@Valid @RequestBody AddDeviceDTO device)
+    public CompletableFuture<ResponseEntity<Object>> addANewDevice(@Valid @RequestBody AddDeviceDTO device)
             throws InterruptedException, ExecutionException {
-        CompletableFuture<AddDeviceResponse> deviceResponse = _deviceService.addANewDevice(device);
-        return new ResponseEntity<>(deviceResponse.get(), OK);
+        return _deviceService.addANewDevice(device);
     }
 
     @PutMapping("/warehouse/{id}")
     @ResponseBody
-    public ResponseEntity<Object> updateDevice(@PathVariable(value = "id") int deviceId,
-                                               @Valid @RequestBody UpdateDeviceDTO device) throws InterruptedException, ExecutionException {
-        CompletableFuture<UpdateDeviceResponse> deviceResponse = _deviceService.updateDevice(deviceId, device);
-        if (deviceResponse.get().getUpdatedDevice() == null)
-            throw new ResourceNotFoundException("Device with Id is " + deviceId + " is not exist");
-        return new ResponseEntity<>(deviceResponse.get(), OK);
+    public CompletableFuture<ResponseEntity<Object>> updateDevice(@PathVariable(value = "id") int deviceId,
+                                                                  @Valid @RequestBody UpdateDeviceDTO device) throws InterruptedException, ExecutionException {
+        return _deviceService.updateDevice(deviceId, device);
     }
 
     @GetMapping("/warehouse/suggestion")
     @ResponseBody
-    public ResponseEntity<Object> getSuggestKeywordDevices(@RequestParam(name = "column") int fieldColumn,
-                                                           @RequestParam(name = "keyword") String keyword, FilterDeviceDTO device)
+    public CompletableFuture<ResponseEntity<Object>> getSuggestKeywordDevices(@RequestParam(name = "column") int fieldColumn,
+                                                                              @RequestParam(name = "keyword") String keyword, FilterDeviceDTO device)
             throws InterruptedException, ExecutionException {
-
-        if (keyword.trim().isBlank())
-            return ResponseEntity.status(NOT_FOUND).body("Keyword must be non-null");
-
-        CompletableFuture<KeywordSuggestionResponse> deviceResponse = _deviceService.getSuggestKeywordDevices(fieldColumn,
+        return _deviceService.getSuggestKeywordDevices(fieldColumn,
                 keyword, device);
-        return new ResponseEntity<>(deviceResponse.get(), OK);
     }
 
     @DeleteMapping("/warehouse/{id}")
     @ResponseBody
-    public ResponseEntity<Object> deleteDevice(@PathVariable(value = "id") int deviceId)
+    public CompletableFuture<ResponseEntity<Object>> deleteDevice(@PathVariable(value = "id") int deviceId)
             throws InterruptedException, ExecutionException {
-        CompletableFuture<DeleteDeviceResponse> deviceResponse = _deviceService.deleteADevice(deviceId);
-        if (!deviceResponse.get().getIsDeletionSuccessful())
-            return new ResponseEntity<>(NOT_FOUND);
-        return new ResponseEntity<>(deviceResponse.get(), OK);
+        return _deviceService.deleteADevice(deviceId);
     }
 
     @GetMapping("/warehouse/export/excel")

@@ -55,6 +55,12 @@ public class DeviceDTO {
             this.Owner = "";
         else
             this.Owner = device.getOwner().getUserName();
+
+        if (device.getKeeper() == null)
+            this.Keeper = "";
+        else
+            this.Keeper = device.getKeeper().getUserName();
+
         this.Id = device.getId();
         this.DeviceName = device.getName();
         this.ItemType = device.getItemType().getName();
@@ -71,5 +77,7 @@ public class DeviceDTO {
         this.Origin = device.getOrigin().name();
         this.CreatedDate = device.getCreatedDate();
         this.UpdatedDate = device.getUpdatedDate();
+        this.BookingDate = device.getBookingDate();
+        this.ReturnDate = device.getReturnDate();
     }
 }

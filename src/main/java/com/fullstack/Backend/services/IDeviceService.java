@@ -12,13 +12,9 @@ import com.fullstack.Backend.dto.device.AddDeviceDTO;
 import com.fullstack.Backend.dto.device.FilterDeviceDTO;
 import com.fullstack.Backend.dto.device.UpdateDeviceDTO;
 import com.fullstack.Backend.entities.Device;
-import com.fullstack.Backend.responses.device.AddDeviceResponse;
-import com.fullstack.Backend.responses.device.DeleteDeviceResponse;
 import com.fullstack.Backend.responses.device.DetailDeviceResponse;
 import com.fullstack.Backend.responses.device.DeviceInWarehouseResponse;
 import com.fullstack.Backend.responses.device.DropdownValuesResponse;
-import com.fullstack.Backend.responses.device.KeywordSuggestionResponse;
-import com.fullstack.Backend.responses.device.UpdateDeviceResponse;
 import com.fullstack.Backend.utils.dropdowns.OriginList;
 import com.fullstack.Backend.utils.dropdowns.ProjectList;
 import com.fullstack.Backend.utils.dropdowns.StatusList;
@@ -30,16 +26,16 @@ public interface IDeviceService {
 			String sortBy, String sortDir, FilterDeviceDTO deviceFilterDTO)
 			throws InterruptedException, ExecutionException;
 
-	public CompletableFuture<AddDeviceResponse> addANewDevice(AddDeviceDTO device);
+	public CompletableFuture<ResponseEntity<Object>> addANewDevice(AddDeviceDTO device) throws ExecutionException, InterruptedException;
 
 	public CompletableFuture<DetailDeviceResponse> getDetailDevice(int deviceId)
 			throws InterruptedException, ExecutionException;
 
-	public CompletableFuture<UpdateDeviceResponse> updateDevice(int deviceId, UpdateDeviceDTO device);
+	public CompletableFuture<ResponseEntity<Object>> updateDevice(int deviceId, UpdateDeviceDTO device) throws ExecutionException, InterruptedException;
 
 	public void formatFilter(FilterDeviceDTO deviceFilterDTO);
 
-	public CompletableFuture<DeleteDeviceResponse> deleteADevice(int deviceId);
+	public CompletableFuture<ResponseEntity<Object>> deleteADevice(int deviceId);
 
 	public void exportToExcel(HttpServletResponse response) throws IOException;
 
@@ -48,8 +44,8 @@ public interface IDeviceService {
 
 	public CompletableFuture<ResponseEntity<Object>> importToDb(MultipartFile file) throws IOException;
 
-	public CompletableFuture<KeywordSuggestionResponse> getSuggestKeywordDevices(int fieldColumn, String keyword,
-                                                                                 FilterDeviceDTO deviceFilter) throws InterruptedException, ExecutionException;
+	public CompletableFuture<ResponseEntity<Object>> getSuggestKeywordDevices(int fieldColumn, String keyword,
+																			  FilterDeviceDTO deviceFilter) throws InterruptedException, ExecutionException;
 
 	public int getTotalPages(int pageSize, int listSize);
 

@@ -40,46 +40,53 @@ public class Device extends BaseEntity {
     private Status status;
 
     @OneToOne()
-    @JoinColumn(name = "platform_Id",nullable = false, referencedColumnName = "id", insertable = false, updatable = false, foreignKey = @ForeignKey(name = "platform_Id_FK"))
+    @JoinColumn(name = "platform_Id", nullable = false, referencedColumnName = "id", insertable = false, updatable = false, foreignKey = @ForeignKey(name = "platform_Id_FK"))
     @JsonIgnore()
     private Platform platform;
-    @Column(name = "platform_Id",nullable = false)
-    private int platform_Id;
+    @Column(name = "platform_Id", nullable = false)
+    private int platformId;
 
     @OneToOne()
-    @JoinColumn(name = "item_type_Id",nullable = false, referencedColumnName = "id", insertable = false, updatable = false, foreignKey = @ForeignKey(name = "item_type_Id_FK"))
+    @JoinColumn(name = "item_type_Id", nullable = false, referencedColumnName = "id", insertable = false, updatable = false, foreignKey = @ForeignKey(name = "item_type_Id_FK"))
     @JsonIgnore()
     private ItemType itemType;
-    @Column(name = "item_type_Id",nullable = false)
-    private int item_type_Id;
+    @Column(name = "item_type_Id", nullable = false)
+    private int itemTypeId;
 
     @OneToOne()
-    @JoinColumn(name = "ram_Id",nullable = false, referencedColumnName = "id", insertable = false, updatable = false, foreignKey = @ForeignKey(name = "ram_Id_FK"))
+    @JoinColumn(name = "ram_Id", nullable = false, referencedColumnName = "id", insertable = false, updatable = false, foreignKey = @ForeignKey(name = "ram_Id_FK"))
     @JsonIgnore()
     private Ram ram;
-    @Column(name = "ram_Id",nullable = false)
-    private int ram_Id;
+    @Column(name = "ram_Id", nullable = false)
+    private int ramId;
 
     @OneToOne()
-    @JoinColumn(name = "screen_Id",nullable = false, referencedColumnName = "id", insertable = false, updatable = false, foreignKey = @ForeignKey(name = "screen_Id_FK"))
+    @JoinColumn(name = "screen_Id", nullable = false, referencedColumnName = "id", insertable = false, updatable = false, foreignKey = @ForeignKey(name = "screen_Id_FK"))
     @JsonIgnore()
     private Screen screen;
-    @Column(name = "screen_Id",nullable = false)
-    private int screen_Id;
+    @Column(name = "screen_Id", nullable = false)
+    private int screenId;
 
     @OneToOne()
-    @JoinColumn(name = "storage_Id",nullable = false, referencedColumnName = "id", insertable = false, updatable = false, foreignKey = @ForeignKey(name = "storage_Id_FK"))
+    @JoinColumn(name = "storage_Id", nullable = false, referencedColumnName = "id", insertable = false, updatable = false, foreignKey = @ForeignKey(name = "storage_Id_FK"))
     @JsonIgnore()
     private Storage storage;
     @Column(name = "storage_Id")
-    private int storage_Id;
+    private int storageId;
 
     @ManyToOne()
-    @JoinColumn(name = "owner_Id",nullable = false, referencedColumnName = "id", insertable = false, updatable = false, foreignKey = @ForeignKey(name = "owner_Id_FK"))
+    @JoinColumn(name = "owner_Id", nullable = false, referencedColumnName = "id", insertable = false, updatable = false, foreignKey = @ForeignKey(name = "owner_Id_FK"))
     @JsonIgnore()
     private User owner;
-    @Column(name = "owner_Id",nullable = false)
-    private int owner_Id;
+    @Column(name = "owner_Id", nullable = false)
+    private int ownerId;
+
+    @ManyToOne()
+    @JoinColumn(name = "keeper_Id", referencedColumnName = "id", insertable = false, updatable = false, foreignKey = @ForeignKey(name = "keeper_device_Id_FK"))
+    @JsonIgnore()
+    private User keeper;
+    @Column(name = "keeper_Id")
+    private Integer keeperId;
 
     @Column(nullable = false)
     private String inventoryNumber;
@@ -106,18 +113,18 @@ public class Device extends BaseEntity {
 
     public void loadToEntity(AddDeviceDTO addDeviceDTO) {
         this.name = addDeviceDTO.getName();
-        this.item_type_Id = addDeviceDTO.getItemTypeId();
+        this.itemTypeId = addDeviceDTO.getItemTypeId();
         this.status = Status.values()[addDeviceDTO.getStatusId()];
-        this.platform_Id = addDeviceDTO.getPlatformId();
-        this.ram_Id = addDeviceDTO.getRamId();
-        this.screen_Id = addDeviceDTO.getScreenId();
-        this.storage_Id = addDeviceDTO.getStorageId();
+        this.platformId = addDeviceDTO.getPlatformId();
+        this.ramId = addDeviceDTO.getRamId();
+        this.screenId = addDeviceDTO.getScreenId();
+        this.storageId = addDeviceDTO.getStorageId();
         this.inventoryNumber = addDeviceDTO.getInventoryNumber();
         this.serialNumber = addDeviceDTO.getSerialNumber();
         this.comments = addDeviceDTO.getComments();
         this.project = Project.values()[addDeviceDTO.getProjectId()];
         this.origin = Origin.values()[addDeviceDTO.getOriginId()];
-        this.owner_Id = addDeviceDTO.getOwnerId();
+        this.ownerId = addDeviceDTO.getOwnerId();
         this.setCreatedDate(new Date());
     }
 }

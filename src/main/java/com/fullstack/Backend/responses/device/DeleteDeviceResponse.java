@@ -6,5 +6,6 @@ import lombok.Setter;
 @Getter
 @Setter
 public class DeleteDeviceResponse {
-	private Boolean isDeletionSuccessful;
+	private Boolean isDeletionSuccessful = false;
+	private String errorMessage;
 }
