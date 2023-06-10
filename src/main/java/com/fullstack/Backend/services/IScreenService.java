@@ -7,6 +7,7 @@ import com.fullstack.Backend.utils.dropdowns.ScreenList;
 
 public interface IScreenService {
 	public CompletableFuture<Screen> findBySize(int size);
+	public CompletableFuture<Boolean> doesScreenExist(int id);
 
 	public CompletableFuture<List<String>> getScreenList();
 

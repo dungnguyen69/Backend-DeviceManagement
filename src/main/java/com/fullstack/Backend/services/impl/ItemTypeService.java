@@ -23,6 +23,11 @@ public class ItemTypeService implements IItemTypeService {
 		return CompletableFuture.completedFuture(_itemTypeRepository.findByName(name));
 	}
 
+	@Override
+	public CompletableFuture<Boolean> doesItemTypeExist(int id) {
+		return CompletableFuture.completedFuture(_itemTypeRepository.existsById((long) id));
+	}
+
 	@Async
 	@Override
 	public CompletableFuture<List<String>> getItemTypeList() {

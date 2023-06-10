@@ -22,6 +22,12 @@ public class StorageService implements IStorageService {
 	public CompletableFuture<Storage> findBySize(int size) {
 		return CompletableFuture.completedFuture(_storageRepository.findBySize(size));
 	}
+
+	@Override
+	public CompletableFuture<Boolean> doesStorageExist(int id) {
+		return CompletableFuture.completedFuture(_storageRepository.existsById((long) id));
+	}
+
 	@Async
 	@Override
 	public CompletableFuture<List<String>> getStorageList() {

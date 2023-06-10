@@ -24,6 +24,11 @@ public class ScreenService implements IScreenService {
 		return CompletableFuture.completedFuture(_screenRepository.findBySize(size));
 	}
 
+	@Override
+	public CompletableFuture<Boolean> doesScreenExist(int id) {
+		return CompletableFuture.completedFuture(_screenRepository.existsById((long) id));
+	}
+
 	@Async
 	@Override
 	public CompletableFuture<List<String>> getScreenList() {

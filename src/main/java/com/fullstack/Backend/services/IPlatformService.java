@@ -12,6 +12,7 @@ public interface IPlatformService {
 	public CompletableFuture<List<String>> getPlatformVersionList();
 
 	public CompletableFuture<List<String>> getPlatformNameVersionList();
+	public CompletableFuture<Boolean> doesPlatformExist(int id);
 
 	public CompletableFuture<Platform> findByNameAndVersion(String name, String version);
 

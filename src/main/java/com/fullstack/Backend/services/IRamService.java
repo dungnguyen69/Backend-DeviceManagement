@@ -8,7 +8,7 @@ import com.fullstack.Backend.utils.dropdowns.RamList;
 
 public interface IRamService {
 	public CompletableFuture<Ram> findBySize(int size);
-
+	public CompletableFuture<Boolean> doesRamExist(int id);
 	public CompletableFuture<List<String>> getRamList();
 
 	public CompletableFuture<List<RamList>> fetchRams();

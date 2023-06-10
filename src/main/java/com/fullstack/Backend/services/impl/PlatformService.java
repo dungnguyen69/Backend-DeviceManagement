@@ -33,6 +33,12 @@ public class PlatformService implements IPlatformService {
 	public CompletableFuture<List<String>> getPlatformNameVersionList() {
 		return CompletableFuture.completedFuture(_platformRepository.findPlatformNameVersion());
 	}
+
+	@Override
+	public CompletableFuture<Boolean> doesPlatformExist(int id) {
+		return CompletableFuture.completedFuture(_platformRepository.existsById((long) id));
+	}
+
 	@Async
 	@Override
 	public CompletableFuture<Platform> findByNameAndVersion(String name, String version) {

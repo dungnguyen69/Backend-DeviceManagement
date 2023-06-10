@@ -15,23 +15,28 @@ import com.fullstack.Backend.utils.dropdowns.RamList;
 @Service
 public class RamService implements IRamService {
 
-	@Autowired
-	IRamRepository _ramRepository;
-	
-	@Async
-	@Override
-	public CompletableFuture<Ram> findBySize(int size) {
-		return CompletableFuture.completedFuture(_ramRepository.findBySize(size));
-	}
+    @Autowired
+    IRamRepository _ramRepository;
 
-	@Async
-	@Override
-	public CompletableFuture<List<String>> getRamList() {
-		return CompletableFuture.completedFuture(_ramRepository.findRamSize());
-	}
+    @Async
+    @Override
+    public CompletableFuture<Ram> findBySize(int size) {
+        return CompletableFuture.completedFuture(_ramRepository.findBySize(size));
+    }
 
-	@Override
-	public CompletableFuture<List<RamList>> fetchRams() {
-		return CompletableFuture.completedFuture(_ramRepository.fetchRams());
-	}
+    @Override
+    public CompletableFuture<Boolean> doesRamExist(int id) {
+        return CompletableFuture.completedFuture(_ramRepository.existsById((long) id));
+    }
+
+    @Async
+    @Override
+    public CompletableFuture<List<String>> getRamList() {
+        return CompletableFuture.completedFuture(_ramRepository.findRamSize());
+    }
+
+    @Override
+    public CompletableFuture<List<RamList>> fetchRams() {
+        return CompletableFuture.completedFuture(_ramRepository.fetchRams());
+    }
 }

@@ -14,24 +14,29 @@ import com.fullstack.Backend.services.IEmployeeService;
 @Service
 public class EmployeeService implements IEmployeeService {
 
-	@Autowired
-	IEmployeeRepository _employeeRepository;
+    @Autowired
+    IEmployeeRepository _employeeRepository;
 
-	@Async
-	@Override
-	public CompletableFuture<User> findById(int id) {
-		return CompletableFuture.completedFuture(_employeeRepository.findById(id).get());
-	}
+    @Async
+    @Override
+    public CompletableFuture<User> findById(int id) {
+        return CompletableFuture.completedFuture(_employeeRepository.findById(id).get());
+    }
 
-	@Async
-	@Override
-	public CompletableFuture<User> findByUsername(String username) {
-		return CompletableFuture.completedFuture(_employeeRepository.findByUserName(username));
-	}
+    @Override
+    public CompletableFuture<Boolean> doesUserExist(int id) {
+        return CompletableFuture.completedFuture(_employeeRepository.existsById((long) id));
+    }
 
-	@Async
-	@Override
-	public CompletableFuture<List<User>> getUserList() {
-		return CompletableFuture.completedFuture(_employeeRepository.findAll());
-	}
+    @Async
+    @Override
+    public CompletableFuture<User> findByUsername(String username) {
+        return CompletableFuture.completedFuture(_employeeRepository.findByUserName(username));
+    }
+
+    @Async
+    @Override
+    public CompletableFuture<List<User>> getUserList() {
+        return CompletableFuture.completedFuture(_employeeRepository.findAll());
+    }
 }
