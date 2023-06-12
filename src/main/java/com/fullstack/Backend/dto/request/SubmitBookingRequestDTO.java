@@ -23,8 +23,6 @@ public class SubmitBookingRequestDTO {
 
         private String requester;
 
-        private String currentKeeper;
-
         private String nextKeeper;
 
         private Date bookingDate;

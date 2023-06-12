@@ -23,6 +23,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.Builder;
+import org.springframework.format.annotation.DateTimeFormat;
 
 @Getter
 @Setter
@@ -106,9 +107,11 @@ public class Device extends BaseEntity {
     private String comments;
 
     @Column()
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
     private Date bookingDate;
 
     @Column()
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
     private Date returnDate;
 
     public void loadToEntity(AddDeviceDTO addDeviceDTO) {

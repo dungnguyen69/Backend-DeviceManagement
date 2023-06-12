@@ -37,8 +37,7 @@ public class constant {
 	public static final int DEVICE_PROJECT = 9;
 	public static final int DEVICE_ORIGIN = 10;
 	public static final int DEVICE_OWNER = 11;
-	public static final int DEVICE_KEEPER = 12;
-	public static final int DEVICE_COMMENTS = 13;
+	public static final int DEVICE_COMMENTS = 12;
 
 	public static final int APPROVED = 0;
 	public static final int REJECTED = 1;

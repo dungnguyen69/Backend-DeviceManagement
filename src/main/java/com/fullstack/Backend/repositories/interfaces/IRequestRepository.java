@@ -29,7 +29,7 @@ public interface IRequestRepository extends JpaRepository<Request, Long>, JpaSpe
     public List<Request> findAllRequest(int employeeId, String sortBy, String sortDir);
 
     @Query(value = FIND_IDENTICAL_DEVICE_RELATED_PENDING_REQUESTS, nativeQuery = true)
-    public List<Request> findRequestRelatedDeviceApproved(int requestId, int currentKeeperId, int deviceId, int requestStatus);
+    public List<Request> findDeviceRelatedApprovedRequest(int requestId, int currentKeeperId, int deviceId, int requestStatus);
 
     @Query(value = FIND_REPETITIVE_REQUESTS, nativeQuery = true)
     public Request findRepetitiveRequest(int requesterId, int currentKeeperId, int nextKeeperId, int deviceId);

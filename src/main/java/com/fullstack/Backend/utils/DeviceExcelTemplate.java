@@ -64,15 +64,14 @@ public class DeviceExcelTemplate {
 		XSSFName namedCell = workBook.createName(); // create a named range for the list constraint
 		namedCell.setNameName("hidden");
 		namedCell.setRefersToFormula(reference);
-
 		XSSFDataValidationConstraint platformVersionConstraint = (XSSFDataValidationConstraint) dvHelper
 				.createFormulaListConstraint("hidden");
-		CellRangeAddressList addressListForplatformVersion = new CellRangeAddressList(1, 100, 3, 3);
-		XSSFDataValidation platformVersionvalidation = (XSSFDataValidation) dvHelper
-				.createValidation(platformVersionConstraint, addressListForplatformVersion);
-		platformVersionvalidation.setShowErrorBox(true);
+		CellRangeAddressList addressListForPlatformVersion = new CellRangeAddressList(1, 100, 3, 3);
+		XSSFDataValidation platformVersionValidation = (XSSFDataValidation) dvHelper
+				.createValidation(platformVersionConstraint, addressListForPlatformVersion);
+		platformVersionValidation.setShowErrorBox(true);
 		workBook.setSheetHidden(1, true); // Hide the hidden sheet
-		sheet.addValidationData(platformVersionvalidation);
+		sheet.addValidationData(platformVersionValidation);
 	}
 
 	// For headers
@@ -105,8 +104,7 @@ public class DeviceExcelTemplate {
 		createCell(row, 9, "Project", cellStyle);
 		createCell(row, 10, "Origin", cellStyle);
 		createCell(row, 11, "Owner", cellStyle);
-		createCell(row, 12, "Keeper", cellStyle);
-		createCell(row, 13, "Comments", cellStyle);
+		createCell(row, 12, "Comments", cellStyle);
 	}
 
 	private void createCell(Row row, int columnCount, Object value, CellStyle cellStyle) {
@@ -139,7 +137,7 @@ public class DeviceExcelTemplate {
 
 		Row row = sheet.createRow(1);
 		int columnCount = 0;
-		for (int i = 0; i < 14; i++) {
+		for (int i = 0; i < 13; i++) {
 			createCell(row, columnCount++, "", cellStyle);
 		}
 	}

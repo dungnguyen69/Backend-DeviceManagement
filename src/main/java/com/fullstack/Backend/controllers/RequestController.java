@@ -40,7 +40,7 @@ public class RequestController {
         return new ResponseEntity<>(NO_CONTENT);
     }
 
-    @PostMapping("/submission")
+    @PostMapping("/submissions")
     @ResponseBody
     public ResponseEntity<Object> submitBookingRequest(
             @Valid @RequestBody SubmitBookingRequestDTO requests)
@@ -49,7 +49,7 @@ public class RequestController {
         return new ResponseEntity<>(response.get(), OK);
     }
 
-    @GetMapping("/{id}/suggestion")
+    @GetMapping("/suggestions/{id}")
     @ResponseBody
     public ResponseEntity<Object> getSuggestKeywordRequests(@PathVariable(value = "id") int employeeId,
                                                             @RequestParam(name = "column") int fieldColumn,

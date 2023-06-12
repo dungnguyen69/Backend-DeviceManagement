@@ -56,11 +56,6 @@ public class DeviceDTO {
         else
             this.Owner = device.getOwner().getUserName();
 
-        if (device.getKeeper() == null)
-            this.Keeper = "";
-        else
-            this.Keeper = device.getKeeper().getUserName();
-
         this.Id = device.getId();
         this.DeviceName = device.getName();
         this.ItemType = device.getItemType().getName();

@@ -25,6 +25,7 @@ public class UpdateDeviceDTO {
     private int screenId;
     private int storageId;
     private Integer ownerId;
+    private Integer keeperId;
     @NotEmpty
     private String inventoryNumber;
     @NotEmpty
