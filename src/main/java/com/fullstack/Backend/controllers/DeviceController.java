@@ -1,8 +1,11 @@
 package com.fullstack.Backend.controllers;
 
+import com.fullstack.Backend.dto.request.ReturnKeepDeviceDTO;
+import com.fullstack.Backend.services.IRequestService;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.IOException;
+import java.text.ParseException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
@@ -36,7 +39,8 @@ public class DeviceController {
 
     @Autowired
     IDeviceService _deviceService;
-
+    @Autowired
+    IRequestService _requestService;
     @GetMapping("/warehouse")
     public CompletableFuture<ResponseEntity<Object>> showDevicesWithPaging(
             @RequestParam(defaultValue = DEFAULT_PAGE_NUMBER, required = false) int pageNo,
@@ -127,5 +131,13 @@ public class DeviceController {
             @DateTimeFormat(pattern = "yyyy-MM-dd") FilterDeviceDTO deviceFilterDTO)
             throws IOException, InterruptedException, ExecutionException {
         return _deviceService.getDevicesOfOwner(pageNo, pageSize, sortBy, sortDir, deviceFilterDTO, ownerId);
+    }
+
+    @PutMapping("/keep/return")
+    @ResponseBody
+    public CompletableFuture<ResponseEntity<Object>> updateReturnKeepDevice(
+            @DateTimeFormat(pattern = "yyyy-MM-dd") ReturnKeepDeviceDTO request)
+            throws InterruptedException, ExecutionException, ParseException {
+        return _deviceService.updateReturnKeepDevice(request);
     }
 }

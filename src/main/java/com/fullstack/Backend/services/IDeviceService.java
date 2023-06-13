@@ -1,6 +1,7 @@
 package com.fullstack.Backend.services;
 
 import java.io.IOException;
+import java.text.ParseException;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -65,6 +66,8 @@ public interface IDeviceService {
     public CompletableFuture<ResponseEntity<Object>> getDevicesOfOwner(int pageIndex, int pageSize, String sortBy, String sortDir, FilterDeviceDTO deviceFilter, int ownerId) throws ExecutionException, InterruptedException;
     public CompletableFuture<List<DeviceDTO>> applyFilterBookingAndReturnDateForDevices(FilterDeviceDTO deviceFilter, List<DeviceDTO> devices);
 
-    public CompletableFuture<ResponseEntity<Object>> returnKeepDevice(ReturnKeepDeviceDTO request) throws ExecutionException, InterruptedException;
+//    public CompletableFuture<Boolean> isReturnKeepDevice(ReturnKeepDeviceDTO request) throws ExecutionException, InterruptedException;
+
+    public CompletableFuture<ResponseEntity<Object>> updateReturnKeepDevice(ReturnKeepDeviceDTO request) throws ExecutionException, InterruptedException, ParseException;
 
 }

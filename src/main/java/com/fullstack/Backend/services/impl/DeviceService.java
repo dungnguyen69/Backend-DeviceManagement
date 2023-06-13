@@ -1,5 +1,6 @@
 package com.fullstack.Backend.services.impl;
 
+import java.text.ParseException;
 import java.util.Date;
 import java.io.IOException;
 import java.text.DateFormat;
@@ -14,6 +15,7 @@ import java.util.stream.Stream;
 
 import com.fullstack.Backend.dto.request.ReturnKeepDeviceDTO;
 import com.fullstack.Backend.entities.*;
+import com.fullstack.Backend.enums.RequestStatus;
 import com.fullstack.Backend.responses.device.*;
 import com.fullstack.Backend.services.*;
 import com.fullstack.Backend.utils.*;
@@ -21,7 +23,6 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
@@ -78,6 +79,9 @@ public class DeviceService implements IDeviceService {
     @Autowired
     IKeeperOrderService _keeperOrderService;
 
+    @Autowired
+    IRequestService _requestService;
+
     @Async
     @Override
     public CompletableFuture<ResponseEntity<Object>> showDevicesWithPaging(int pageIndex, int pageSize, String sortBy, String sortDir, FilterDeviceDTO deviceFilter) throws InterruptedException, ExecutionException {
@@ -102,10 +106,10 @@ public class DeviceService implements IDeviceService {
         }
         deviceList = applyFilterBookingAndReturnDateForDevices(deviceFilter, deviceList).get(); /*Apply booking date and return date filter after adding keeper orders to devices*/
         /* Return lists for filtering purposes*/
-        List<String> statusList = deviceList.stream().map(c -> c.getStatus()).distinct().collect(Collectors.toList());
-        List<String> originList = deviceList.stream().map(c -> c.getOrigin()).distinct().collect(Collectors.toList());
-        List<String> projectList = deviceList.stream().map(c -> c.getProject()).distinct().collect(Collectors.toList());
-        List<String> itemTypeList = deviceList.stream().map(c -> c.getItemType()).distinct().collect(Collectors.toList());
+        List<String> statusList = deviceList.stream().map(DeviceDTO::getStatus).distinct().collect(Collectors.toList());
+        List<String> originList = deviceList.stream().map(DeviceDTO::getOrigin).distinct().collect(Collectors.toList());
+        List<String> projectList = deviceList.stream().map(DeviceDTO::getProject).distinct().collect(Collectors.toList());
+        List<String> itemTypeList = deviceList.stream().map(DeviceDTO::getItemType).distinct().collect(Collectors.toList());
         /* */
         deviceList = getPage(deviceList, pageIndex, pageSize).get(); /*Pagination*/
         /* Return the desired response*/
@@ -150,7 +154,7 @@ public class DeviceService implements IDeviceService {
     public CompletableFuture<ResponseEntity<Object>> addDevice(AddDeviceDTO addDeviceDTO) throws ExecutionException, InterruptedException {
         AddDeviceResponse addDeviceResponse = new AddDeviceResponse();
         List<ErrorMessage> errors = new ArrayList<>();
-        Boolean useNonExistent = !_employeeService.doesUserExist(addDeviceDTO.getOwnerId()).get(),
+        boolean useNonExistent = !_employeeService.doesUserExist(addDeviceDTO.getOwnerId()).get(),
                 isSerialNumberExistent = _deviceRepository.findBySerialNumber(addDeviceDTO.getSerialNumber()) != null,
                 isItemTypeInvalid = !_itemTypeService.doesItemTypeExist(addDeviceDTO.getItemTypeId()).get(),
                 isRamInvalid = !_ramService.doesRamExist(addDeviceDTO.getRamId()).get(),
@@ -284,7 +288,7 @@ public class DeviceService implements IDeviceService {
             return CompletableFuture.completedFuture(new ResponseEntity<Object>(errors, NOT_ACCEPTABLE));
         }
         Device deviceDetail = _deviceRepository.findById(deviceId);
-        Boolean useNonExistent = !_employeeService.doesUserExist(device.getOwnerId()).get(),
+        boolean useNonExistent = !_employeeService.doesUserExist(device.getOwnerId()).get(),
                 isSerialNumberExistent = _deviceRepository.findBySerialNumberExceptProvidedDevice(deviceId, device.getSerialNumber()) != null,
                 isItemTypeInvalid = !_itemTypeService.doesItemTypeExist(device.getItemTypeId()).get(),
                 isRamInvalid = !_ramService.doesRamExist(device.getRamId()).get(),
@@ -379,7 +383,7 @@ public class DeviceService implements IDeviceService {
         deviceDetail.setStorageId(device.getStorageId());
         deviceDetail.setScreenId(device.getScreenId());
         deviceDetail.setComments(device.getComments());
-        deviceDetail.setOwnerId(Integer.valueOf(device.getOwnerId()));
+        deviceDetail.setOwnerId(device.getOwnerId());
         deviceDetail.setUpdatedDate(new Date());
         _deviceRepository.save(deviceDetail);
         detailDeviceResponse.setUpdatedDevice(deviceDetail);
@@ -466,11 +470,11 @@ public class DeviceService implements IDeviceService {
         String[] statusList = Stream.of(Status.values()).map(Status::name).toArray(String[]::new);
         String[] projectList = Stream.of(Project.values()).map(Project::name).toArray(String[]::new);
         String[] originList = Stream.of(Origin.values()).map(Origin::name).toArray(String[]::new);
-        String[] itemTypeList = _itemTypeService.getItemTypeList().get().stream().toArray(String[]::new);
-        String[] ramList = _ramService.getRamList().get().stream().toArray(String[]::new);
-        String[] platformList = _platformService.getPlatformNameVersionList().get().stream().toArray(String[]::new);
-        String[] screenList = _screenService.getScreenList().get().stream().toArray(String[]::new);
-        String[] storageList = _storageService.getStorageList().get().stream().toArray(String[]::new);
+        String[] itemTypeList = _itemTypeService.getItemTypeList().get().toArray(String[]::new);
+        String[] ramList = _ramService.getRamList().get().toArray(String[]::new);
+        String[] platformList = _platformService.getPlatformNameVersionList().get().toArray(String[]::new);
+        String[] screenList = _screenService.getScreenList().get().toArray(String[]::new);
+        String[] storageList = _storageService.getStorageList().get().toArray(String[]::new);
         DropDownListsDTO dropDownListsDTO = new DropDownListsDTO();
         dropDownListsDTO.setStatusList(statusList);
         dropDownListsDTO.setProjectList(projectList);
@@ -697,69 +701,51 @@ public class DeviceService implements IDeviceService {
         }
         deviceList = applyFilterBookingAndReturnDateForDevices(deviceFilter, deviceList).get(); /*Apply booking date and return date filter*/
         switch (fieldColumn) { /*Fetch only one column*/
-            case DEVICE_NAME_COLUMN:
-                keywordList = deviceList.stream()
-                        .filter(device -> device.getDeviceName().contains(keyword))
-                        .map(device -> device.getDeviceName())
-                        .limit(20)
-                        .collect(Collectors.toSet());
-                break;
-            case DEVICE_PLATFORM_NAME_COLUMN:
-                keywordList = deviceList.stream()
-                        .filter(device -> device.getPlatformName().contains(keyword))
-                        .map(device -> device.getPlatformName())
-                        .limit(20)
-                        .collect(Collectors.toSet());
-                break;
-            case DEVICE_PLATFORM_VERSION_COLUMN:
-                keywordList = deviceList.stream()
-                        .filter(device -> device.getPlatformVersion().contains(keyword))
-                        .map(device -> device.getPlatformVersion())
-                        .limit(20)
-                        .collect(Collectors.toSet());
-                break;
-            case DEVICE_RAM_COLUMN:
-                keywordList = deviceList.stream()
-                        .filter(device -> device.getRamSize().toString().contains(keyword))
-                        .map(device -> device.getRamSize().toString())
-                        .limit(20)
-                        .collect(Collectors.toSet());
-                break;
-            case DEVICE_SCREEN_COLUMN:
-                keywordList = deviceList.stream()
-                        .filter(device -> device.getScreenSize().toString().contains(keyword))
-                        .map(device -> device.getScreenSize().toString())
-                        .limit(20)
-                        .collect(Collectors.toSet());
-                break;
-            case DEVICE_STORAGE_COLUMN:
-                keywordList = deviceList.stream()
-                        .filter(device -> device.getStorageSize().toString().contains(keyword))
-                        .map(device -> device.getStorageSize().toString())
-                        .limit(20)
-                        .collect(Collectors.toSet());
-                break;
-            case DEVICE_OWNER_COLUMN:
-                keywordList = deviceList.stream()
-                        .filter(device -> device.getOwner().contains(keyword))
-                        .map(device -> device.getOwner())
-                        .limit(20)
-                        .collect(Collectors.toSet());
-                break;
-            case DEVICE_INVENTORY_NUMBER_COLUMN:
-                keywordList = deviceList.stream()
-                        .filter(device -> device.getInventoryNumber().contains(keyword))
-                        .map(device -> device.getInventoryNumber())
-                        .limit(20)
-                        .collect(Collectors.toSet());
-                break;
-            case DEVICE_SERIAL_NUMBER_COLUMN:
-                keywordList = deviceList.stream()
-                        .filter(device -> device.getSerialNumber().contains(keyword))
-                        .map(device -> device.getSerialNumber())
-                        .limit(20)
-                        .collect(Collectors.toSet());
-                break;
+            case DEVICE_NAME_COLUMN -> keywordList = deviceList.stream()
+                    .map(DeviceDTO::getDeviceName)
+                    .filter(deviceName -> deviceName.toLowerCase().contains(keyword.strip().toLowerCase()))
+                    .limit(20)
+                    .collect(Collectors.toSet());
+            case DEVICE_PLATFORM_NAME_COLUMN -> keywordList = deviceList.stream()
+                    .map(DeviceDTO::getPlatformName)
+                    .filter(platformName -> platformName.toLowerCase().contains(keyword.strip().toLowerCase()))
+                    .limit(20)
+                    .collect(Collectors.toSet());
+            case DEVICE_PLATFORM_VERSION_COLUMN -> keywordList = deviceList.stream()
+                    .map(DeviceDTO::getPlatformVersion)
+                    .filter(platformVersion -> platformVersion.toLowerCase().contains(keyword.strip().toLowerCase()))
+                    .limit(20)
+                    .collect(Collectors.toSet());
+            case DEVICE_RAM_COLUMN -> keywordList = deviceList.stream()
+                    .filter(device -> device.getRamSize().toString().contains(keyword))
+                    .map(device -> device.getRamSize().toString())
+                    .limit(20)
+                    .collect(Collectors.toSet());
+            case DEVICE_SCREEN_COLUMN -> keywordList = deviceList.stream()
+                    .filter(device -> device.getScreenSize().toString().contains(keyword))
+                    .map(device -> device.getScreenSize().toString())
+                    .limit(20)
+                    .collect(Collectors.toSet());
+            case DEVICE_STORAGE_COLUMN -> keywordList = deviceList.stream()
+                    .filter(device -> device.getStorageSize().toString().contains(keyword))
+                    .map(device -> device.getStorageSize().toString())
+                    .limit(20)
+                    .collect(Collectors.toSet());
+            case DEVICE_OWNER_COLUMN -> keywordList = deviceList.stream()
+                    .map(DeviceDTO::getOwner)
+                    .filter(owner -> owner.toLowerCase().contains(keyword.strip().toLowerCase()))
+                    .limit(20)
+                    .collect(Collectors.toSet());
+            case DEVICE_INVENTORY_NUMBER_COLUMN -> keywordList = deviceList.stream()
+                    .map(DeviceDTO::getInventoryNumber)
+                    .filter(inventoryNumber -> inventoryNumber.toLowerCase().contains(keyword.strip().toLowerCase()))
+                    .limit(20)
+                    .collect(Collectors.toSet());
+            case DEVICE_SERIAL_NUMBER_COLUMN -> keywordList = deviceList.stream()
+                    .map(DeviceDTO::getSerialNumber)
+                    .filter(serialNumber -> serialNumber.toLowerCase().contains(keyword.strip().toLowerCase()))
+                    .limit(20)
+                    .collect(Collectors.toSet());
         }
         KeywordSuggestionResponse response = new KeywordSuggestionResponse();
         response.setKeywordList(keywordList);
@@ -848,10 +834,10 @@ public class DeviceService implements IDeviceService {
         }
         deviceList = applyFilterBookingAndReturnDateForDevices(deviceFilter, deviceList).get(); /*Apply booking date and return date filter after adding keeper orders to devices*/
         /* Return lists for filtering purposes*/
-        List<String> statusList = deviceList.stream().map(c -> c.getStatus()).distinct().collect(Collectors.toList());
-        List<String> originList = deviceList.stream().map(c -> c.getOrigin()).distinct().collect(Collectors.toList());
-        List<String> projectList = deviceList.stream().map(c -> c.getProject()).distinct().collect(Collectors.toList());
-        List<String> itemTypeList = deviceList.stream().map(c -> c.getItemType()).distinct().collect(Collectors.toList());
+        List<String> statusList = deviceList.stream().map(DeviceDTO::getStatus).distinct().collect(Collectors.toList());
+        List<String> originList = deviceList.stream().map(DeviceDTO::getOrigin).distinct().collect(Collectors.toList());
+        List<String> projectList = deviceList.stream().map(DeviceDTO::getProject).distinct().collect(Collectors.toList());
+        List<String> itemTypeList = deviceList.stream().map(DeviceDTO::getItemType).distinct().collect(Collectors.toList());
         /* */
         deviceList = getPage(deviceList, pageIndex, pageSize).get(); /*Pagination*/
         /* Return the desired response*/
@@ -884,26 +870,36 @@ public class DeviceService implements IDeviceService {
     }
 
     @Override
-    public CompletableFuture<ResponseEntity<Object>> returnKeepDevice(ReturnKeepDeviceDTO request) throws ExecutionException, InterruptedException {
+    public CompletableFuture<ResponseEntity<Object>> updateReturnKeepDevice(ReturnKeepDeviceDTO request) throws ExecutionException, InterruptedException, ParseException {
         /*  No 1: B borrowed A's from 1/6 - 1/10
          *  No 2: C borrowed B's from 1/7 - 1/9
          *  No 3: D borrowed C's from 1/8 - 15/8
-         *  2 is able to confirm 3's device returned
-         *  1 is able to confirm 2's or 3's device returned
+         *  2 (as an input) is able to confirm 3's device returned
+         *  1 (as an input) is able to confirm that 2 or 3 RETURNED THE DEVICE.
+         *  Find orders (keeperOrderReturnList) whose keeper number > that of the input
+         *  Find old requests based upon keeper and device of keeperOrderReturnList's keeper order
+         *  Set current keeper to input's
+         *  Set request status to RETURNED
+         *  Set IsReturned to TRUE
+         *  Set UpdatedDate to new date
          *  Display a list of old keepers
          */
         List<KeeperOrder> keeperOrderReturnList = _keeperOrderService
                 .getKeeperOrderListByDeviceId(request.getDeviceId()).get().stream()
                 .filter(ko -> ko.getKeeperNo() > request.getKeeperNo())
-                .collect(Collectors.toList());
+                .toList();
         ReturnDeviceResponse response = new ReturnDeviceResponse();
-        List<String> oldKeepers = new ArrayList<>();
         if (keeperOrderReturnList.size() == 0)
             return CompletableFuture.completedFuture(new ResponseEntity<Object>(response, NOT_FOUND));
+        List<String> oldKeepers = new ArrayList<>();
         for (KeeperOrder keeperOrder : keeperOrderReturnList) {
+            Request occupiedRequest = _requestService.findAnOccupiedRequest(keeperOrder.getKeeper().getId(), request.getDeviceId()).get();
+            occupiedRequest.setCurrentKeeper_Id(request.getCurrentKeeperId());
+            occupiedRequest.setRequestStatus(RequestStatus.RETURNED);
             keeperOrder.setIsReturned(true);
             keeperOrder.setUpdatedDate(new Date());
             oldKeepers.add(keeperOrder.getKeeper().getUserName());
+            _requestService.updateRequest(occupiedRequest);
             _keeperOrderService.updateKeeperOrder(keeperOrder);
         }
         response.setKeepDeviceReturned(true);
