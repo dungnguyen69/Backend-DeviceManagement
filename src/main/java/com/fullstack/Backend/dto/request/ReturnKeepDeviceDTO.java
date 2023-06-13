@@ -7,4 +7,6 @@ import lombok.Data;
 public class ReturnKeepDeviceDTO {
     private int keeperNo;
     private int deviceId;
+    private int currentKeeperId;
+
 }

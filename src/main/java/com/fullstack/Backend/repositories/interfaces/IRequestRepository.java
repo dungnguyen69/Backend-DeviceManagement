@@ -1,5 +1,7 @@
 package com.fullstack.Backend.repositories.interfaces;
 
+import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
 
 import com.fullstack.Backend.entities.Request;
@@ -25,6 +27,10 @@ public interface IRequestRepository extends JpaRepository<Request, Long>, JpaSpe
             + "AND device_id = :deviceId "
             + "AND request_status IN (0,4)";
 
+    public static final String FIND_AN_OCCUPIED_REQUEST = "SELECT * FROM requests WHERE "
+            + "next_keeper_id = :nextKeeperId "
+            + "AND device_id = :deviceId "
+            + "AND request_status = 3";
     @Query(value = FIND_ALL_REQUESTS_BY_EMPLOYEE_ID, nativeQuery = true)
     public List<Request> findAllRequest(int employeeId, String sortBy, String sortDir);
 
@@ -33,4 +39,7 @@ public interface IRequestRepository extends JpaRepository<Request, Long>, JpaSpe
 
     @Query(value = FIND_REPETITIVE_REQUESTS, nativeQuery = true)
     public Request findRepetitiveRequest(int requesterId, int currentKeeperId, int nextKeeperId, int deviceId);
+
+    @Query(value = FIND_AN_OCCUPIED_REQUEST, nativeQuery = true)
+    public Request findAnOccupiedRequest(int nextKeeperId, int deviceId);
 }

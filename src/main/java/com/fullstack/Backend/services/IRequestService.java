@@ -1,9 +1,11 @@
 package com.fullstack.Backend.services;
 
+import java.text.ParseException;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
+import com.fullstack.Backend.dto.request.ExtendDurationRequestDTO;
 import com.fullstack.Backend.dto.request.RequestFilterDTO;
 import com.fullstack.Backend.dto.request.SubmitBookingRequestDTO;
 import com.fullstack.Backend.dto.request.UpdateStatusRequestDTO;
@@ -33,4 +35,11 @@ public interface IRequestService {
                                                                                   RequestFilterDTO requestFilter) throws InterruptedException, ExecutionException;
 
     public CompletableFuture<ResponseEntity<Object>> updateRequestStatus(UpdateStatusRequestDTO updateStatusRequestDTO) throws InterruptedException, ExecutionException;
+
+    public CompletableFuture<ResponseEntity<Object>> extendDurationRequest(ExtendDurationRequestDTO request) throws InterruptedException, ExecutionException, ParseException;
+
+    public CompletableFuture<Request> findAnOccupiedRequest(int nextKeeperId, int deviceId) throws InterruptedException, ExecutionException, ParseException;
+
+    public void updateRequest(Request request) throws InterruptedException, ExecutionException;
+
 }

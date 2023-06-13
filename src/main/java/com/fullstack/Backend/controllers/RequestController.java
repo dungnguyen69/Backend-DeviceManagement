@@ -1,8 +1,6 @@
 package com.fullstack.Backend.controllers;
 
-import com.fullstack.Backend.dto.request.RequestFilterDTO;
-import com.fullstack.Backend.dto.request.SubmitBookingRequestDTO;
-import com.fullstack.Backend.dto.request.UpdateStatusRequestDTO;
+import com.fullstack.Backend.dto.request.*;
 import com.fullstack.Backend.responses.device.KeywordSuggestionResponse;
 import com.fullstack.Backend.responses.request.ShowRequestsResponse;
 import com.fullstack.Backend.responses.request.SubmitBookingResponse;
@@ -13,6 +11,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.text.ParseException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
@@ -51,22 +50,29 @@ public class RequestController {
 
     @GetMapping("/suggestions/{id}")
     @ResponseBody
-    public ResponseEntity<Object> getSuggestKeywordRequests(@PathVariable(value = "id") int employeeId,
-                                                            @RequestParam(name = "column") int fieldColumn,
-                                                            @RequestParam(name = "keyword") String keyword, RequestFilterDTO request)
+    public ResponseEntity<Object> getSuggestKeywordRequests(
+            @PathVariable(value = "id") int employeeId,
+            @RequestParam(name = "column") int fieldColumn,
+            @RequestParam(name = "keyword") String keyword, RequestFilterDTO request)
             throws InterruptedException, ExecutionException {
         if (keyword.trim().isBlank())
             return ResponseEntity.status(NOT_FOUND).body("Keyword must be non-null");
-
-        CompletableFuture<KeywordSuggestionResponse> response = _requestService.getSuggestKeywordRequests(employeeId, fieldColumn,
-                keyword, request);
+        CompletableFuture<KeywordSuggestionResponse> response = _requestService.getSuggestKeywordRequests(employeeId, fieldColumn, keyword, request);
         return new ResponseEntity<>(response.get(), OK);
     }
 
     @PutMapping("/status-update")
     @ResponseBody
-    public CompletableFuture<ResponseEntity<Object>> getSuggestKeywordRequests(UpdateStatusRequestDTO request)
+    public CompletableFuture<ResponseEntity<Object>> updateRequestStatus(UpdateStatusRequestDTO request)
             throws InterruptedException, ExecutionException {
         return _requestService.updateRequestStatus(request);
+    }
+
+    @PostMapping("/extend-duration")
+    @ResponseBody
+    public CompletableFuture<ResponseEntity<Object>> extendDurationRequest(
+            @DateTimeFormat(pattern = "yyyy-MM-dd") ExtendDurationRequestDTO request)
+            throws InterruptedException, ExecutionException, ParseException {
+        return _requestService.extendDurationRequest(request);
     }
 }

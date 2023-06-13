@@ -107,7 +107,6 @@
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-mysql</artifactId>
         </dependency>
-		
 	</dependencies>
 
 	<build>
