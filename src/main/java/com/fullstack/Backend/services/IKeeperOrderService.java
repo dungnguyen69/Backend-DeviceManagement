@@ -19,4 +19,7 @@ public interface IKeeperOrderService {
             throws InterruptedException, ExecutionException;
 
     public CompletableFuture<List<KeeperOrder>> getAllKeeperOrders();
+
+    public CompletableFuture<List<KeeperOrder>> findByKeeperId(int keeperId);
+
 }

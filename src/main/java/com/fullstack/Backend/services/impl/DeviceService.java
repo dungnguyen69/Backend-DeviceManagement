@@ -13,6 +13,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.fullstack.Backend.dto.device.*;
 import com.fullstack.Backend.dto.request.ReturnKeepDeviceDTO;
 import com.fullstack.Backend.entities.*;
 import com.fullstack.Backend.enums.RequestStatus;
@@ -32,11 +33,6 @@ import org.springframework.web.multipart.MultipartFile;
 import static com.fullstack.Backend.constant.constant.*;
 import static org.springframework.http.HttpStatus.*;
 
-import com.fullstack.Backend.dto.device.AddDeviceDTO;
-import com.fullstack.Backend.dto.device.DeviceDTO;
-import com.fullstack.Backend.dto.device.FilterDeviceDTO;
-import com.fullstack.Backend.dto.device.UpdateDeviceDTO;
-import com.fullstack.Backend.dto.device.DropDownListsDTO;
 import com.fullstack.Backend.enums.Origin;
 import com.fullstack.Backend.enums.Project;
 import com.fullstack.Backend.enums.Status;
@@ -906,4 +902,101 @@ public class DeviceService implements IDeviceService {
         response.setOldKeepers(oldKeepers);
         return CompletableFuture.completedFuture(new ResponseEntity<Object>(response, OK));
     }
+
+    @Override
+    public CompletableFuture<ResponseEntity<Object>> getDevicesOfKeeper(int keeperId, int pageIndex, int pageSize, FilterDeviceDTO deviceFilter) throws ExecutionException, InterruptedException {
+        CompletableFuture<Boolean> doesUserExist = _employeeService.doesUserExist(keeperId);
+        if (!doesUserExist.get())
+            return CompletableFuture.completedFuture(new ResponseEntity<Object>("User does not exist", NOT_FOUND));
+        formatFilter(deviceFilter); /* Remove spaces and make input text become lowercase*/
+        List<KeeperOrder> keeperOrderList = _keeperOrderService.findByKeeperId(keeperId).get();
+        KeepingDeviceResponse response = new KeepingDeviceResponse();
+        if (keeperOrderList == null)
+            return CompletableFuture.completedFuture(new ResponseEntity<Object>(response, NOT_FOUND));
+        List<KeepingDeviceDTO> keepingDeviceList = new ArrayList<>();
+        for (KeeperOrder keeperOrder : keeperOrderList) {
+            Device device = _deviceRepository.findById(keeperOrder.getDevice().getId());
+            KeepingDeviceDTO keepingDevice = new KeepingDeviceDTO(device);
+            keepingDevice.setKeeper(keeperOrder.getKeeper().getUserName());
+            keepingDevice.setKeeperNo(keeperOrder.getKeeperNo());
+            keepingDevice.setBookingDate(keeperOrder.getBookingDate());
+            keepingDevice.setReturnDate(keeperOrder.getDueDate());
+            keepingDeviceList.add(keepingDevice);
+        }
+        keepingDeviceList = fetchFilteredKeepingDevice(deviceFilter, keepingDeviceList).get();
+        List<String> statusList = keepingDeviceList.stream().map(KeepingDeviceDTO::getStatus).distinct().toList();
+        List<String> originList = keepingDeviceList.stream().map(KeepingDeviceDTO::getOrigin).distinct().toList();
+        List<String> projectList = keepingDeviceList.stream().map(KeepingDeviceDTO::getProject).distinct().toList();
+        List<String> itemTypeList = keepingDeviceList.stream().map(KeepingDeviceDTO::getItemType).distinct().toList();
+        /* */
+        keepingDeviceList = getPageForKeepingDevices(keepingDeviceList, pageIndex, pageSize).get(); /*Pagination*/
+        response.setDevicesList(keepingDeviceList);
+        response.setPageNo(pageIndex);
+        response.setPageSize(pageSize);
+        response.setTotalElements(keepingDeviceList.size());
+        response.setTotalPages(getTotalPages(pageSize, keepingDeviceList.size()));
+        response.setStatusList(statusList);
+        response.setOriginList(originList);
+        response.setProjectList(projectList);
+        response.setItemTypeList(itemTypeList);
+        return CompletableFuture.completedFuture(new ResponseEntity<Object>(response, OK));
+    }
+
+    @Async()
+    @Override
+    public CompletableFuture<List<KeepingDeviceDTO>> fetchFilteredKeepingDevice(FilterDeviceDTO deviceFilter, List<KeepingDeviceDTO> devices) {
+        if (deviceFilter.getName() != null)
+            devices = devices.stream().filter(device -> device.getDeviceName().toLowerCase().equals(deviceFilter.getName())).collect(Collectors.toList());
+        if (deviceFilter.getStatus() != null)
+            devices = devices.stream().filter(device -> device.getStatus().equalsIgnoreCase(deviceFilter.getStatus())).collect(Collectors.toList());
+        if (deviceFilter.getPlatformName() != null)
+            devices = devices.stream().filter(device -> device.getPlatformName().toLowerCase().equals(deviceFilter.getPlatformName())).collect(Collectors.toList());
+        if (deviceFilter.getPlatformVersion() != null)
+            devices = devices.stream().filter(device -> device.getPlatformVersion().toLowerCase().equals(deviceFilter.getPlatformVersion())).collect(Collectors.toList());
+        if (deviceFilter.getItemType() != null)
+            devices = devices.stream().filter(device -> device.getItemType().toLowerCase().equals(deviceFilter.getItemType())).collect(Collectors.toList());
+        if (deviceFilter.getRam() != null)
+            devices = devices.stream().filter(device -> device.getRamSize().toString().toLowerCase().equals(deviceFilter.getRam())).collect(Collectors.toList());
+        if (deviceFilter.getScreen() != null)
+            devices = devices.stream().filter(device -> device.getStorageSize().toString().toLowerCase().equals(deviceFilter.getScreen())).collect(Collectors.toList());
+        if (deviceFilter.getStorage() != null)
+            devices = devices.stream().filter(device -> device.getStorageSize().toString().toLowerCase().equals(deviceFilter.getStorage())).collect(Collectors.toList());
+        if (deviceFilter.getOwner() != null)
+            devices = devices.stream().filter(device -> device.getOwner().toLowerCase().equals(deviceFilter.getOwner())).collect(Collectors.toList());
+        if (deviceFilter.getKeeper() != null)
+            devices = devices.stream().filter(device -> device.getKeeper().toLowerCase().equals(deviceFilter.getKeeper())).collect(Collectors.toList());
+        if (deviceFilter.getOrigin() != null)
+            devices = devices.stream().filter(device -> device.getOrigin().equalsIgnoreCase(deviceFilter.getOrigin())).collect(Collectors.toList());
+        if (deviceFilter.getInventoryNumber() != null)
+            devices = devices.stream().filter(device -> device.getInventoryNumber().toLowerCase().equals(deviceFilter.getInventoryNumber())).collect(Collectors.toList());
+        if (deviceFilter.getSerialNumber() != null)
+            devices = devices.stream().filter(device -> device.getSerialNumber().toLowerCase().equals(deviceFilter.getSerialNumber())).collect(Collectors.toList());
+        if (deviceFilter.getProject() != null)
+            devices = devices.stream().filter(device -> device.getProject().equalsIgnoreCase(deviceFilter.getProject())).collect(Collectors.toList());
+        if (deviceFilter.getBookingDate() != null)
+            devices = devices.stream()
+                    .filter(device -> device.getBookingDate() != null)
+                    .filter(device -> device.getBookingDate().after(deviceFilter.getBookingDate()))
+                    .collect(Collectors.toList());
+        if (deviceFilter.getReturnDate() != null)
+            devices = devices.stream()
+                    .filter(device -> device.getReturnDate() != null)
+                    .filter(device -> device.getReturnDate().before(deviceFilter.getReturnDate()))
+                    .collect(Collectors.toList());
+        return CompletableFuture.completedFuture(devices);
+    }
+
+    @Async
+    @Override
+    public CompletableFuture<List<KeepingDeviceDTO>> getPageForKeepingDevices(List<KeepingDeviceDTO> sourceList, int pageIndex, int pageSize) {
+        if (pageSize <= 0 || pageIndex <= 0) throw new IllegalArgumentException("invalid page size: " + pageSize);
+
+        int fromIndex = (pageIndex - 1) * pageSize;
+
+        if (sourceList == null || sourceList.size() <= fromIndex)
+            return CompletableFuture.completedFuture(Collections.emptyList());
+
+        return CompletableFuture.completedFuture(sourceList.subList(fromIndex, Math.min(fromIndex + pageSize, sourceList.size())));
+    }
+
 }

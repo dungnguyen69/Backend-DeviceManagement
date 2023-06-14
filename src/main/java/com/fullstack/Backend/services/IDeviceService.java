@@ -6,14 +6,11 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
-import com.fullstack.Backend.dto.device.DeviceDTO;
+import com.fullstack.Backend.dto.device.*;
 import com.fullstack.Backend.dto.request.ReturnKeepDeviceDTO;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.fullstack.Backend.dto.device.AddDeviceDTO;
-import com.fullstack.Backend.dto.device.FilterDeviceDTO;
-import com.fullstack.Backend.dto.device.UpdateDeviceDTO;
 import com.fullstack.Backend.entities.Device;
 import com.fullstack.Backend.responses.device.DropdownValuesResponse;
 import com.fullstack.Backend.utils.dropdowns.OriginList;
@@ -64,10 +61,17 @@ public interface IDeviceService {
     public CompletableFuture<List<OriginList>> getOriginList();
 
     public CompletableFuture<ResponseEntity<Object>> getDevicesOfOwner(int pageIndex, int pageSize, String sortBy, String sortDir, FilterDeviceDTO deviceFilter, int ownerId) throws ExecutionException, InterruptedException;
+
     public CompletableFuture<List<DeviceDTO>> applyFilterBookingAndReturnDateForDevices(FilterDeviceDTO deviceFilter, List<DeviceDTO> devices);
 
 //    public CompletableFuture<Boolean> isReturnKeepDevice(ReturnKeepDeviceDTO request) throws ExecutionException, InterruptedException;
 
     public CompletableFuture<ResponseEntity<Object>> updateReturnKeepDevice(ReturnKeepDeviceDTO request) throws ExecutionException, InterruptedException, ParseException;
 
+
+    public CompletableFuture<ResponseEntity<Object>> getDevicesOfKeeper(int keeperId, int pageIndex, int pageSize, FilterDeviceDTO deviceFilter) throws ExecutionException, InterruptedException;
+
+    public CompletableFuture<List<KeepingDeviceDTO>> fetchFilteredKeepingDevice(FilterDeviceDTO deviceFilter, List<KeepingDeviceDTO> devices);
+
+    public CompletableFuture<List<KeepingDeviceDTO>> getPageForKeepingDevices(List<KeepingDeviceDTO> sourceList, int pageIndex, int pageSize);
 }

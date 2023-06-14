@@ -10,9 +10,14 @@ public interface IKeeperOrderRepository extends JpaRepository<KeeperOrder, Long>
     public static final String FIND_KEEPER_ORDER_LIST_BY_DEVICE_ID = "SELECT * FROM keeper_order WHERE device_id = :deviceId AND is_returned = false";
     public static final String FIND_KEEPER_ORDER_BY_DEVICE_ID_AND_KEEPER_ID = "SELECT * FROM keeper_order WHERE device_id = :deviceId AND keeper_id = :keeperId AND is_returned = false";
 
+    public static final String FIND_KEEPER_ORDER_LIST_BY_KEEPER_ID = "SELECT * FROM keeper_order WHERE keeper_id = :keeperId AND is_returned = false";
+
     @Query(value = FIND_KEEPER_ORDER_LIST_BY_DEVICE_ID, nativeQuery = true)
     public List<KeeperOrder> findKeeperOrderByDeviceId(int deviceId);
 
     @Query(value = FIND_KEEPER_ORDER_BY_DEVICE_ID_AND_KEEPER_ID, nativeQuery = true)
     public KeeperOrder findByDeviceIdAndKeeperId(int deviceId, int keeperId);
+
+    @Query(value = FIND_KEEPER_ORDER_LIST_BY_KEEPER_ID, nativeQuery = true)
+    public List<KeeperOrder> findByKeeperId(int keeperId);
 }

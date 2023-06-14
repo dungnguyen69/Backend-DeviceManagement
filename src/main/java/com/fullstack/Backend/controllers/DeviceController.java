@@ -41,6 +41,7 @@ public class DeviceController {
     IDeviceService _deviceService;
     @Autowired
     IRequestService _requestService;
+
     @GetMapping("/warehouse")
     public CompletableFuture<ResponseEntity<Object>> showDevicesWithPaging(
             @RequestParam(defaultValue = DEFAULT_PAGE_NUMBER, required = false) int pageNo,
@@ -139,5 +140,16 @@ public class DeviceController {
             @DateTimeFormat(pattern = "yyyy-MM-dd") ReturnKeepDeviceDTO request)
             throws InterruptedException, ExecutionException, ParseException {
         return _deviceService.updateReturnKeepDevice(request);
+    }
+
+    @GetMapping("/keepers/{id}")
+    @ResponseBody
+    public CompletableFuture<ResponseEntity<Object>> getDevicesOfKeeper(
+            @PathVariable(value = "id") int ownerId,
+            @RequestParam(defaultValue = DEFAULT_PAGE_NUMBER, required = false) int pageNo,
+            @RequestParam(defaultValue = DEFAULT_PAGE_SIZE, required = false) int pageSize,
+            @DateTimeFormat(pattern = "yyyy-MM-dd") FilterDeviceDTO deviceFilterDTO)
+            throws IOException, InterruptedException, ExecutionException {
+        return _deviceService.getDevicesOfKeeper(ownerId, pageNo, pageSize, deviceFilterDTO);
     }
 }

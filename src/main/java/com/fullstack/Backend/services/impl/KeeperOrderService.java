@@ -38,4 +38,9 @@ public class KeeperOrderService implements IKeeperOrderService {
     public CompletableFuture<List<KeeperOrder>> getAllKeeperOrders() {
         return CompletableFuture.completedFuture(_keeperOrderRepository.findAll());
     }
+
+    @Override
+    public CompletableFuture<List<KeeperOrder>> findByKeeperId(int keeperId) {
+        return CompletableFuture.completedFuture(_keeperOrderRepository.findByKeeperId(keeperId));
+    }
 }
