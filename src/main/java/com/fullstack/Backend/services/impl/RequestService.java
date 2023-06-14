@@ -6,6 +6,7 @@ import com.fullstack.Backend.entities.KeeperOrder;
 import com.fullstack.Backend.entities.Request;
 import com.fullstack.Backend.entities.User;
 import com.fullstack.Backend.enums.RequestStatus;
+import com.fullstack.Backend.enums.Status;
 import com.fullstack.Backend.repositories.interfaces.IDeviceRepository;
 import com.fullstack.Backend.repositories.interfaces.IRequestRepository;
 import com.fullstack.Backend.responses.device.KeywordSuggestionResponse;
@@ -117,12 +118,18 @@ public class RequestService implements IRequestService {
                     break;
                 }
             }
-            /* There are more than 2 identical requests when submitting */
+            /* There are more than 2 identical requests when SUBMITTING */
             if (areRequestsIdentical) {
                 requestFail.setErrorMessage("There are more than 2 identical requests when submitting");
                 requestFails.add(requestFail);
                 continue;
             }
+            if(keeperOrderList.get().size() == 3){
+                requestFail.setErrorMessage("Keeper number exceeds the allowance of times");
+                requestFails.add(requestFail);
+                continue;
+            }
+            /* The request whose device was never approved before */
             if (keeperOrderList.get().size() == 0) {
                 User owner = _employeeService.findByUsername(device.getOwner().getUserName()).get();
                 boolean isRequestRepetitive = _requestRepository.findRepetitiveRequest(requester.getId(), owner.getId(), nextKeeper.getId(), device.getId()) != null;
@@ -142,6 +149,7 @@ public class RequestService implements IRequestService {
                 requestSuccessful.add(requestData);
             }
 
+            /* The request whose device was approved before */
             for (KeeperOrder keeperOrder : keeperOrderList.get()) {
                 boolean areDatesInDuration = request.getBookingDate().before(request.getReturnDate()) && request.getBookingDate().after(keeperOrder.getBookingDate()) && request.getReturnDate().before(keeperOrder.getDueDate());
 
@@ -171,7 +179,7 @@ public class RequestService implements IRequestService {
                 if (isRequestRepetitive) {
                     requestFail.setErrorMessage("Your request is repetitive");
                     requestFails.add(requestFail);
-                    continue;
+                    break;
                 }
                 /* A keeper order's no > 0
                 and someone keeping the booked device
@@ -181,7 +189,6 @@ public class RequestService implements IRequestService {
                 requestData.setCurrentKeeper_Id(keeperOrder.getKeeper().getId());
                 requestData.setRequestStatus(RequestStatus.values()[PENDING]);
                 requestSuccessful.add(requestData);
-                break;
             }
         }
         if (requestFails.size() > 0) {
@@ -325,6 +332,12 @@ public class RequestService implements IRequestService {
                         relatedRequest.setCancelledDate(new Date());
                         _requestRepository.save(relatedRequest);
                     }
+                }
+                /* Change device status to OCCUPIED when a request is approved */
+                Device device = _deviceRepository.findById(request.get().getDevice().getId());
+                if(device.getStatus() != Status.OCCUPIED){
+                    device.setStatus(Status.OCCUPIED);
+                    _deviceRepository.save(device);
                 }
             }
             case REJECTED -> {
