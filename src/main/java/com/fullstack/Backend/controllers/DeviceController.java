@@ -131,7 +131,7 @@ public class DeviceController {
             @RequestParam(defaultValue = DEFAULT_SORT_DIRECTION, required = false) String sortDir,
             @DateTimeFormat(pattern = "yyyy-MM-dd") FilterDeviceDTO deviceFilterDTO)
             throws IOException, InterruptedException, ExecutionException {
-        return _deviceService.getDevicesOfOwner(pageNo, pageSize, sortBy, sortDir, deviceFilterDTO, ownerId);
+        return _deviceService.showOwnedDevicesWithPaging(ownerId, pageNo, pageSize, sortBy, sortDir, deviceFilterDTO);
     }
 
     @PutMapping("/keepers/return")
@@ -150,7 +150,7 @@ public class DeviceController {
             @RequestParam(defaultValue = DEFAULT_PAGE_SIZE, required = false) int pageSize,
             @DateTimeFormat(pattern = "yyyy-MM-dd") FilterDeviceDTO deviceFilterDTO)
             throws IOException, InterruptedException, ExecutionException {
-        return _deviceService.getDevicesOfKeeper(ownerId, pageNo, pageSize, deviceFilterDTO);
+        return _deviceService.showKeepingDevicesWithPaging(ownerId, pageNo, pageSize, deviceFilterDTO);
     }
 
     @PutMapping("/owners/return")

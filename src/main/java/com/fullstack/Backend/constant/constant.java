@@ -18,6 +18,7 @@ public class constant {
     public static final int DEVICE_OWNER_COLUMN = 6;
     public static final int DEVICE_INVENTORY_NUMBER_COLUMN = 7;
     public static final int DEVICE_SERIAL_NUMBER_COLUMN = 8;
+    public static final int DEVICE_KEEPER_COLUMN = 9;
 
     public static final int REQUEST_REQUEST_ID_COLUMN = 0;
     public static final int REQUEST_DEVICE_NAME_COLUMN = 1;

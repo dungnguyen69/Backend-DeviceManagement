@@ -47,7 +47,7 @@ public class KeepingDeviceDTO {
     @JsonProperty("Keeper")
     public String Keeper;
     @JsonProperty("KeeperNo")
-    public int KeeperNo;
+    public String KeeperNo;
     @JsonProperty("BookingDate")
     public Date BookingDate;
     @JsonProperty("ReturnDate")

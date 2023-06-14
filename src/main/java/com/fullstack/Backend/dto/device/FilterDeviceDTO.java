@@ -23,6 +23,7 @@ public class FilterDeviceDTO {
 	private String storage;
 	private String owner;
 	private String keeper;
+	private String keeperNo;
 	private String inventoryNumber;
 	private String serialNumber;
 	private String origin;

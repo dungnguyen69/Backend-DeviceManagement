@@ -101,6 +101,12 @@ public class RequestService implements IRequestService {
                 requestFails.add(requestFail);
                 continue;
             }
+            CompletableFuture<List<KeeperOrder>> keeperOrderList = _keeperOrderService.getKeeperOrderListByDeviceId(request.getDeviceId());
+            if(keeperOrderList.get().size() == 3){
+                requestFail.setErrorMessage("Keeper number exceeds the allowance of times");
+                requestFails.add(requestFail);
+                continue;
+            }
             String requestId = UUID.randomUUID().toString().replace("-", "");
             Request requestData = new Request();
             requestData.setRequestId(requestId);
@@ -110,7 +116,7 @@ public class RequestService implements IRequestService {
             requestData.setReturnDate(request.getReturnDate());
             requestData.setDevice_Id(device.getId());
             requestData.setCreatedDate(new Date());
-            CompletableFuture<List<KeeperOrder>> keeperOrderList = _keeperOrderService.getKeeperOrderListByDeviceId(request.getDeviceId());
+
             boolean areRequestsIdentical = false;
             for (Request r : requestSuccessful) {
                 if (r.getDevice_Id() == requestData.getDevice_Id() && r.getRequester_Id() == requestData.getRequester_Id() && r.getNextKeeper_Id() == requestData.getNextKeeper_Id()) {
@@ -124,12 +130,8 @@ public class RequestService implements IRequestService {
                 requestFails.add(requestFail);
                 continue;
             }
-            if(keeperOrderList.get().size() == 3){
-                requestFail.setErrorMessage("Keeper number exceeds the allowance of times");
-                requestFails.add(requestFail);
-                continue;
-            }
-            /* The request whose device was never approved before */
+
+            /* The requests whose device was never approved before but was not returned*/
             if (keeperOrderList.get().size() == 0) {
                 User owner = _employeeService.findByUsername(device.getOwner().getUserName()).get();
                 boolean isRequestRepetitive = _requestRepository.findRepetitiveRequest(requester.getId(), owner.getId(), nextKeeper.getId(), device.getId()) != null;
@@ -139,9 +141,8 @@ public class RequestService implements IRequestService {
                     requestFails.add(requestFail);
                     continue;
                 }
-                /* A keeper order's no = 0 and
-                the OWNER of the booked device
-                concurs the NEXT KEEPER to keep it
+                /*
+                the OWNER of the booked device concurs the NEXT KEEPER to keep it
                 */
                 requestData.setAccepter_Id(owner.getId());
                 requestData.setCurrentKeeper_Id(owner.getId());
@@ -149,7 +150,7 @@ public class RequestService implements IRequestService {
                 requestSuccessful.add(requestData);
             }
 
-            /* The request whose device was approved before */
+            /* The requests whose device was approved before but was not returned */
             for (KeeperOrder keeperOrder : keeperOrderList.get()) {
                 boolean areDatesInDuration = request.getBookingDate().before(request.getReturnDate()) && request.getBookingDate().after(keeperOrder.getBookingDate()) && request.getReturnDate().before(keeperOrder.getDueDate());
 

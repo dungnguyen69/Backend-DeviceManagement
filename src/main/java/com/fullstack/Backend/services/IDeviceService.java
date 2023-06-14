@@ -60,7 +60,9 @@ public interface IDeviceService {
 
     public CompletableFuture<List<OriginList>> getOriginList();
 
-    public CompletableFuture<ResponseEntity<Object>> getDevicesOfOwner(int pageIndex, int pageSize, String sortBy, String sortDir, FilterDeviceDTO deviceFilter, int ownerId) throws ExecutionException, InterruptedException;
+    public CompletableFuture<List<DeviceDTO>> getDevicesOfOwner(int ownerId, FilterDeviceDTO deviceFilter, String sortBy, String sortDir) throws ExecutionException, InterruptedException;
+
+    public CompletableFuture<List<KeepingDeviceDTO>> getDevicesOfKeeper(int keeperId, FilterDeviceDTO deviceFilter) throws ExecutionException, InterruptedException;
 
     public CompletableFuture<List<DeviceDTO>> applyFilterBookingAndReturnDateForDevices(FilterDeviceDTO deviceFilter, List<DeviceDTO> devices);
 
@@ -68,7 +70,9 @@ public interface IDeviceService {
 
     public CompletableFuture<ResponseEntity<Object>> updateReturnOwnedDevice(ReturnKeepDeviceDTO request) throws ExecutionException, InterruptedException, ParseException;
 
-    public CompletableFuture<ResponseEntity<Object>> getDevicesOfKeeper(int keeperId, int pageIndex, int pageSize, FilterDeviceDTO deviceFilter) throws ExecutionException, InterruptedException;
+    public CompletableFuture<ResponseEntity<Object>> showOwnedDevicesWithPaging(int ownerId, int pageIndex, int pageSize, String sortBy, String sortDir, FilterDeviceDTO deviceFilter) throws ExecutionException, InterruptedException;
+
+    public CompletableFuture<ResponseEntity<Object>> showKeepingDevicesWithPaging(int keeperId, int pageIndex, int pageSize, FilterDeviceDTO deviceFilter) throws ExecutionException, InterruptedException;
 
     public CompletableFuture<List<KeepingDeviceDTO>> fetchFilteredKeepingDevice(FilterDeviceDTO deviceFilter, List<KeepingDeviceDTO> devices);
 
