@@ -134,7 +134,7 @@ public class DeviceController {
         return _deviceService.getDevicesOfOwner(pageNo, pageSize, sortBy, sortDir, deviceFilterDTO, ownerId);
     }
 
-    @PutMapping("/keep/return")
+    @PutMapping("/keepers/return")
     @ResponseBody
     public CompletableFuture<ResponseEntity<Object>> updateReturnKeepDevice(
             @DateTimeFormat(pattern = "yyyy-MM-dd") ReturnKeepDeviceDTO request)
@@ -151,5 +151,13 @@ public class DeviceController {
             @DateTimeFormat(pattern = "yyyy-MM-dd") FilterDeviceDTO deviceFilterDTO)
             throws IOException, InterruptedException, ExecutionException {
         return _deviceService.getDevicesOfKeeper(ownerId, pageNo, pageSize, deviceFilterDTO);
+    }
+
+    @PutMapping("/owners/return")
+    @ResponseBody
+    public CompletableFuture<ResponseEntity<Object>> updateReturnOwnedDevice(
+            @DateTimeFormat(pattern = "yyyy-MM-dd") ReturnKeepDeviceDTO request)
+            throws InterruptedException, ExecutionException, ParseException {
+        return _deviceService.updateReturnOwnedDevice(request);
     }
 }
