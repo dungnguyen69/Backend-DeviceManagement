@@ -160,4 +160,26 @@ public class DeviceController {
             throws InterruptedException, ExecutionException, ParseException {
         return _deviceService.updateReturnOwnedDevice(request);
     }
+
+    @GetMapping("/owners/{id}/suggestion")
+    @ResponseBody
+    public CompletableFuture<ResponseEntity<Object>> getSuggestKeywordOwnedDevices(
+            @PathVariable(value = "id") int ownerId,
+            @RequestParam(name = "column") int fieldColumn,
+            @RequestParam(name = "keyword") String keyword, FilterDeviceDTO device)
+            throws InterruptedException, ExecutionException {
+        return _deviceService.getSuggestKeywordOwnedDevices(ownerId, fieldColumn,
+                keyword, device);
+    }
+
+    @GetMapping("/keepers/{id}/suggestion")
+    @ResponseBody
+    public CompletableFuture<ResponseEntity<Object>> getSuggestKeywordKeepingDevices(
+            @PathVariable(value = "id") int keeperId,
+            @RequestParam(name = "column") int fieldColumn,
+            @RequestParam(name = "keyword") String keyword, FilterDeviceDTO device)
+            throws InterruptedException, ExecutionException {
+        return _deviceService.getSuggestKeywordKeepingDevices(keeperId, fieldColumn,
+                keyword, device);
+    }
 }

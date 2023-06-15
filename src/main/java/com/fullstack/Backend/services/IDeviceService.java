@@ -64,6 +64,12 @@ public interface IDeviceService {
 
     public CompletableFuture<List<KeepingDeviceDTO>> getDevicesOfKeeper(int keeperId, FilterDeviceDTO deviceFilter) throws ExecutionException, InterruptedException;
 
+    public CompletableFuture<ResponseEntity<Object>> getSuggestKeywordOwnedDevices(int ownerId,int fieldColumn, String keyword,
+                                                                              FilterDeviceDTO deviceFilter) throws InterruptedException, ExecutionException;
+
+    public CompletableFuture<ResponseEntity<Object>> getSuggestKeywordKeepingDevices(int keeperId,int fieldColumn, String keyword,
+                                                                                   FilterDeviceDTO deviceFilter) throws InterruptedException, ExecutionException;
+
     public CompletableFuture<List<DeviceDTO>> applyFilterBookingAndReturnDateForDevices(FilterDeviceDTO deviceFilter, List<DeviceDTO> devices);
 
     public CompletableFuture<ResponseEntity<Object>> updateReturnKeepDevice(ReturnKeepDeviceDTO request) throws ExecutionException, InterruptedException, ParseException;

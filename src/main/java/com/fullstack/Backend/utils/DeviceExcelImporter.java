@@ -1,13 +1,9 @@
 package com.fullstack.Backend.utils;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
 
 import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.Cell;
@@ -20,19 +16,7 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFFont;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.multipart.MultipartFile;
-import static com.fullstack.Backend.constant.constant.*;
-import com.fullstack.Backend.entities.Device;
-import com.fullstack.Backend.enums.Origin;
-import com.fullstack.Backend.enums.Project;
-import com.fullstack.Backend.enums.Status;
-import com.fullstack.Backend.services.IEmployeeService;
-import com.fullstack.Backend.services.IItemTypeService;
-import com.fullstack.Backend.services.IPlatformService;
-import com.fullstack.Backend.services.IRamService;
-import com.fullstack.Backend.services.IScreenService;
-import com.fullstack.Backend.services.IStorageService;
 
 import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.http.HttpServletResponse;

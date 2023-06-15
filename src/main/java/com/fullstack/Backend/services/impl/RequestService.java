@@ -31,7 +31,7 @@ public class RequestService implements IRequestService {
     @Autowired
     IRequestRepository _requestRepository;
     @Autowired
-    IEmployeeService _employeeService;
+    IUserService _employeeService;
     @Autowired
     IKeeperOrderService _keeperOrderService;
     @Autowired

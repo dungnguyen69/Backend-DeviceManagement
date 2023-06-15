@@ -70,7 +70,7 @@ public class DeviceService implements IDeviceService {
     IStorageService _storageService;
 
     @Autowired
-    IEmployeeService _employeeService;
+    IUserService _employeeService;
 
     @Autowired
     IKeeperOrderService _keeperOrderService;
@@ -1070,4 +1070,131 @@ public class DeviceService implements IDeviceService {
         return CompletableFuture.completedFuture(new ResponseEntity<Object>(response, OK));
     }
 
+    @Async()
+    @Override
+    public CompletableFuture<ResponseEntity<Object>> getSuggestKeywordOwnedDevices(int ownerId, int fieldColumn, String keyword, FilterDeviceDTO deviceFilter) throws InterruptedException, ExecutionException {
+        if (keyword.trim().isBlank())
+            return CompletableFuture.completedFuture(ResponseEntity.status(NOT_FOUND).body("Keyword must be non-null"));
+        Set<String> keywordList = new HashSet<>();
+        List<DeviceDTO> deviceList = getDevicesOfOwner(ownerId, deviceFilter, "id", "asc").get();
+        switch (fieldColumn) { /*Fetch only one column*/
+            case DEVICE_NAME_COLUMN -> keywordList = deviceList.stream()
+                    .map(DeviceDTO::getDeviceName)
+                    .filter(deviceName -> deviceName.toLowerCase().contains(keyword.strip().toLowerCase()))
+                    .limit(20)
+                    .collect(Collectors.toSet());
+            case DEVICE_PLATFORM_NAME_COLUMN -> keywordList = deviceList.stream()
+                    .map(DeviceDTO::getPlatformName)
+                    .filter(platformName -> platformName.toLowerCase().contains(keyword.strip().toLowerCase()))
+                    .limit(20)
+                    .collect(Collectors.toSet());
+            case DEVICE_PLATFORM_VERSION_COLUMN -> keywordList = deviceList.stream()
+                    .map(DeviceDTO::getPlatformVersion)
+                    .filter(platformVersion -> platformVersion.toLowerCase().contains(keyword.strip().toLowerCase()))
+                    .limit(20)
+                    .collect(Collectors.toSet());
+            case DEVICE_RAM_COLUMN -> keywordList = deviceList.stream()
+                    .filter(device -> device.getRamSize().toString().contains(keyword.strip()))
+                    .map(device -> device.getRamSize().toString())
+                    .limit(20)
+                    .collect(Collectors.toSet());
+            case DEVICE_SCREEN_COLUMN -> keywordList = deviceList.stream()
+                    .filter(device -> device.getScreenSize().toString().contains(keyword.strip()))
+                    .map(device -> device.getScreenSize().toString())
+                    .limit(20)
+                    .collect(Collectors.toSet());
+            case DEVICE_STORAGE_COLUMN -> keywordList = deviceList.stream()
+                    .filter(device -> device.getStorageSize().toString().contains(keyword.strip()))
+                    .map(device -> device.getStorageSize().toString())
+                    .limit(20)
+                    .collect(Collectors.toSet());
+            case DEVICE_OWNER_COLUMN -> keywordList = deviceList.stream()
+                    .map(DeviceDTO::getOwner)
+                    .filter(owner -> owner.toLowerCase().contains(keyword.strip().toLowerCase()))
+                    .limit(20)
+                    .collect(Collectors.toSet());
+            case DEVICE_INVENTORY_NUMBER_COLUMN -> keywordList = deviceList.stream()
+                    .map(DeviceDTO::getInventoryNumber)
+                    .filter(inventoryNumber -> inventoryNumber.toLowerCase().contains(keyword.strip().toLowerCase()))
+                    .limit(20)
+                    .collect(Collectors.toSet());
+            case DEVICE_SERIAL_NUMBER_COLUMN -> keywordList = deviceList.stream()
+                    .map(DeviceDTO::getSerialNumber)
+                    .filter(serialNumber -> serialNumber.toLowerCase().contains(keyword.strip().toLowerCase()))
+                    .limit(20)
+                    .collect(Collectors.toSet());
+            case DEVICE_KEEPER_COLUMN -> keywordList = deviceList.stream()
+                    .map(DeviceDTO::getKeeper)
+                    .filter(keeper -> keeper.toLowerCase().contains(keyword.strip().toLowerCase()))
+                    .limit(20)
+                    .collect(Collectors.toSet());
+        }
+        KeywordSuggestionResponse response = new KeywordSuggestionResponse();
+        response.setKeywordList(keywordList);
+        return CompletableFuture.completedFuture(new ResponseEntity<>(response, OK));
+    }
+
+    @Async()
+    @Override
+    public CompletableFuture<ResponseEntity<Object>> getSuggestKeywordKeepingDevices(int keeperId, int fieldColumn, String keyword, FilterDeviceDTO deviceFilter) throws InterruptedException, ExecutionException {
+        if (keyword.trim().isBlank())
+            return CompletableFuture.completedFuture(ResponseEntity.status(NOT_FOUND).body("Keyword must be non-null"));
+        Set<String> keywordList = new HashSet<>();
+        List<KeepingDeviceDTO> deviceList = getDevicesOfKeeper(keeperId, deviceFilter).get();
+        switch (fieldColumn) { /*Fetch only one column*/
+            case DEVICE_NAME_COLUMN -> keywordList = deviceList.stream()
+                    .map(KeepingDeviceDTO::getDeviceName)
+                    .filter(deviceName -> deviceName.toLowerCase().contains(keyword.strip().toLowerCase()))
+                    .limit(20)
+                    .collect(Collectors.toSet());
+            case DEVICE_PLATFORM_NAME_COLUMN -> keywordList = deviceList.stream()
+                    .map(KeepingDeviceDTO::getPlatformName)
+                    .filter(platformName -> platformName.toLowerCase().contains(keyword.strip().toLowerCase()))
+                    .limit(20)
+                    .collect(Collectors.toSet());
+            case DEVICE_PLATFORM_VERSION_COLUMN -> keywordList = deviceList.stream()
+                    .map(KeepingDeviceDTO::getPlatformVersion)
+                    .filter(platformVersion -> platformVersion.toLowerCase().contains(keyword.strip().toLowerCase()))
+                    .limit(20)
+                    .collect(Collectors.toSet());
+            case DEVICE_RAM_COLUMN -> keywordList = deviceList.stream()
+                    .filter(device -> device.getRamSize().toString().contains(keyword.strip()))
+                    .map(device -> device.getRamSize().toString())
+                    .limit(20)
+                    .collect(Collectors.toSet());
+            case DEVICE_SCREEN_COLUMN -> keywordList = deviceList.stream()
+                    .filter(device -> device.getScreenSize().toString().contains(keyword.strip()))
+                    .map(device -> device.getScreenSize().toString())
+                    .limit(20)
+                    .collect(Collectors.toSet());
+            case DEVICE_STORAGE_COLUMN -> keywordList = deviceList.stream()
+                    .filter(device -> device.getStorageSize().toString().contains(keyword.strip()))
+                    .map(device -> device.getStorageSize().toString())
+                    .limit(20)
+                    .collect(Collectors.toSet());
+            case DEVICE_OWNER_COLUMN -> keywordList = deviceList.stream()
+                    .map(KeepingDeviceDTO::getOwner)
+                    .filter(owner -> owner.toLowerCase().contains(keyword.strip().toLowerCase()))
+                    .limit(20)
+                    .collect(Collectors.toSet());
+            case DEVICE_INVENTORY_NUMBER_COLUMN -> keywordList = deviceList.stream()
+                    .map(KeepingDeviceDTO::getInventoryNumber)
+                    .filter(inventoryNumber -> inventoryNumber.toLowerCase().contains(keyword.strip().toLowerCase()))
+                    .limit(20)
+                    .collect(Collectors.toSet());
+            case DEVICE_SERIAL_NUMBER_COLUMN -> keywordList = deviceList.stream()
+                    .map(KeepingDeviceDTO::getSerialNumber)
+                    .filter(serialNumber -> serialNumber.toLowerCase().contains(keyword.strip().toLowerCase()))
+                    .limit(20)
+                    .collect(Collectors.toSet());
+            case DEVICE_KEEPER_COLUMN -> keywordList = deviceList.stream()
+                    .map(KeepingDeviceDTO::getKeeper)
+                    .filter(keeper -> keeper.toLowerCase().contains(keyword.strip().toLowerCase()))
+                    .limit(20)
+                    .collect(Collectors.toSet());
+        }
+        KeywordSuggestionResponse response = new KeywordSuggestionResponse();
+        response.setKeywordList(keywordList);
+        return CompletableFuture.completedFuture(new ResponseEntity<>(response, OK));
+    }
 }
