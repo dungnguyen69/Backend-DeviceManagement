@@ -16,6 +16,6 @@ import lombok.Setter;
 @Entity
 @Table(name = "SystemRoles")
 public class SystemRole extends BaseEntity{
-	@Column(nullable = false)
+	@Column(nullable = false,length = 20)
 	private String name;
 }
