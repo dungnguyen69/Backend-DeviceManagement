@@ -85,21 +85,7 @@ public class DeviceService implements IDeviceService {
         formatFilter(deviceFilter); /* Remove spaces and make input text become lowercase*/
         List<Device> devices = _deviceRepository.findAll(sort);
         devices = fetchFilteredDevice(deviceFilter, devices).get(); // List of devices after filtering
-        List<DeviceDTO> deviceList = new ArrayList<>();
-        for (Device device : devices) {
-            DeviceDTO deviceDTO = new DeviceDTO(device);  /* Convert fields that have an id value to a readable value */
-            CompletableFuture<List<KeeperOrder>> keeperOrderList = _keeperOrderService.getKeeperOrderListByDeviceId(device.getId()); /* Get a list of keeper orders of a device*/
-            if (keeperOrderList.get().isEmpty()) { /* Were a list empty, we would set a keeper value is a device's owner */
-                deviceDTO.setKeeper(device.getOwner().getUserName());
-                deviceList.add(deviceDTO);
-                continue;
-            }
-            Optional<KeeperOrder> keeperOrder = keeperOrderList.get().stream().max(Comparator.comparing(KeeperOrder::getKeeperNo)); /* Get the latest keeper order of a device*/
-            deviceDTO.setKeeper(keeperOrder.get().getKeeper().getUserName()); /* Add keeper order information to devices*/
-            deviceDTO.setBookingDate(keeperOrder.get().getBookingDate());
-            deviceDTO.setReturnDate(keeperOrder.get().getDueDate());
-            deviceList.add(deviceDTO);
-        }
+        List<DeviceDTO> deviceList = convertEntityToDTO(devices).get();
         deviceList = applyFilterBookingAndReturnDateForDevices(deviceFilter, deviceList).get(); /*Apply booking date and return date filter after adding keeper orders to devices*/
         /* Return lists for filtering purposes*/
         List<String> statusList = deviceList.stream().map(DeviceDTO::getStatus).distinct().collect(Collectors.toList());
@@ -145,97 +131,154 @@ public class DeviceService implements IDeviceService {
         return (listSize / pageSize) + 1;
     }
 
+    @Override
+    public CompletableFuture<Boolean> doesDeviceExist(int deviceId) {
+        return CompletableFuture.completedFuture(!_deviceRepository.existsById((long) deviceId));
+    }
+
+    @Async
+    private CompletableFuture<Boolean> useNonExistent(int ownerId) throws ExecutionException, InterruptedException {
+        return CompletableFuture.completedFuture(!_employeeService.doesUserExist(ownerId).get());
+    }
+
+    @Async
+    private CompletableFuture<Boolean> isSerialNumberExistent(String serialNumber) throws ExecutionException, InterruptedException {
+        return CompletableFuture.completedFuture(_deviceRepository.findBySerialNumber(serialNumber) != null);
+    }
+
+    @Async
+    private CompletableFuture<Boolean> isItemTypeInvalid(int itemTypeId) throws ExecutionException, InterruptedException {
+        return CompletableFuture.completedFuture(!_itemTypeService.doesItemTypeExist(itemTypeId).get());
+    }
+
+    @Async
+    private CompletableFuture<Boolean> isRamInvalid(int ramId) throws ExecutionException, InterruptedException {
+        return CompletableFuture.completedFuture(!_ramService.doesRamExist(ramId).get());
+    }
+
+    @Async
+    private CompletableFuture<Boolean> isStorageInvalid(int storageId) throws ExecutionException, InterruptedException {
+        return CompletableFuture.completedFuture(!_storageService.doesStorageExist(storageId).get());
+    }
+
+    @Async
+    private CompletableFuture<Boolean> isScreenInvalid(int screenId) throws ExecutionException, InterruptedException {
+        return CompletableFuture.completedFuture(!_screenService.doesScreenExist(screenId).get());
+    }
+
+    @Async
+    private CompletableFuture<Boolean> isPlatformInvalid(int platformId) throws ExecutionException, InterruptedException {
+        return CompletableFuture.completedFuture(!_platformService.doesPlatformExist(platformId).get());
+    }
+
+    @Async
+    private CompletableFuture<Boolean> isStatusInvalid(int statusId) throws ExecutionException, InterruptedException {
+        return CompletableFuture.completedFuture(Status.findByNumber(statusId).isEmpty());
+    }
+
+    @Async
+    private CompletableFuture<Boolean> isOriginInvalid(int originId) throws ExecutionException, InterruptedException {
+        return CompletableFuture.completedFuture(Origin.findByNumber(originId).isEmpty());
+    }
+
+    @Async
+    private CompletableFuture<Boolean> isProjectInvalid(int projectId) throws ExecutionException, InterruptedException {
+        return CompletableFuture.completedFuture(Project.findByNumber(projectId).isEmpty());
+    }
+
     @Async
     @Override
-    public CompletableFuture<ResponseEntity<Object>> addDevice(AddDeviceDTO addDeviceDTO) throws ExecutionException, InterruptedException {
+    public CompletableFuture<List<DeviceDTO>> convertEntityToDTO(List<Device> devices) throws ExecutionException, InterruptedException {
+        List<DeviceDTO> deviceList = new ArrayList<>();
+        for (Device device : devices) {
+            DeviceDTO deviceDTO = new DeviceDTO(device);  /* Convert fields that have an id value to a readable value */
+            CompletableFuture<List<KeeperOrder>> keeperOrderList = _keeperOrderService.getKeeperOrderListByDeviceId(device.getId()); /* Get a list of keeper orders of a device*/
+            if (keeperOrderList.get().isEmpty()) { /* Were a list empty, we would set a keeper value is a device's owner */
+                deviceDTO.setKeeper(device.getOwner().getUserName());
+                deviceList.add(deviceDTO);
+                continue;
+            }
+            Optional<KeeperOrder> keeperOrder = keeperOrderList.get().stream().max(Comparator.comparing(KeeperOrder::getKeeperNo)); /* Get the latest keeper order of a device*/
+            deviceDTO.setKeeper(keeperOrder.get().getKeeper().getUserName()); /* Add keeper order information to devices*/
+            deviceDTO.setBookingDate(keeperOrder.get().getBookingDate());
+            deviceDTO.setReturnDate(keeperOrder.get().getDueDate());
+            deviceList.add(deviceDTO);
+        }
+        return CompletableFuture.completedFuture(deviceList);
+    }
+
+    @Async
+    @Override
+    public CompletableFuture<ResponseEntity<Object>> addDevice(AddDeviceDTO dto) throws ExecutionException, InterruptedException {
         AddDeviceResponse addDeviceResponse = new AddDeviceResponse();
         List<ErrorMessage> errors = new ArrayList<>();
-        boolean useNonExistent = !_employeeService.doesUserExist(addDeviceDTO.getOwnerId()).get(),
-                isSerialNumberExistent = _deviceRepository.findBySerialNumber(addDeviceDTO.getSerialNumber()) != null,
-                isItemTypeInvalid = !_itemTypeService.doesItemTypeExist(addDeviceDTO.getItemTypeId()).get(),
-                isRamInvalid = !_ramService.doesRamExist(addDeviceDTO.getRamId()).get(),
-                isStorageInvalid = !_storageService.doesStorageExist(addDeviceDTO.getStorageId()).get(),
-                isScreenInvalid = !_screenService.doesScreenExist(addDeviceDTO.getScreenId()).get(),
-                isPlatformInvalid = !_platformService.doesPlatformExist(addDeviceDTO.getPlatformId()).get(),
-                isStatusInvalid = Status.findByNumber(addDeviceDTO.getStatusId()).isEmpty(),
-                isOriginInvalid = Origin.findByNumber(addDeviceDTO.getOriginId()).isEmpty(),
-                isProjectInvalid = Project.findByNumber(addDeviceDTO.getProjectId()).isEmpty();
 
-        if (useNonExistent) {
-            ErrorMessage error = new ErrorMessage();
-            error.setMessage("Owner does not exist");
-            error.setStatusCode(NOT_FOUND);
-            error.setServerTime(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
+        if (useNonExistent(dto.getOwnerId()).get()) {
+            ErrorMessage error = new ErrorMessage(NOT_FOUND,
+                    "Owner does not exist",
+                    new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
             errors.add(error);
         }
-        if (isSerialNumberExistent) {
-            ErrorMessage error = new ErrorMessage();
-            error.setMessage("Serial value number of this device is already existed");
-            error.setStatusCode(BAD_REQUEST);
-            error.setServerTime(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
+        if (isSerialNumberExistent(dto.getSerialNumber()).get()) {
+            ErrorMessage error = new ErrorMessage(BAD_REQUEST,
+                    "Serial number value of this device is already existed",
+                    new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
             errors.add(error);
         }
-        if (isItemTypeInvalid) {
-            ErrorMessage error = new ErrorMessage();
-            error.setMessage("Item type value of this device is non existent");
-            error.setStatusCode(NOT_FOUND);
-            error.setServerTime(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
+        if (isItemTypeInvalid(dto.getItemTypeId()).get()) {
+            ErrorMessage error = new ErrorMessage(NOT_FOUND,
+                    "Item type value of this device is non existent",
+                    new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
             errors.add(error);
         }
-        if (isRamInvalid) {
-            ErrorMessage error = new ErrorMessage();
-            error.setMessage("Ram value of this device is non existent");
-            error.setStatusCode(NOT_FOUND);
-            error.setServerTime(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
+        if (isRamInvalid(dto.getRamId()).get()) {
+            ErrorMessage error = new ErrorMessage(NOT_FOUND,
+                    "Ram value of this device is non existent",
+                    new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
             errors.add(error);
         }
-        if (isStorageInvalid) {
-            ErrorMessage error = new ErrorMessage();
-            error.setMessage("Storage value of this device is non existent");
-            error.setStatusCode(NOT_FOUND);
-            error.setServerTime(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
+        if (isStorageInvalid(dto.getStorageId()).get()) {
+            ErrorMessage error = new ErrorMessage(NOT_FOUND,
+                    "Storage value of this device is non existent",
+                    new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
             errors.add(error);
         }
-        if (isScreenInvalid) {
-            ErrorMessage error = new ErrorMessage();
+        if (isScreenInvalid(dto.getScreenId()).get()) {
+            ErrorMessage error = new ErrorMessage(NOT_FOUND,
+                    "Screen value of this device is non existent",
+                    new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
             error.setMessage("Screen value of this device is non existent");
-            error.setStatusCode(NOT_FOUND);
-            error.setServerTime(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
             errors.add(error);
         }
-        if (isPlatformInvalid) {
-            ErrorMessage error = new ErrorMessage();
-            error.setMessage("Platform value of this device is non existent");
-            error.setStatusCode(NOT_FOUND);
-            error.setServerTime(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
+        if (isPlatformInvalid(dto.getPlatformId()).get()) {
+            ErrorMessage error = new ErrorMessage(NOT_FOUND,
+                    "Platform value of this device is non existent",
+                    new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
             errors.add(error);
         }
-        if (isStatusInvalid) {
-            ErrorMessage error = new ErrorMessage();
-            error.setMessage("Status value of this device is invalid");
-            error.setStatusCode(NOT_FOUND);
-            error.setServerTime(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
+        if (isStatusInvalid(dto.getStatusId()).get()) {
+            ErrorMessage error = new ErrorMessage(NOT_FOUND,
+                    "Status value of this device is non existent",
+                    new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
             errors.add(error);
         }
-        if (isOriginInvalid) {
-            ErrorMessage error = new ErrorMessage();
-            error.setMessage("Origin value of this device is invalid");
-            error.setStatusCode(NOT_FOUND);
-            error.setServerTime(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
+        if (isOriginInvalid(dto.getOriginId()).get()) {
+            ErrorMessage error = new ErrorMessage(NOT_FOUND,
+                    "Origin value of this device is non existent",
+                    new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
             errors.add(error);
         }
-        if (isProjectInvalid) {
-            ErrorMessage error = new ErrorMessage();
-            error.setMessage("Project value of this device is invalid");
-            error.setStatusCode(NOT_FOUND);
-            error.setServerTime(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
+        if (isProjectInvalid(dto.getProjectId()).get()) {
+            ErrorMessage error = new ErrorMessage(NOT_FOUND,
+                    "Project value of this device is non existent",
+                    new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
             errors.add(error);
         }
         if (errors.size() > 0)
             return CompletableFuture.completedFuture(new ResponseEntity<Object>(errors, NOT_ACCEPTABLE));
 
         Device device = new Device();
-        device.loadToEntity(addDeviceDTO);
+        device.loadToEntity(dto);
         _deviceRepository.save(device);
         addDeviceResponse.setNewDevice(device);
         addDeviceResponse.setIsAddedSuccessful(true);
@@ -248,7 +291,7 @@ public class DeviceService implements IDeviceService {
         DetailDeviceResponse detailDeviceResponse = new DetailDeviceResponse();
         Device deviceDetail = _deviceRepository.findById(deviceId);
 
-        if (deviceDetail == null)
+        if (doesDeviceExist(deviceId).get())
             return CompletableFuture.completedFuture(new ResponseEntity<Object>(detailDeviceResponse, NOT_FOUND));
 
         CompletableFuture<User> owner = _employeeService.findById(deviceDetail.getOwnerId());
@@ -272,114 +315,95 @@ public class DeviceService implements IDeviceService {
 
     @Async()
     @Override
-    public CompletableFuture<ResponseEntity<Object>> updateDevice(int deviceId, UpdateDeviceDTO device) throws ExecutionException, InterruptedException {
+    public CompletableFuture<ResponseEntity<Object>> updateDevice(int deviceId, UpdateDeviceDTO dto) throws ExecutionException, InterruptedException {
         UpdateDeviceResponse detailDeviceResponse = new UpdateDeviceResponse();
         List<ErrorMessage> errors = new ArrayList<>();
-        if (!_deviceRepository.existsById((long) deviceId)) {
-            ErrorMessage error = new ErrorMessage();
-            error.setMessage("Device does not exist");
-            error.setStatusCode(NOT_FOUND);
-            error.setServerTime(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
+        if (doesDeviceExist(deviceId).get()) {
+            ErrorMessage error = new ErrorMessage(NOT_FOUND,
+                    "Device does not exist",
+                    new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
             errors.add(error);
             return CompletableFuture.completedFuture(new ResponseEntity<Object>(errors, NOT_ACCEPTABLE));
         }
         Device deviceDetail = _deviceRepository.findById(deviceId);
-        boolean useNonExistent = !_employeeService.doesUserExist(device.getOwnerId()).get(),
-                isSerialNumberExistent = _deviceRepository.findBySerialNumberExceptProvidedDevice(deviceId, device.getSerialNumber()) != null,
-                isItemTypeInvalid = !_itemTypeService.doesItemTypeExist(device.getItemTypeId()).get(),
-                isRamInvalid = !_ramService.doesRamExist(device.getRamId()).get(),
-                isStorageInvalid = !_storageService.doesStorageExist(device.getStorageId()).get(),
-                isScreenInvalid = !_screenService.doesScreenExist(device.getScreenId()).get(),
-                isPlatformInvalid = !_platformService.doesPlatformExist(device.getPlatformId()).get(),
-                isStatusInvalid = Status.findByNumber(device.getStatusId()).isEmpty(),
-                isOriginInvalid = Origin.findByNumber(device.getOriginId()).isEmpty(),
-                isProjectInvalid = Project.findByNumber(device.getProjectId()).isEmpty();
-        if (useNonExistent) {
-            ErrorMessage error = new ErrorMessage();
-            error.setMessage("Owner does not exist");
-            error.setStatusCode(NOT_FOUND);
-            error.setServerTime(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
+
+        if (useNonExistent(dto.getOwnerId()).get()) {
+            ErrorMessage error = new ErrorMessage(NOT_FOUND,
+                    "Owner does not exist",
+                    new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
             errors.add(error);
         }
-        if (isSerialNumberExistent) {
-            ErrorMessage error = new ErrorMessage();
-            error.setMessage("Serial number value of this device is already existed");
-            error.setStatusCode(BAD_REQUEST);
-            error.setServerTime(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
+        if (isSerialNumberExistent(dto.getSerialNumber()).get()) {
+            ErrorMessage error = new ErrorMessage(BAD_REQUEST,
+                    "Serial number value of this device is already existed",
+                    new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
             errors.add(error);
         }
-        if (isItemTypeInvalid) {
-            ErrorMessage error = new ErrorMessage();
-            error.setMessage("Item type value of this device is non existent");
-            error.setStatusCode(NOT_FOUND);
-            error.setServerTime(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
+        if (isItemTypeInvalid(dto.getItemTypeId()).get()) {
+            ErrorMessage error = new ErrorMessage(NOT_FOUND,
+                    "Item type value of this device is non existent",
+                    new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
             errors.add(error);
         }
-        if (isRamInvalid) {
-            ErrorMessage error = new ErrorMessage();
-            error.setMessage("Ram value of this device is non existent");
-            error.setStatusCode(NOT_FOUND);
-            error.setServerTime(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
+        if (isRamInvalid(dto.getRamId()).get()) {
+            ErrorMessage error = new ErrorMessage(NOT_FOUND,
+                    "Ram value of this device is non existent",
+                    new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
             errors.add(error);
         }
-        if (isStorageInvalid) {
-            ErrorMessage error = new ErrorMessage();
-            error.setMessage("Storage value of this device is non existent");
-            error.setStatusCode(NOT_FOUND);
-            error.setServerTime(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
+        if (isStorageInvalid(dto.getStorageId()).get()) {
+            ErrorMessage error = new ErrorMessage(NOT_FOUND,
+                    "Storage value of this device is non existent",
+                    new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
             errors.add(error);
         }
-        if (isScreenInvalid) {
-            ErrorMessage error = new ErrorMessage();
+        if (isScreenInvalid(dto.getScreenId()).get()) {
+            ErrorMessage error = new ErrorMessage(NOT_FOUND,
+                    "Screen value of this device is non existent",
+                    new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
             error.setMessage("Screen value of this device is non existent");
-            error.setStatusCode(NOT_FOUND);
-            error.setServerTime(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
             errors.add(error);
         }
-        if (isPlatformInvalid) {
-            ErrorMessage error = new ErrorMessage();
-            error.setMessage("Platform value of this device is non existent");
-            error.setStatusCode(NOT_FOUND);
-            error.setServerTime(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
+        if (isPlatformInvalid(dto.getPlatformId()).get()) {
+            ErrorMessage error = new ErrorMessage(NOT_FOUND,
+                    "Platform value of this device is non existent",
+                    new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
             errors.add(error);
         }
-        if (isStatusInvalid) {
-            ErrorMessage error = new ErrorMessage();
-            error.setMessage("Status value of this device is invalid");
-            error.setStatusCode(NOT_FOUND);
-            error.setServerTime(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
+        if (isStatusInvalid(dto.getStatusId()).get()) {
+            ErrorMessage error = new ErrorMessage(NOT_FOUND,
+                    "Status value of this device is non existent",
+                    new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
             errors.add(error);
         }
-        if (isOriginInvalid) {
-            ErrorMessage error = new ErrorMessage();
-            error.setMessage("Origin value of this device is invalid");
-            error.setStatusCode(NOT_FOUND);
-            error.setServerTime(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
+        if (isOriginInvalid(dto.getOriginId()).get()) {
+            ErrorMessage error = new ErrorMessage(NOT_FOUND,
+                    "Origin value of this device is non existent",
+                    new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
             errors.add(error);
         }
-        if (isProjectInvalid) {
-            ErrorMessage error = new ErrorMessage();
-            error.setMessage("Project value of this device is invalid");
-            error.setStatusCode(NOT_FOUND);
-            error.setServerTime(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
+        if (isProjectInvalid(dto.getProjectId()).get()) {
+            ErrorMessage error = new ErrorMessage(NOT_FOUND,
+                    "Project value of this device is non existent",
+                    new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
             errors.add(error);
         }
         if (errors.size() > 0)
             return CompletableFuture.completedFuture(new ResponseEntity<Object>(errors, NOT_ACCEPTABLE));
 
-        deviceDetail.setName(device.getName().trim());
-        deviceDetail.setStatus(Status.values()[device.getStatusId()]);
-        deviceDetail.setSerialNumber(device.getSerialNumber().trim());
-        deviceDetail.setInventoryNumber(device.getInventoryNumber().trim());
-        deviceDetail.setProject(Project.values()[device.getProjectId()]);
-        deviceDetail.setOrigin(Origin.values()[device.getOriginId()]);
-        deviceDetail.setPlatformId(device.getPlatformId());
-        deviceDetail.setRamId(device.getRamId());
-        deviceDetail.setItemTypeId(device.getItemTypeId());
-        deviceDetail.setStorageId(device.getStorageId());
-        deviceDetail.setScreenId(device.getScreenId());
-        deviceDetail.setComments(device.getComments());
-        deviceDetail.setOwnerId(device.getOwnerId());
+        deviceDetail.setName(dto.getName().trim());
+        deviceDetail.setStatus(Status.values()[dto.getStatusId()]);
+        deviceDetail.setSerialNumber(dto.getSerialNumber().trim());
+        deviceDetail.setInventoryNumber(dto.getInventoryNumber().trim());
+        deviceDetail.setProject(Project.values()[dto.getProjectId()]);
+        deviceDetail.setOrigin(Origin.values()[dto.getOriginId()]);
+        deviceDetail.setPlatformId(dto.getPlatformId());
+        deviceDetail.setRamId(dto.getRamId());
+        deviceDetail.setItemTypeId(dto.getItemTypeId());
+        deviceDetail.setStorageId(dto.getStorageId());
+        deviceDetail.setScreenId(dto.getScreenId());
+        deviceDetail.setComments(dto.getComments());
+        deviceDetail.setOwnerId(dto.getOwnerId());
         deviceDetail.setUpdatedDate(new Date());
         _deviceRepository.save(deviceDetail);
         detailDeviceResponse.setUpdatedDevice(deviceDetail);
@@ -444,21 +468,7 @@ public class DeviceService implements IDeviceService {
         String headerValue = "attachment; filename=ExportDevices_" + currentDateTime + ".xlsx";
         response.setHeader(headerKey, headerValue);
         List<Device> devices = _deviceRepository.findAll();
-        List<DeviceDTO> deviceList = new ArrayList<>();
-        for (Device device : devices) {
-            DeviceDTO deviceDTO = new DeviceDTO(device);  /* Convert fields that have an id value to a readable value */
-            CompletableFuture<List<KeeperOrder>> keeperOrderList = _keeperOrderService.getKeeperOrderListByDeviceId(device.getId()); /* Get a list of keeper orders of a device*/
-            if (keeperOrderList.get().isEmpty()) { /* Were a list empty, we would set a keeper value is a device's owner */
-                deviceDTO.setKeeper(device.getOwner().getUserName());
-                deviceList.add(deviceDTO);
-                continue;
-            }
-            Optional<KeeperOrder> keeperOrder = keeperOrderList.get().stream().max(Comparator.comparing(KeeperOrder::getKeeperNo)); /* Get the latest keeper order of a device*/
-            deviceDTO.setKeeper(keeperOrder.get().getKeeper().getUserName()); /* Add keeper order information to devices*/
-            deviceDTO.setBookingDate(keeperOrder.get().getBookingDate());
-            deviceDTO.setReturnDate(keeperOrder.get().getDueDate());
-            deviceList.add(deviceDTO);
-        }
+        List<DeviceDTO> deviceList = convertEntityToDTO(devices).get();
         DeviceExcelExporter excelExporter = new DeviceExcelExporter(deviceList);
         excelExporter.export(response);
     }
@@ -508,14 +518,11 @@ public class DeviceService implements IDeviceService {
                 numberOfRows = DeviceExcelImporter.getNumberOfNonEmptyCells(sheet, 0);
                 if (numberOfRows == 0)
                     return CompletableFuture.completedFuture(new ResponseEntity<>("Sheet must be not empty", BAD_REQUEST));
-
                 for (; rowIndex < numberOfRows; rowIndex++) {
                     if (rowIndex == 0) continue;
-
                     Row currentRow = sheet.getRow(rowIndex);
                     String[] platformString = currentRow.getCell(DEVICE_PLATFORM).toString().split(",");
                     Device device;
-
                     String name = currentRow.getCell(DEVICE_NAME).toString().strip(),
                             inventoryNumber = currentRow.getCell(DEVICE_INVENTORY_NUMBER).toString().strip(),
                             serialNumber = currentRow.getCell(DEVICE_SERIAL_NUMBER).toString().strip(),
@@ -538,68 +545,52 @@ public class DeviceService implements IDeviceService {
                     CompletableFuture<Platform> platform = _platformService.findByNameAndVersion(platformName, platformVersion);
                     if (platform.get() == null) {
                         errors.add("Platform at row " + rowInExcel + " is not valid");
-                        break;
                     }
                     if (name.isBlank()) {
                         errors.add("Name at row " + rowInExcel + " is not valid");
-                        break;
                     }
                     if (inventoryNumber.isBlank()) {
                         errors.add("Inventory number at row " + rowInExcel + " is not valid");
-                        break;
                     }
                     if (serialNumber.isBlank()) {
                         errors.add("Serial number at row " + rowInExcel + " is not valid");
-                        break;
                     }
                     if (ram.get() == null) {
                         errors.add("Ram at row " + rowInExcel + " is not valid");
-                        break;
                     }
                     if (itemType.get() == null) {
                         errors.add("Item type at row " + rowInExcel + " is not valid");
-                        break;
                     }
                     if (screen.get() == null) {
                         errors.add("Screen at row " + rowInExcel + " is not valid");
-                        break;
                     }
                     if (storage.get() == null) {
                         errors.add("Storage at row " + rowInExcel + " is not valid");
-                        break;
                     }
                     if (owner.get() == null) {
                         errors.add("Owner at row " + rowInExcel + " is not valid");
-                        break;
                     }
                     if (projectString.isBlank()) {
                         errors.add("Project at row " + rowInExcel + " is not valid");
-                        break;
                     }
                     if (originString.isBlank()) {
                         errors.add("Origin at row " + rowInExcel + " is not valid");
-                        break;
                     }
                     if (statusString.isBlank()) {
                         errors.add("Status at row " + rowInExcel + " is not valid");
-                        break;
+                    }
+
+                    if (!errors.isEmpty()) {
+                        ImportError importError = new ImportError(errors);
+                        return CompletableFuture.completedFuture(new ResponseEntity<Object>(importError, BAD_REQUEST));
                     }
                     /* Create a new device */
                     if (existDevice == null) {
-                        device = Device.builder()
-                                .name(name)
-                                .status(Status.valueOf(statusString))
-                                .ramId(ram.get().getId())
-                                .platformId(platform.get().getId())
-                                .screenId(screen.get().getId())
-                                .storageId(storage.get().getId())
-                                .ownerId(owner.get().getId())
-                                .origin(Origin.valueOf(originString))
-                                .project(Project.valueOf(projectString))
-                                .comments(comments)
-                                .itemTypeId(itemType.get().getId())
-                                .inventoryNumber(inventoryNumber)
-                                .serialNumber(serialNumber)
+                        device = Device.builder().name(name).status(Status.valueOf(statusString))
+                                .ramId(ram.get().getId()).platformId(platform.get().getId()).screenId(screen.get().getId())
+                                .storageId(storage.get().getId()).ownerId(owner.get().getId())
+                                .origin(Origin.valueOf(originString)).project(Project.valueOf(projectString)).comments(comments)
+                                .itemTypeId(itemType.get().getId()).inventoryNumber(inventoryNumber).serialNumber(serialNumber)
                                 .build();
                         device.setCreatedDate(new Date());
                         deviceList.add(device);
@@ -623,10 +614,6 @@ public class DeviceService implements IDeviceService {
                 }
                 workBook.close();
                 /* Display list of error fields */
-                if (!errors.isEmpty()) {
-                    ImportError importError = new ImportError(errors);
-                    return CompletableFuture.completedFuture(new ResponseEntity<Object>(importError, BAD_REQUEST));
-                }
             }
 
             try {
@@ -686,21 +673,7 @@ public class DeviceService implements IDeviceService {
         List<Device> devices = _deviceRepository.findAll();
         formatFilter(deviceFilter); /* Remove spaces and make input text become lowercase*/
         devices = fetchFilteredDevice(deviceFilter, devices).get(); // List of devices after filtering
-        List<DeviceDTO> deviceList = new ArrayList<>();
-        for (Device device : devices) { /* Convert to readable data and add keeper order information to devices*/
-            DeviceDTO deviceDTO = new DeviceDTO(device);
-            CompletableFuture<List<KeeperOrder>> keeperOrderList = _keeperOrderService.getKeeperOrderListByDeviceId(device.getId());
-            if (keeperOrderList.get().isEmpty()) {
-                deviceDTO.setKeeper(device.getOwner().getUserName());
-                deviceList.add(deviceDTO);
-                continue;
-            }
-            Optional<KeeperOrder> keeperOrder = keeperOrderList.get().stream().max(Comparator.comparing(KeeperOrder::getKeeperNo));
-            deviceDTO.setKeeper(keeperOrder.get().getKeeper().getUserName());
-            deviceDTO.setBookingDate(keeperOrder.get().getBookingDate());
-            deviceDTO.setReturnDate(keeperOrder.get().getDueDate());
-            deviceList.add(deviceDTO);
-        }
+        List<DeviceDTO> deviceList = convertEntityToDTO(devices).get();
         deviceList = applyFilterBookingAndReturnDateForDevices(deviceFilter, deviceList).get(); /*Apply booking date and return date filter*/
         switch (fieldColumn) { /*Fetch only one column*/
             case DEVICE_NAME_COLUMN -> keywordList = deviceList.stream()
@@ -817,22 +790,7 @@ public class DeviceService implements IDeviceService {
         Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
         List<Device> devices = _deviceRepository.findByOwnerId(ownerId, sort);
         devices = fetchFilteredDevice(deviceFilter, devices).get(); /* List of devices after filtering */
-        List<DeviceDTO> deviceList = new ArrayList<>();
-        for (Device device : devices) {
-            DeviceDTO deviceDTO = new DeviceDTO(device);  /* Convert fields that have an id value to a readable value */
-            CompletableFuture<List<KeeperOrder>> keeperOrderList = _keeperOrderService.getKeeperOrderListByDeviceId(device.getId()); /* Get a list of keeper orders of a device*/
-            if (keeperOrderList.get().isEmpty()) { /* Should a list be empty, we set a keeper value is a device's owner */
-                deviceDTO.setKeeper(device.getOwner().getUserName());
-                deviceList.add(deviceDTO);
-                continue;
-            }
-            Optional<KeeperOrder> keeperOrder = keeperOrderList.get().stream().max(Comparator.comparing(KeeperOrder::getKeeperNo)); /* Get the latest keeper order of a device*/
-            deviceDTO.setKeeper(keeperOrder.get().getKeeper().getUserName()); /* Add keeper order information to devices*/
-            deviceDTO.setKeeperNumber(keeperOrder.get().getKeeperNo());
-            deviceDTO.setBookingDate(keeperOrder.get().getBookingDate());
-            deviceDTO.setReturnDate(keeperOrder.get().getDueDate());
-            deviceList.add(deviceDTO);
-        }
+        List<DeviceDTO> deviceList = convertEntityToDTO(devices).get();
         deviceList = applyFilterBookingAndReturnDateForDevices(deviceFilter, deviceList).get(); /*Apply booking date and return date filter after adding keeper orders to devices*/
         return CompletableFuture.completedFuture(deviceList);
     }
