@@ -23,7 +23,7 @@ public class JwtUtils {
     @Value("${fullstack.app.jwtExpirationMs}")
     private int jwtExpirationMs;
 
-    /* generate a JWT from username, date, expiration, secret */
+    /* GENERATE a JWT from username, date, expiration, secret */
     public String generateJwtToken(Authentication authentication) {
         UserDetailsImpl userPrincipal = (UserDetailsImpl) authentication.getPrincipal();
         return Jwts.builder()
@@ -40,8 +40,8 @@ public class JwtUtils {
 
     /* get username from JWT */
     public String getUserNameFromJwtToken(String token) {
-        return Jwts.parserBuilder().setSigningKey(key()).build()
-                .parseClaimsJws(token).getBody().getSubject();
+        return Jwts.parserBuilder().setSigningKey(key()).build() /* expect the incoming string to be a signed JWT */
+                .parseClaimsJws(token).getBody().getSubject(); /* verifying the signature, and will throw an exception if the signature is invalid */
     }
     /* validate a JWT */
     public boolean validateJwtToken(String authToken) {

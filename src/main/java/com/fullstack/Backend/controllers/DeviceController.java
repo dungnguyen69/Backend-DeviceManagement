@@ -11,6 +11,7 @@ import java.util.concurrent.ExecutionException;
 
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -123,6 +124,7 @@ public class DeviceController {
 
     @GetMapping("/owners/{id}")
     @ResponseBody
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public CompletableFuture<ResponseEntity<Object>> getDevicesOfOwner(
             @PathVariable(value = "id") int ownerId,
             @RequestParam(defaultValue = DEFAULT_PAGE_NUMBER, required = false) int pageNo,
@@ -136,6 +138,7 @@ public class DeviceController {
 
     @PutMapping("/keepers/return")
     @ResponseBody
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public CompletableFuture<ResponseEntity<Object>> updateReturnKeepDevice(
             @DateTimeFormat(pattern = "yyyy-MM-dd") ReturnKeepDeviceDTO request)
             throws InterruptedException, ExecutionException, ParseException {
@@ -144,6 +147,7 @@ public class DeviceController {
 
     @GetMapping("/keepers/{id}")
     @ResponseBody
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public CompletableFuture<ResponseEntity<Object>> getDevicesOfKeeper(
             @PathVariable(value = "id") int ownerId,
             @RequestParam(defaultValue = DEFAULT_PAGE_NUMBER, required = false) int pageNo,
@@ -155,6 +159,7 @@ public class DeviceController {
 
     @PutMapping("/owners/return")
     @ResponseBody
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public CompletableFuture<ResponseEntity<Object>> updateReturnOwnedDevice(
             @DateTimeFormat(pattern = "yyyy-MM-dd") ReturnKeepDeviceDTO request)
             throws InterruptedException, ExecutionException, ParseException {
@@ -163,6 +168,7 @@ public class DeviceController {
 
     @GetMapping("/owners/{id}/suggestion")
     @ResponseBody
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public CompletableFuture<ResponseEntity<Object>> getSuggestKeywordOwnedDevices(
             @PathVariable(value = "id") int ownerId,
             @RequestParam(name = "column") int fieldColumn,
@@ -174,6 +180,7 @@ public class DeviceController {
 
     @GetMapping("/keepers/{id}/suggestion")
     @ResponseBody
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public CompletableFuture<ResponseEntity<Object>> getSuggestKeywordKeepingDevices(
             @PathVariable(value = "id") int keeperId,
             @RequestParam(name = "column") int fieldColumn,

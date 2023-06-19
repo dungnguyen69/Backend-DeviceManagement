@@ -15,8 +15,10 @@ import com.fullstack.Backend.responses.request.SubmitBookingResponse;
 import com.fullstack.Backend.services.*;
 import com.fullstack.Backend.utils.RequestFails;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+
 import java.text.ParseException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -102,7 +104,7 @@ public class RequestService implements IRequestService {
                 continue;
             }
             CompletableFuture<List<KeeperOrder>> keeperOrderList = _keeperOrderService.getKeeperOrderListByDeviceId(request.getDeviceId());
-            if(keeperOrderList.get().size() == 3){
+            if (keeperOrderList.get().size() == 3) {
                 requestFail.setErrorMessage("Keeper number exceeds the allowance of times");
                 requestFails.add(requestFail);
                 continue;
@@ -205,17 +207,19 @@ public class RequestService implements IRequestService {
     public CompletableFuture<ShowRequestsResponse> showRequestListsWithPaging(int employeeId, int pageIndex, int pageSize, String sortBy, String sortDir, RequestFilterDTO requestFilter)
             throws InterruptedException, ExecutionException {
         formatFilter(requestFilter);
-        List<Request> requests = _requestRepository.findAllRequest(employeeId, sortBy, sortDir);
-        List<String> requestStatusList = requests.stream().map(c -> c.getRequestStatus().name()).distinct().collect(Collectors.toList());
+        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
+        List<Request> requests = _requestRepository.findAllRequest(employeeId, sort);
         requests = fetchFilteredRequest(requestFilter, requests).get();
+        List<String> requestStatusList = requests.stream().map(c -> c.getRequestStatus().name()).distinct().collect(Collectors.toList());
+        int totalElements = requests.size();
         requests = getPage(requests, pageIndex, pageSize).get();
-        List<RequestDTO> requestList = requests.stream().map(request -> new RequestDTO(request)).collect(Collectors.toList());
+        List<RequestDTO> requestList = requests.stream().map(RequestDTO::new).collect(Collectors.toList());
         ShowRequestsResponse response = new ShowRequestsResponse();
         response.setRequestsList(requestList);
         response.setPageNo(pageIndex);
         response.setPageSize(pageSize);
-        response.setTotalElements(requests.size());
-        response.setTotalPages(getTotalPages(pageSize, requests.size()));
+        response.setTotalElements(totalElements);
+        response.setTotalPages(getTotalPages(pageSize, totalElements));
         response.setRequestStatusList(requestStatusList);
         return CompletableFuture.completedFuture(response);
     }
@@ -290,7 +294,9 @@ public class RequestService implements IRequestService {
     @Override
     public CompletableFuture<KeywordSuggestionResponse> getSuggestKeywordRequests(int employeeId, int fieldColumn, String keyword, RequestFilterDTO requestFilter) throws InterruptedException, ExecutionException {
         Set<String> keywordList = new HashSet<>();
-        List<Request> requests = _requestRepository.findAllRequest(employeeId, "Id", "ASC");
+        Sort sort = Sort.by("Id").ascending();
+
+        List<Request> requests = _requestRepository.findAllRequest(employeeId, sort);
         formatFilter(requestFilter);
         requests = fetchFilteredRequest(requestFilter, requests).get();
         switch (fieldColumn) {
@@ -336,7 +342,7 @@ public class RequestService implements IRequestService {
                 }
                 /* Change device status to OCCUPIED when a request is approved */
                 Device device = _deviceRepository.findById(request.get().getDevice().getId());
-                if(device.getStatus() != Status.OCCUPIED){
+                if (device.getStatus() != Status.OCCUPIED) {
                     device.setStatus(Status.OCCUPIED);
                     _deviceRepository.save(device);
                 }
@@ -453,7 +459,7 @@ public class RequestService implements IRequestService {
 
     @Override
     public CompletableFuture<Request> findAnOccupiedRequest(int nextKeeperId, int deviceId) throws InterruptedException, ExecutionException, ParseException {
-        return  CompletableFuture.completedFuture(_requestRepository.findAnOccupiedRequest(nextKeeperId, deviceId));
+        return CompletableFuture.completedFuture(_requestRepository.findAnOccupiedRequest(nextKeeperId, deviceId));
     }
 
     @Override

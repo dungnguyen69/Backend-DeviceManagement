@@ -1,7 +1,7 @@
 package com.fullstack.Backend.enums;
 
 public enum Role {
-    USER,
-    MODERATOR,
-    ADMIN
+    ROLE_USER,
+    ROLE_MODERATOR,
+    ROLE_ADMIN
 }

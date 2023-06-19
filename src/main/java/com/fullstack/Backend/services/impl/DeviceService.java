@@ -93,14 +93,15 @@ public class DeviceService implements IDeviceService {
         List<String> projectList = deviceList.stream().map(DeviceDTO::getProject).distinct().collect(Collectors.toList());
         List<String> itemTypeList = deviceList.stream().map(DeviceDTO::getItemType).distinct().collect(Collectors.toList());
         /* */
+        int totalElements = deviceList.size();
         deviceList = getPage(deviceList, pageIndex, pageSize).get(); /*Pagination*/
         /* Return the desired response*/
         DeviceInWarehouseResponse deviceResponse = new DeviceInWarehouseResponse();
         deviceResponse.setDevicesList(deviceList);
         deviceResponse.setPageNo(pageIndex);
         deviceResponse.setPageSize(pageSize);
-        deviceResponse.setTotalElements(deviceList.size());
-        deviceResponse.setTotalPages(getTotalPages(pageSize, deviceList.size()));
+        deviceResponse.setTotalElements(totalElements);
+        deviceResponse.setTotalPages(getTotalPages(pageSize, totalElements));
         deviceResponse.setStatusList(statusList);
         deviceResponse.setOriginList(originList);
         deviceResponse.setProjectList(projectList);
@@ -984,14 +985,15 @@ public class DeviceService implements IDeviceService {
         List<String> itemTypeList = deviceList.stream().map(DeviceDTO::getItemType).distinct().collect(Collectors.toList());
         List<Integer> keeperNumberList = deviceList.stream().map(DeviceDTO::getKeeperNumber).distinct().collect(Collectors.toList());
         /* */
+        int totalElements = deviceList.size();
         deviceList = getPage(deviceList, pageIndex, pageSize).get(); /*Pagination*/
         /* Return the desired response*/
         OwnedDeviceResponse response = new OwnedDeviceResponse();
         response.setDevicesList(deviceList);
         response.setPageNo(pageIndex);
         response.setPageSize(pageSize);
-        response.setTotalElements(deviceList.size());
-        response.setTotalPages(getTotalPages(pageSize, deviceList.size()));
+        response.setTotalElements(totalElements);
+        response.setTotalPages(getTotalPages(pageSize, totalElements));
         response.setStatusList(statusList);
         response.setOriginList(originList);
         response.setProjectList(projectList);
@@ -1013,13 +1015,14 @@ public class DeviceService implements IDeviceService {
         List<String> projectList = keepingDeviceList.stream().map(KeepingDeviceDTO::getProject).distinct().toList();
         List<String> itemTypeList = keepingDeviceList.stream().map(KeepingDeviceDTO::getItemType).distinct().toList();
         List<String> keeperNumberList = keepingDeviceList.stream().map(KeepingDeviceDTO::getKeeperNo).distinct().collect(Collectors.toList());
+        int totalElements = keepingDeviceList.size();
         keepingDeviceList = getPageForKeepingDevices(keepingDeviceList, pageIndex, pageSize).get(); /*Pagination*/
         /* Return the desired response*/
         response.setDevicesList(keepingDeviceList);
         response.setPageNo(pageIndex);
         response.setPageSize(pageSize);
-        response.setTotalElements(keepingDeviceList.size());
-        response.setTotalPages(getTotalPages(pageSize, keepingDeviceList.size()));
+        response.setTotalElements(totalElements);
+        response.setTotalPages(getTotalPages(pageSize, totalElements));
         response.setStatusList(statusList);
         response.setOriginList(originList);
         response.setProjectList(projectList);

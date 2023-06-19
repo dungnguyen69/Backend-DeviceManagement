@@ -50,7 +50,7 @@ public class Request extends BaseEntity {
     @Column(name = "accepter_Id", nullable = false)
     private int accepter_Id;
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "device_Id", nullable = false, referencedColumnName = "id", insertable = false, updatable = false, foreignKey = @ForeignKey(name = "device_Id_FK"))
     @JsonIgnore()
     private Device device;

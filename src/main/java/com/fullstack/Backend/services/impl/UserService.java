@@ -1,30 +1,36 @@
 package com.fullstack.Backend.services.impl;
 
 import java.io.UnsupportedEncodingException;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
+import com.fullstack.Backend.dto.users.FilterUserDTO;
 import com.fullstack.Backend.dto.users.LoginDTO;
 import com.fullstack.Backend.dto.users.RegisterDTO;
+import com.fullstack.Backend.dto.users.UserDTO;
 import com.fullstack.Backend.entities.SystemRole;
+import com.fullstack.Backend.entities.VerificationToken;
 import com.fullstack.Backend.enums.Role;
 import com.fullstack.Backend.repositories.interfaces.ISystemRoleRepository;
+import com.fullstack.Backend.repositories.interfaces.IVerificationTokenRepository;
 import com.fullstack.Backend.responses.users.JwtResponse;
 import com.fullstack.Backend.responses.users.MessageResponse;
+import com.fullstack.Backend.responses.users.UsersResponse;
 import com.fullstack.Backend.security.JwtUtils;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+import jakarta.transaction.Transactional;
 import net.bytebuddy.utility.RandomString;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -32,8 +38,11 @@ import com.fullstack.Backend.entities.User;
 import com.fullstack.Backend.repositories.interfaces.IUserRepository;
 import com.fullstack.Backend.services.IUserService;
 
+import static org.springframework.http.HttpStatus.OK;
+
 
 @Service
+@Transactional
 public class UserService implements IUserService {
     @Autowired
     JwtUtils jwtUtils;
@@ -45,15 +54,21 @@ public class UserService implements IUserService {
     ISystemRoleRepository _systemRoleRepository;
 
     @Autowired
+    IVerificationTokenRepository _tokenRepository;
+
+    @Autowired
     PasswordEncoder encoder;
 
     @Autowired
     private JavaMailSender mailSender;
 
+    @Autowired
+    private MessageSource messages;
+
     @Async
     @Override
     public CompletableFuture<User> findById(int id) {
-        return CompletableFuture.completedFuture(_userRepository.findById(id).get());
+        return CompletableFuture.completedFuture(_userRepository.findById(id).orElseThrow(null));
     }
 
 
@@ -65,13 +80,73 @@ public class UserService implements IUserService {
     @Async
     @Override
     public CompletableFuture<User> findByUsername(String username) {
-        return CompletableFuture.completedFuture(_userRepository.findByUserName(username).get());
+        return CompletableFuture.completedFuture(_userRepository.findByUserName(username).orElseThrow(null));
     }
 
     @Async
     @Override
-    public CompletableFuture<List<User>> getUserList() {
-        return CompletableFuture.completedFuture(_userRepository.findAll());
+    public CompletableFuture<List<UserDTO>> getUserList(FilterUserDTO dto) throws ExecutionException, InterruptedException {
+        formatFilter(dto);
+        List<User> users = _userRepository.findAll();
+        users = fetchFilteredUsers(dto, users).get();
+        List<UserDTO> usersList = users.stream().map(UserDTO::new).collect(Collectors.toList());
+        return CompletableFuture.completedFuture(usersList);
+    }
+
+    @Override
+    public void formatFilter(FilterUserDTO dto) {
+        if (dto.getBadgeId() != null) dto.setBadgeId(dto.getBadgeId().trim().toLowerCase());
+
+        if (dto.getUserName() != null)
+            dto.setUserName(dto.getUserName().trim().toLowerCase());
+
+        if (dto.getFirstName() != null)
+            dto.setFirstName(dto.getFirstName().trim().toLowerCase());
+
+        if (dto.getLastName() != null) dto.setLastName(dto.getLastName().trim().toLowerCase());
+
+        if (dto.getEmail() != null)
+            dto.setEmail(dto.getEmail().trim().toLowerCase());
+
+        if (dto.getPhoneNumber() != null)
+            dto.setPhoneNumber(dto.getPhoneNumber().trim().toLowerCase());
+
+        if (dto.getProject() != null)
+            dto.setProject(dto.getProject().trim().toLowerCase());
+
+    }
+
+    @Async()
+    @Override
+    public CompletableFuture<List<User>> fetchFilteredUsers(FilterUserDTO dto, List<User> users) {
+        if (dto.getBadgeId() != null)
+            users = users.stream().filter(user -> user.getBadgeId().equalsIgnoreCase(dto.getBadgeId())).collect(Collectors.toList());
+        if (dto.getUserName() != null)
+            users = users.stream().filter(user -> user.getUserName().equalsIgnoreCase(dto.getUserName())).collect(Collectors.toList());
+        if (dto.getFirstName() != null)
+            users = users.stream().filter(user -> user.getFirstName().equalsIgnoreCase(dto.getFirstName())).collect(Collectors.toList());
+        if (dto.getLastName() != null)
+            users = users.stream().filter(user -> user.getLastName().equalsIgnoreCase(dto.getLastName())).collect(Collectors.toList());
+        if (dto.getEmail() != null)
+            users = users.stream().filter(user -> user.getEmail().equalsIgnoreCase(dto.getEmail())).collect(Collectors.toList());
+        if (dto.getPhoneNumber() != null)
+            users = users.stream().filter(user -> user.getPhoneNumber().equalsIgnoreCase(dto.getPhoneNumber())).collect(Collectors.toList());
+        if (dto.getProject() != null)
+            users = users.stream().filter(user -> user.getProject().equalsIgnoreCase(dto.getProject())).collect(Collectors.toList());
+        return CompletableFuture.completedFuture(users);
+    }
+
+    @Async
+    @Override
+    public CompletableFuture<List<UserDTO>> getPage(List<UserDTO> sourceList, int pageIndex, int pageSize) {
+        if (pageSize <= 0 || pageIndex <= 0) throw new IllegalArgumentException("invalid page size: " + pageSize);
+
+        int fromIndex = (pageIndex - 1) * pageSize;
+
+        if (sourceList == null || sourceList.size() <= fromIndex)
+            return CompletableFuture.completedFuture(Collections.emptyList());
+
+        return CompletableFuture.completedFuture(sourceList.subList(fromIndex, Math.min(fromIndex + pageSize, sourceList.size())));
     }
 
     @Async
@@ -81,7 +156,7 @@ public class UserService implements IUserService {
         String jwt = jwtUtils.generateJwtToken(authentication);
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
         List<String> roles = userDetails.getAuthorities().stream()
-                .map(item -> item.getAuthority())
+                .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toList());
         return CompletableFuture.completedFuture(ResponseEntity.ok(new JwtResponse(jwt,
                 userDetails.getUser().getId(),
@@ -101,16 +176,16 @@ public class UserService implements IUserService {
     @Async
     @Override
     public CompletableFuture<ResponseEntity<Object>> registerUser(RegisterDTO registerRequest, String siteURL) throws MessagingException, UnsupportedEncodingException {
-        if (_userRepository.existsByUserName(registerRequest.getUserName())) {
+        if (nameExists(registerRequest.getUserName())) {
             return CompletableFuture.completedFuture(ResponseEntity
                     .badRequest()
-                    .body(new MessageResponse("Error: Username is already taken!")));
+                    .body(new MessageResponse("Error: " + registerRequest.getUserName() + " is already taken!")));
         }
 
-        if (_userRepository.existsByEmail(registerRequest.getEmail())) {
+        if (emailExists(registerRequest.getEmail())) {
             return CompletableFuture.completedFuture(ResponseEntity
                     .badRequest()
-                    .body(new MessageResponse("Error: Email is already in use!")));
+                    .body(new MessageResponse("Error: " + registerRequest.getEmail() + " is already in use!")));
         }
 
         // Create new user's account
@@ -118,36 +193,35 @@ public class UserService implements IUserService {
         user.setUserName(registerRequest.getUserName());
         user.setEmail(registerRequest.getEmail());
         user.setPassword(encoder.encode(registerRequest.getPassword()));
-        String randomCode = RandomString.make(64);
+        String token = RandomString.make(64);
         user.setFirstName(registerRequest.getFirstName());
         user.setLastName(registerRequest.getLastName());
         user.setPhoneNumber(registerRequest.getPhoneNumber());
         user.setProject(registerRequest.getProject());
-        user.setVerificationCode(randomCode);
         user.setBadgeId(registerRequest.getBadgeId());
         user.setCreatedDate(new Date());
         user.setEnabled(false);
         Set<String> strRoles = registerRequest.getRole();
         Set<SystemRole> roles = new HashSet<>();
         if (strRoles == null) {
-            SystemRole userRole = _systemRoleRepository.findByName(Role.USER.name())
+            SystemRole userRole = _systemRoleRepository.findByName(Role.ROLE_USER.name())
                     .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
             roles.add(userRole);
         } else {
             strRoles.forEach(role -> {
                 switch (role) {
                     case "admin" -> {
-                        SystemRole adminRole = _systemRoleRepository.findByName(Role.USER.name())
+                        SystemRole adminRole = _systemRoleRepository.findByName(Role.ROLE_USER.name())
                                 .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
                         roles.add(adminRole);
                     }
                     case "mod" -> {
-                        SystemRole modRole = _systemRoleRepository.findByName(Role.MODERATOR.name())
+                        SystemRole modRole = _systemRoleRepository.findByName(Role.ROLE_MODERATOR.name())
                                 .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
                         roles.add(modRole);
                     }
                     default -> {
-                        SystemRole userRole = _systemRoleRepository.findByName(Role.ADMIN.name())
+                        SystemRole userRole = _systemRoleRepository.findByName(Role.ROLE_ADMIN.name())
                                 .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
                         roles.add(userRole);
                     }

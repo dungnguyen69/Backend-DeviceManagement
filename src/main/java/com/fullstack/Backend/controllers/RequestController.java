@@ -9,6 +9,7 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.text.ParseException;
@@ -18,6 +19,7 @@ import java.util.concurrent.ExecutionException;
 import static com.fullstack.Backend.constant.constant.*;
 import static org.springframework.http.HttpStatus.*;
 
+@CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
 @RequestMapping("/api/requests")
 public class RequestController {
@@ -25,6 +27,7 @@ public class RequestController {
     IRequestService _requestService;
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<Object> getRequestsWithPaging(
             @PathVariable(value = "id") int employeeId,
             @RequestParam(defaultValue = DEFAULT_PAGE_NUMBER, required = false) int pageNo,

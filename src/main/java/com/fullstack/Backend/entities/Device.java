@@ -40,35 +40,35 @@ public class Device extends BaseEntity {
     @Enumerated(EnumType.ORDINAL)
     private Status status;
 
-    @OneToOne()
+    @ManyToOne()
     @JoinColumn(name = "platform_Id", nullable = false, referencedColumnName = "id", insertable = false, updatable = false, foreignKey = @ForeignKey(name = "platform_Id_FK"))
     @JsonIgnore()
     private Platform platform;
     @Column(name = "platform_Id", nullable = false)
     private int platformId;
 
-    @OneToOne()
+    @ManyToOne()
     @JoinColumn(name = "item_type_Id", nullable = false, referencedColumnName = "id", insertable = false, updatable = false, foreignKey = @ForeignKey(name = "item_type_Id_FK"))
     @JsonIgnore()
     private ItemType itemType;
     @Column(name = "item_type_Id", nullable = false)
     private int itemTypeId;
 
-    @OneToOne()
+    @ManyToOne()
     @JoinColumn(name = "ram_Id", nullable = false, referencedColumnName = "id", insertable = false, updatable = false, foreignKey = @ForeignKey(name = "ram_Id_FK"))
     @JsonIgnore()
     private Ram ram;
     @Column(name = "ram_Id", nullable = false)
     private int ramId;
 
-    @OneToOne()
+    @ManyToOne()
     @JoinColumn(name = "screen_Id", nullable = false, referencedColumnName = "id", insertable = false, updatable = false, foreignKey = @ForeignKey(name = "screen_Id_FK"))
     @JsonIgnore()
     private Screen screen;
     @Column(name = "screen_Id", nullable = false)
     private int screenId;
 
-    @OneToOne()
+    @ManyToOne()
     @JoinColumn(name = "storage_Id", nullable = false, referencedColumnName = "id", insertable = false, updatable = false, foreignKey = @ForeignKey(name = "storage_Id_FK"))
     @JsonIgnore()
     private Storage storage;
