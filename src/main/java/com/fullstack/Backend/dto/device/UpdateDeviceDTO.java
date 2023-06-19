@@ -8,6 +8,7 @@ import com.fullstack.Backend.enums.Project;
 import com.fullstack.Backend.enums.Status;
 
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -16,22 +17,41 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class UpdateDeviceDTO {
     private int id;
+    @NotNull
     @NotEmpty
     private String name;
+    @NotNull
+    @NotEmpty
     private int statusId;
+    @NotNull
+    @NotEmpty
     private int platformId;
+    @NotNull
+    @NotEmpty
     private int itemTypeId;
+    @NotNull
+    @NotEmpty
     private int ramId;
+    @NotNull
+    @NotEmpty
     private int screenId;
+    @NotNull
+    @NotEmpty
     private int storageId;
-    private Integer ownerId;
-    private Integer keeperId;
+    @NotNull
     @NotEmpty
     private String inventoryNumber;
+    @NotNull
     @NotEmpty
     private String serialNumber;
+    @NotNull
+    @NotEmpty
     private int originId;
+    @NotNull
+    @NotEmpty
     private int projectId;
+    private Integer ownerId;
+    private Integer keeperId;
     private String comments;
     private Date createdDate;
     private Date updatedDate;

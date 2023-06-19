@@ -1,6 +1,8 @@
 package com.fullstack.Backend.dto.request;
 
 import com.fullstack.Backend.entities.Request;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -19,14 +21,20 @@ public class SubmitBookingRequestDTO {
     @Setter
     @AllArgsConstructor
     public static class RequestInput {
+        @NotNull
+        @NotEmpty
         private int deviceId;
-
+        @NotNull
+        @NotEmpty
         private String requester;
-
+        @NotNull
+        @NotEmpty
         private String nextKeeper;
-
+        @NotNull
+        @NotEmpty
         private Date bookingDate;
-
+        @NotNull
+        @NotEmpty
         private Date returnDate;
     }
 }
