@@ -9,24 +9,24 @@ import com.fullstack.Backend.entities.Platform;
 import com.fullstack.Backend.utils.dropdowns.PlatformList;
 
 public interface IPlatformRepository extends JpaRepository<Platform, Long> {
-	public static final String FIND_PLATFORM_NAME = "select name from platform";
-	public static final String FIND_PLATFORM_VERSION = "select version from platform";
-	public static final String FIND_PLATFORM_NAME_VERSION = "select name,version from platform";
-	public static final String FIND_PLATFORM = "SELECT * FROM platform WHERE name = ?1 and version = ?2";
-	public static final String FETCH_PLATFORM = "SELECT id, name, version FROM platform";
+	public static final String FIND_PLATFORM_NAME = "SELECT name FROM Platform";
+	public static final String FIND_PLATFORM_VERSION = "SELECT version FROM Platform";
+	public static final String FIND_PLATFORM_NAME_VERSION = "SELECT name,version FROM Platform";
+	public static final String FIND_PLATFORM = "SELECT p FROM Platform p WHERE name = :name and version = :version";
+	public static final String FETCH_PLATFORM = "SELECT Id, name, version FROM Platform";
 
-	@Query(value = FIND_PLATFORM_NAME, nativeQuery = true)
+	@Query(FIND_PLATFORM_NAME)
 	public List<String> findPlatformName();
 
-	@Query(value = FIND_PLATFORM_VERSION, nativeQuery = true)
+	@Query(FIND_PLATFORM_VERSION)
 	public List<String> findPlatformVersion();
 
-	@Query(value = FIND_PLATFORM_NAME_VERSION, nativeQuery = true)
+	@Query(FIND_PLATFORM_NAME_VERSION)
 	public List<String> findPlatformNameVersion();
 
-	@Query(value = FIND_PLATFORM, nativeQuery = true)
+	@Query(FIND_PLATFORM)
 	public Platform findByNameAndVersion(String name, String version);
 
-	@Query(value = FETCH_PLATFORM, nativeQuery = true)
+	@Query(FETCH_PLATFORM)
 	public List<PlatformList> fetchPlatform();
 }

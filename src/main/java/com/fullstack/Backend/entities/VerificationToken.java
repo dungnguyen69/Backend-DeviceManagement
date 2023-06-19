@@ -3,12 +3,16 @@ package com.fullstack.Backend.entities;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import jakarta.persistence.*;
+import lombok.NoArgsConstructor;
 
 import java.security.Timestamp;
 import java.util.Calendar;
 import java.util.Date;
 
 @Data
+@Entity
+@NoArgsConstructor
+@Table(name = "VerificationToken")
 public class VerificationToken {
     private static final int EXPIRATION = 60 * 24; /* Last only 24h */
 

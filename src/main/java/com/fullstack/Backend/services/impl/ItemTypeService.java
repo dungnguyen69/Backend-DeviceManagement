@@ -31,7 +31,7 @@ public class ItemTypeService implements IItemTypeService {
 	@Async
 	@Override
 	public CompletableFuture<List<String>> getItemTypeList() {
-		return CompletableFuture.completedFuture(_itemTypeRepository.findItemtypeNames());
+		return CompletableFuture.completedFuture(_itemTypeRepository.findItemTypeNames());
 	}
 
 	@Override

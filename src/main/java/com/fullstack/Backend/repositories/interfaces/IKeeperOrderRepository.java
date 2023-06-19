@@ -7,17 +7,17 @@ import org.springframework.data.jpa.repository.Query;
 import java.util.List;
 
 public interface IKeeperOrderRepository extends JpaRepository<KeeperOrder, Long> {
-    public static final String FIND_KEEPER_ORDER_LIST_BY_DEVICE_ID = "SELECT * FROM keeper_order WHERE device_id = :deviceId AND is_returned = false";
-    public static final String FIND_KEEPER_ORDER_BY_DEVICE_ID_AND_KEEPER_ID = "SELECT * FROM keeper_order WHERE device_id = :deviceId AND keeper_id = :keeperId AND is_returned = false";
+    public static final String FIND_KEEPER_ORDER_LIST_BY_DEVICE_ID = "SELECT ko FROM KeeperOrder ko WHERE device_Id = :deviceId AND isReturned = false";
+    public static final String FIND_KEEPER_ORDER_BY_DEVICE_ID_AND_KEEPER_ID = "SELECT ko FROM KeeperOrder ko WHERE device_Id = :deviceId AND keeper_Id = :keeperId AND isReturned = false";
 
-    public static final String FIND_KEEPER_ORDER_LIST_BY_KEEPER_ID = "SELECT * FROM keeper_order WHERE keeper_id = :keeperId AND is_returned = false";
+    public static final String FIND_KEEPER_ORDER_LIST_BY_KEEPER_ID = "SELECT ko FROM KeeperOrder ko WHERE keeper_Id = :keeperId AND isReturned = false";
 
-    @Query(value = FIND_KEEPER_ORDER_LIST_BY_DEVICE_ID, nativeQuery = true)
+    @Query(FIND_KEEPER_ORDER_LIST_BY_DEVICE_ID)
     public List<KeeperOrder> findKeeperOrderByDeviceId(int deviceId);
 
-    @Query(value = FIND_KEEPER_ORDER_BY_DEVICE_ID_AND_KEEPER_ID, nativeQuery = true)
+    @Query(FIND_KEEPER_ORDER_BY_DEVICE_ID_AND_KEEPER_ID)
     public KeeperOrder findByDeviceIdAndKeeperId(int deviceId, int keeperId);
 
-    @Query(value = FIND_KEEPER_ORDER_LIST_BY_KEEPER_ID, nativeQuery = true)
+    @Query(FIND_KEEPER_ORDER_LIST_BY_KEEPER_ID)
     public List<KeeperOrder> findByKeeperId(int keeperId);
 }

@@ -7,9 +7,9 @@ import com.fullstack.Backend.entities.Storage;
 import com.fullstack.Backend.utils.dropdowns.StorageList;
 
 public interface IStorageRepository extends JpaRepository<Storage, Long> {
-	public static final String FIND_STORAGE_SIZES = "select size from storages";
-	public static final String FIND_STORAGE = "select * from storages WHERE size = ?";
-	public static final String FETCH_STORAGE = "SELECT id, size FROM storages";
+	public static final String FIND_STORAGE_SIZES = "SELECT size FROM Storage";
+	public static final String FIND_STORAGE = "SELECT s FROM Storage s WHERE size = :size";
+	public static final String FETCH_STORAGE = "SELECT Id, size FROM Storage";
 
 	@Query(value = FIND_STORAGE_SIZES, nativeQuery = true)
 	public List<String> findStorageSize();

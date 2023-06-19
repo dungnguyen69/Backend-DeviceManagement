@@ -7,16 +7,16 @@ import com.fullstack.Backend.entities.Ram;
 import com.fullstack.Backend.utils.dropdowns.RamList;
 
 public interface IRamRepository extends JpaRepository<Ram, Long> {
-	public static final String FIND_RAM_SIZES = "SELECT size FROM rams";
-	public static final String FIND_RAM = "SELECT * FROM rams WHERE size = ?";
-	public static final String FETCH_RAMS = "SELECT id, size FROM rams";
+	public static final String FIND_RAM_SIZES = "SELECT size FROM Ram";
+	public static final String FIND_RAM = "SELECT r FROM Ram r WHERE size = :size";
+	public static final String FETCH_RAMS = "SELECT Id, size FROM Ram";
 	
-	@Query(value = FIND_RAM_SIZES, nativeQuery = true)
+	@Query(FIND_RAM_SIZES)
 	public List<String> findRamSize();
 
-	@Query(value = FIND_RAM, nativeQuery = true)
+	@Query(FIND_RAM)
 	public Ram findBySize(int size);
 	
-	@Query(value = FETCH_RAMS, nativeQuery = true)
+	@Query(FETCH_RAMS)
 	public List<RamList> fetchRams();
 }

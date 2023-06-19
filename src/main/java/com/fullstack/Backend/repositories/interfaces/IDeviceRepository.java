@@ -11,17 +11,13 @@ import com.fullstack.Backend.entities.Device;
 import com.fullstack.Backend.utils.dropdowns.ItemTypeList;
 
 public interface IDeviceRepository extends JpaRepository<Device, Long>, JpaSpecificationExecutor<Device> {
-    public static final String FIND_DEVICE_BY_SERIALNUMBER = "SELECT * FROM devices WHERE serial_number = ?";
-    public static final String FIND_DEVICE_BY_SERIALNUMBER_EXCEPT_PROVIDED_DEVICE = "SELECT * FROM devices WHERE serial_number = :serialNumber AND id != :deviceId";
+    public static final String FIND_DEVICE_BY_SERIALNUMBER = "SELECT d FROM Device d WHERE serialNumber = :serialNumber";
 
     public Device findById(int deviceId);
 
     // For update device information when importing
-    @Query(value = FIND_DEVICE_BY_SERIALNUMBER, nativeQuery = true)
+    @Query(FIND_DEVICE_BY_SERIALNUMBER)
     public Device findBySerialNumber(String serialNumber);
-
-    @Query(value = FIND_DEVICE_BY_SERIALNUMBER_EXCEPT_PROVIDED_DEVICE, nativeQuery = true)
-    public Device findBySerialNumberExceptProvidedDevice(int deviceId, String serialNumber);
 
     public List<Device> findByOwnerId(int ownerId, Sort sort);
 }

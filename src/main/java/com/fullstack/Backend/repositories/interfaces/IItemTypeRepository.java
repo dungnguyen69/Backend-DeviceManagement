@@ -10,15 +10,15 @@ import com.fullstack.Backend.utils.dropdowns.ItemTypeList;
 
 public interface IItemTypeRepository extends JpaRepository<ItemType, Long> {
 
-	public static final String FIND_ITEM_TYPE_NAMES = "SELECT name FROM item_types";
-	public static final String FETCH_ITEM_TYPES = "SELECT id, name FROM item_types";
+	public static final String FIND_ITEM_TYPE_NAMES = "SELECT name FROM ItemType";
+	public static final String FETCH_ITEM_TYPES = "SELECT Id, name FROM ItemType";
+	public static final String FIND_BY_NAME = "SELECT it FROM ItemType it WHERE name = :name";
+	@Query(FIND_ITEM_TYPE_NAMES)
+	public List<String> findItemTypeNames();
 
-	@Query(value = FIND_ITEM_TYPE_NAMES, nativeQuery = true)
-	public List<String> findItemtypeNames();
-
-	@Query(value = "SELECT * FROM item_types it WHERE name = ?", nativeQuery = true)
+	@Query(FIND_BY_NAME)
 	public ItemType findByName(String name);
 
-	@Query(value = FETCH_ITEM_TYPES, nativeQuery = true)
+	@Query(FETCH_ITEM_TYPES)
 	public List<ItemTypeList> fetchItemTypes();
 }
