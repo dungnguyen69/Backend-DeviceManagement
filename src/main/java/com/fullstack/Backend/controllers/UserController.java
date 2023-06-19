@@ -50,7 +50,7 @@ public class UserController {
     }
 
     @GetMapping("/verify")
-    public CompletableFuture<ResponseEntity<Object>> verifyUser(@Param("code") String code) {
+    public CompletableFuture<ResponseEntity<Object>> verifyUser(@Param("code") String code) throws ExecutionException, InterruptedException {
         return _userService.verify(code);
     }
 }

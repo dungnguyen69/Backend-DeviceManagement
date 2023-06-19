@@ -90,6 +90,14 @@ public class UserService implements IUserService {
                 roles)));
     }
 
+    private boolean emailExists(String email) {
+        return _userRepository.existsByEmail(email);
+    }
+
+    private boolean nameExists(String email) {
+        return _userRepository.existsByUserName(email);
+    }
+
     @Async
     @Override
     public CompletableFuture<ResponseEntity<Object>> registerUser(RegisterDTO registerRequest, String siteURL) throws MessagingException, UnsupportedEncodingException {
@@ -148,12 +156,14 @@ public class UserService implements IUserService {
         }
         user.setSystemRoles(roles);
         _userRepository.save(user);
-        sendVerificationEmail(user, siteURL);
+        createVerificationToken(user, token);
+        String verifyURL = siteURL + "/api/users/verify?code=" + token;
+        sendVerificationEmail(user, verifyURL);
         return CompletableFuture.completedFuture(ResponseEntity.ok(new MessageResponse("User registered successfully!")));
     }
 
     @Override
-    public void sendVerificationEmail(User user, String siteURL) throws MessagingException, UnsupportedEncodingException {
+    public void sendVerificationEmail(User user, String verifyURL) throws MessagingException {
         String toAddress = user.getEmail();
         String fromAddress = "dungtestemail33@gmail.com";
         String subject = "Please verify your registration";
@@ -168,7 +178,6 @@ public class UserService implements IUserService {
         helper.setTo(toAddress);
         helper.setSubject(subject);
         content = content.replace("[[name]]", user.getFirstName().concat(" " + user.getLastName()));
-        String verifyURL = siteURL + "/api/users/verify?code=" + user.getVerificationCode();
         content = content.replace("[[URL]]", verifyURL);
         helper.setText(content, true);
         mailSender.send(message);
@@ -176,19 +185,72 @@ public class UserService implements IUserService {
 
     @Async
     @Override
-    public CompletableFuture<ResponseEntity<Object>> verify(String verificationCode) {
-        User user = _userRepository.findByVerificationCode(verificationCode);
+    public CompletableFuture<ResponseEntity<Object>> verify(String verificationCode) throws ExecutionException, InterruptedException {
+        /* User user = _userRepository.findByVerificationCode(verificationCode);
         if (user == null || user.isEnabled())
             return CompletableFuture.completedFuture(ResponseEntity
                     .badRequest()
                     .body(new MessageResponse("Error: Sorry, we could not verify account. It maybe already verified,\n" +
+                            "        or verification code is incorrect.")));*/
+
+        VerificationToken verificationToken = getVerificationToken(verificationCode).get();
+        if (verificationToken == null || verificationToken.getUser().isEnabled())
+            return CompletableFuture.completedFuture(ResponseEntity
+                    .badRequest()
+                    .body(new MessageResponse("Error: Sorry, we could not verify account. It maybe already verified,\n" +
                             "        or verification code is incorrect.")));
-        user.setVerificationCode(null);
-        user.setEnabled(true);
-        _userRepository.save(user);
+
+        User userByToken = verificationToken.getUser();
+        Calendar cal = Calendar.getInstance();
+
+        if ((verificationToken.getExpiryDate().getTime() - cal.getTime().getTime()) <= 0)
+            return CompletableFuture.completedFuture(ResponseEntity
+                    .badRequest()
+                    .body(new MessageResponse("Error: Verification code was expired!")));
+
+        userByToken.setEnabled(true);
+        _userRepository.save(userByToken);
         return CompletableFuture.completedFuture(ResponseEntity
                 .ok()
                 .body(new MessageResponse("Verify successfully")));
 
+    }
+
+    @Async
+    @Override
+    public int getTotalPages(int pageSize, int listSize) {
+        if (listSize == 0) return 1;
+
+        if (listSize % pageSize == 0) return listSize / pageSize;
+
+        return (listSize / pageSize) + 1;
+    }
+
+    @Async
+    @Override
+    public CompletableFuture<ResponseEntity<Object>> showUsersWithPaging(int pageIndex, int pageSize, String sortBy, String sortDir, FilterUserDTO dto) throws ExecutionException, InterruptedException {
+        List<UserDTO> usersList = getUserList(dto).get();
+        List<String> projectList = usersList.stream().map(UserDTO::getProject).distinct().toList();
+        int totalElements = usersList.size();
+        usersList = getPage(usersList, pageIndex, pageSize).get();
+        UsersResponse response = new UsersResponse();
+        response.setUsersList(usersList);
+        response.setPageNo(pageIndex);
+        response.setPageSize(pageSize);
+        response.setTotalElements(totalElements);
+        response.setTotalPages(getTotalPages(pageSize, totalElements));
+        response.setProjectList(projectList);
+        return CompletableFuture.completedFuture(new ResponseEntity<Object>(response, OK));
+    }
+
+    @Override
+    public void createVerificationToken(User user, String token) {
+        VerificationToken myToken = new VerificationToken(token, user);
+        _tokenRepository.save(myToken);
+    }
+
+    @Override
+    public CompletableFuture<VerificationToken> getVerificationToken(String VerificationToken) {
+        return CompletableFuture.completedFuture(_tokenRepository.findByToken(VerificationToken));
     }
 }
