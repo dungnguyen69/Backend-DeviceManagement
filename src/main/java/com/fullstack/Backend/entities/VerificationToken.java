@@ -1,23 +1,22 @@
 package com.fullstack.Backend.entities;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import jakarta.persistence.*;
 import lombok.NoArgsConstructor;
 
-import java.security.Timestamp;
 import java.util.Calendar;
 import java.util.Date;
 
 @Data
-@Entity
+@Entity()
 @NoArgsConstructor
 @Table(name = "VerificationToken")
 public class VerificationToken {
     private static final int EXPIRATION = 60 * 24; /* Last only 24h */
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @Column(unique = true, nullable = false)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String token;

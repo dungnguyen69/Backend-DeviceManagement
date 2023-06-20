@@ -7,8 +7,8 @@ import lombok.Data;
 
 import java.util.Set;
 
-@PasswordMatches
 @Data
+@PasswordMatches
 public class RegisterDTO {
     @NotNull
     @NotEmpty

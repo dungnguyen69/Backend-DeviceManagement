@@ -70,4 +70,10 @@ public class UserController {
             FilterUserDTO dto) throws ExecutionException, InterruptedException {
         return _userService.showUsersWithPaging(pageNo, pageSize, sortBy, sortDir, dto);
     }
+
+    @GetMapping("/resendRegistrationToken")
+    public CompletableFuture<ResponseEntity<Object>> resendRegistrationToken(
+            HttpServletRequest request, @RequestParam("token") String existingToken) throws ExecutionException, InterruptedException, MessagingException {
+        return _userService.resendRegistrationToken(getSiteURL(request),existingToken);
+    }
 }

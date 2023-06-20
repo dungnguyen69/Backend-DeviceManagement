@@ -11,7 +11,9 @@ public class PasswordMatchesValidator implements ConstraintValidator<PasswordMat
     }
     @Override
     public boolean isValid(Object obj, ConstraintValidatorContext context){
+        context.buildConstraintViolationWithTemplate(context.getDefaultConstraintMessageTemplate())
+                .addPropertyNode("matchingPassword").addConstraintViolation();
         RegisterDTO user = (RegisterDTO) obj;
-        return user.getPassword().equals(user.getMatchingPassword());
+        return (user.getPassword().equals(user.getMatchingPassword()));
     }
 }

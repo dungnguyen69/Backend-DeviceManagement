@@ -244,7 +244,7 @@ public class UserService implements IUserService {
         String content = "Dear [[name]],<br>"
                 + "Please click the link below to verify your registration:<br>"
                 + "<h3><a href=\"[[URL]]\" target=\"_self\">VERIFY</a></h3>"
-                + "Thank you,<br>";
+                + "Thank you!<br>";
 
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message);
@@ -271,8 +271,8 @@ public class UserService implements IUserService {
         if (verificationToken == null || verificationToken.getUser().isEnabled())
             return CompletableFuture.completedFuture(ResponseEntity
                     .badRequest()
-                    .body(new MessageResponse("Error: Sorry, we could not verify account. It maybe already verified,\n" +
-                            "        or verification code is incorrect.")));
+                    .body(new MessageResponse("Error: Sorry, we could not verify account. It maybe already verified," +
+                            "or verification code is incorrect.")));
 
         User userByToken = verificationToken.getUser();
         Calendar cal = Calendar.getInstance();
@@ -323,8 +323,48 @@ public class UserService implements IUserService {
         _tokenRepository.save(myToken);
     }
 
+    @Async
     @Override
     public CompletableFuture<VerificationToken> getVerificationToken(String VerificationToken) {
         return CompletableFuture.completedFuture(_tokenRepository.findByToken(VerificationToken));
+    }
+    @Async
+    @Override
+    public CompletableFuture<VerificationToken> generateNewVerificationToken(String existingVerificationToken) throws ExecutionException, InterruptedException {
+        VerificationToken vToken = getVerificationToken(existingVerificationToken).get();
+        vToken.updateToken(RandomString.make(64));
+        _tokenRepository.save(vToken);
+        return CompletableFuture.completedFuture(vToken);
+    }
+
+    @Async
+    @Override
+    public CompletableFuture<ResponseEntity<Object>> resendRegistrationToken(String siteURL, String existingToken) throws ExecutionException, InterruptedException, MessagingException {
+        VerificationToken newToken = generateNewVerificationToken(existingToken).get();
+        User user = newToken.getUser();
+        String verifyURL = siteURL + "/api/users/verify?code=" + newToken;
+        resendVerificationEmail(user, verifyURL);
+        return CompletableFuture.completedFuture(ResponseEntity.ok(new MessageResponse("Resent successfully!")));
+    }
+
+    @Override
+    public void resendVerificationEmail(User user, String verifyURL) throws MessagingException {
+        String toAddress = user.getEmail();
+        String fromAddress = "dungtestemail33@gmail.com";
+        String subject = "Resend Verification Email";
+        String content = "Dear [[name]],<br>"
+                + "Please click the link below to verify your registration:<br>"
+                + "<h3><a href=\"[[URL]]\" target=\"_self\">VERIFY</a></h3>"
+                + "Thank you!<br>";
+
+        MimeMessage message = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(message);
+        helper.setFrom(fromAddress);
+        helper.setTo(toAddress);
+        helper.setSubject(subject);
+        content = content.replace("[[name]]", user.getFirstName().concat(" " + user.getLastName()));
+        content = content.replace("[[URL]]", verifyURL);
+        helper.setText(content, true);
+        mailSender.send(message);
     }
 }

@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
-import com.fullstack.Backend.dto.device.FilterDeviceDTO;
 import com.fullstack.Backend.dto.users.FilterUserDTO;
 import com.fullstack.Backend.dto.users.LoginDTO;
 import com.fullstack.Backend.dto.users.RegisterDTO;
@@ -14,7 +13,6 @@ import com.fullstack.Backend.entities.User;
 import com.fullstack.Backend.entities.VerificationToken;
 import jakarta.mail.MessagingException;
 import org.springframework.http.ResponseEntity;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.core.Authentication;
 
 public interface IUserService {
@@ -51,4 +49,11 @@ public interface IUserService {
     public void createVerificationToken(User user, String token);
 
     public CompletableFuture<VerificationToken> getVerificationToken(String VerificationToken);
+
+    public CompletableFuture<VerificationToken> generateNewVerificationToken(final String existingVerificationToken) throws ExecutionException, InterruptedException;
+
+    public CompletableFuture<ResponseEntity<Object>> resendRegistrationToken(String siteURL, String existingToken) throws ExecutionException, InterruptedException, MessagingException;
+
+    public void resendVerificationEmail(User user, String siteURL) throws
+            MessagingException, UnsupportedEncodingException;
 }
