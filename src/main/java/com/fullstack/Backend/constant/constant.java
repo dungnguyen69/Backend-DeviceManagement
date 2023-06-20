@@ -52,4 +52,5 @@ public class constant {
     public static final String TEMPLATE_IMPORT = "Template_Import_Device";
     public static final String EXTENSION = ".xlsx";
 
+    public static final String FROM_ADDRESS = "dungtestemail33@gmail.com";
 }

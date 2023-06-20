@@ -6,13 +6,12 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
-import com.fullstack.Backend.dto.users.FilterUserDTO;
-import com.fullstack.Backend.dto.users.LoginDTO;
-import com.fullstack.Backend.dto.users.RegisterDTO;
-import com.fullstack.Backend.dto.users.UserDTO;
+import com.fullstack.Backend.dto.users.*;
+import com.fullstack.Backend.entities.PasswordResetToken;
 import com.fullstack.Backend.entities.SystemRole;
 import com.fullstack.Backend.entities.VerificationToken;
 import com.fullstack.Backend.enums.Role;
+import com.fullstack.Backend.repositories.interfaces.IPasswordResetTokenRepository;
 import com.fullstack.Backend.repositories.interfaces.ISystemRoleRepository;
 import com.fullstack.Backend.repositories.interfaces.IVerificationTokenRepository;
 import com.fullstack.Backend.responses.users.JwtResponse;
@@ -32,12 +31,15 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.bcrypt.BCrypt;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import com.fullstack.Backend.entities.User;
 import com.fullstack.Backend.repositories.interfaces.IUserRepository;
 import com.fullstack.Backend.services.IUserService;
 
+import static com.fullstack.Backend.constant.constant.FROM_ADDRESS;
 import static org.springframework.http.HttpStatus.OK;
 
 
@@ -63,7 +65,7 @@ public class UserService implements IUserService {
     private JavaMailSender mailSender;
 
     @Autowired
-    private MessageSource messages;
+    IPasswordResetTokenRepository _passwordResetTokenRepository;
 
     @Async
     @Override
@@ -239,7 +241,6 @@ public class UserService implements IUserService {
     @Override
     public void sendVerificationEmail(User user, String verifyURL) throws MessagingException {
         String toAddress = user.getEmail();
-        String fromAddress = "dungtestemail33@gmail.com";
         String subject = "Please verify your registration";
         String content = "Dear [[name]],<br>"
                 + "Please click the link below to verify your registration:<br>"
@@ -248,7 +249,7 @@ public class UserService implements IUserService {
 
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message);
-        helper.setFrom(fromAddress);
+        helper.setFrom(FROM_ADDRESS);
         helper.setTo(toAddress);
         helper.setSubject(subject);
         content = content.replace("[[name]]", user.getFirstName().concat(" " + user.getLastName()));
@@ -328,6 +329,43 @@ public class UserService implements IUserService {
     public CompletableFuture<VerificationToken> getVerificationToken(String VerificationToken) {
         return CompletableFuture.completedFuture(_tokenRepository.findByToken(VerificationToken));
     }
+
+    @Async
+    @Override
+    public CompletableFuture<PasswordResetToken> getResetPasswordToken(String token) {
+        return CompletableFuture.completedFuture(_passwordResetTokenRepository.findByToken(token).orElseThrow(null));
+    }
+
+    @Async
+    @Override
+    public CompletableFuture<User> findByEmail(String email) {
+        return CompletableFuture.completedFuture(_userRepository.findByEmail(email).orElseThrow(null));
+    }
+
+    @Async
+    @Override
+    public CompletableFuture<User> findByToken(String token) {
+        if (_passwordResetTokenRepository.findByToken(token).isEmpty()) {
+            return null;
+        }
+        return CompletableFuture.completedFuture(_passwordResetTokenRepository.findByToken(token).get().getUser());
+    }
+
+    @Async
+    @Override
+    public CompletableFuture<PasswordResetToken> findUserFromResetPasswordToken(User user) {
+        return CompletableFuture.completedFuture(_passwordResetTokenRepository.findByUser(user));
+    }
+
+    @Async
+    @Override
+    public CompletableFuture<PasswordResetToken> generateResetPasswordToken(String existingToken) throws ExecutionException, InterruptedException {
+        PasswordResetToken rpToken = getResetPasswordToken(existingToken).get();
+        rpToken.updateToken(RandomString.make(64));
+        _passwordResetTokenRepository.save(rpToken);
+        return CompletableFuture.completedFuture(rpToken);
+    }
+
     @Async
     @Override
     public CompletableFuture<VerificationToken> generateNewVerificationToken(String existingVerificationToken) throws ExecutionException, InterruptedException {
@@ -350,7 +388,6 @@ public class UserService implements IUserService {
     @Override
     public void resendVerificationEmail(User user, String verifyURL) throws MessagingException {
         String toAddress = user.getEmail();
-        String fromAddress = "dungtestemail33@gmail.com";
         String subject = "Resend Verification Email";
         String content = "Dear [[name]],<br>"
                 + "Please click the link below to verify your registration:<br>"
@@ -359,12 +396,101 @@ public class UserService implements IUserService {
 
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message);
-        helper.setFrom(fromAddress);
+        helper.setFrom(FROM_ADDRESS);
         helper.setTo(toAddress);
         helper.setSubject(subject);
         content = content.replace("[[name]]", user.getFirstName().concat(" " + user.getLastName()));
         content = content.replace("[[URL]]", verifyURL);
         helper.setText(content, true);
         mailSender.send(message);
+    }
+
+    @Async
+    @Override
+    public CompletableFuture<ResponseEntity<Object>> resetPassword(String siteURL, String userEmail) throws ExecutionException, InterruptedException, MessagingException {
+        User user = findByEmail(userEmail).get();
+        if (user == null)
+            return CompletableFuture.completedFuture(ResponseEntity
+                    .badRequest()
+                    .body(new MessageResponse("User is not existent!")));
+
+        PasswordResetToken existingToken = findUserFromResetPasswordToken(user).get();
+        if (existingToken != null) {
+            PasswordResetToken newToken = generateResetPasswordToken(existingToken.getToken()).get(); /* Change old token to new token and return it */
+            User updateDuser = newToken.getUser();
+            String verifyURL = siteURL + "/api/users/changePassword?token=" + newToken;
+            sendResetPasswordEmail(updateDuser, verifyURL);
+            return CompletableFuture.completedFuture(ResponseEntity.ok(new MessageResponse("Sent successfully!")));
+        }
+        String token = RandomString.make(64);
+        createPasswordResetTokenForUser(user, token);
+        String verifyURL = siteURL + "/api/users/changePassword?token=" + token;
+        sendResetPasswordEmail(user, verifyURL);
+        return CompletableFuture.completedFuture(ResponseEntity.ok(new MessageResponse("Sent successfully!")));
+    }
+
+
+    @Override
+    public void createPasswordResetTokenForUser(User user, String token) {
+        PasswordResetToken myToken = new PasswordResetToken(token, user);
+        _passwordResetTokenRepository.save(myToken);
+    }
+
+    @Override
+    public void sendResetPasswordEmail(User user, String verifyURL) throws MessagingException {
+        String toAddress = user.getEmail();
+        String subject = "Reset password";
+        String content = "Dear [[name]],<br>"
+                + "Please click the link below to reset your password:<br>"
+                + "<h3><a href=\"[[URL]]\" target=\"_self\">RESET PASSWORD</a></h3>";
+        MimeMessage message = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(message);
+        helper.setFrom(FROM_ADDRESS);
+        helper.setTo(toAddress);
+        helper.setSubject(subject);
+        content = content.replace("[[name]]", user.getFirstName().concat(" " + user.getLastName()));
+        content = content.replace("[[URL]]", verifyURL);
+        helper.setText(content, true);
+        mailSender.send(message);
+    }
+
+    @Async
+    @Override
+    public CompletableFuture<ResponseEntity<Object>> changePassword(PasswordDTO dto) throws ExecutionException, InterruptedException, MessagingException {
+
+        if (validatePasswordResetToken(dto.getToken()) != null)
+            return CompletableFuture.completedFuture(ResponseEntity
+                    .badRequest()
+                    .body(new MessageResponse("User is not existent because token is " + validatePasswordResetToken(dto.getToken()).get())));
+
+        CompletableFuture<User> user = findByToken(dto.getToken());
+        if (user == null)
+            return CompletableFuture.completedFuture(ResponseEntity
+                    .badRequest()
+                    .body(new MessageResponse("User is not existent")));
+
+        Boolean isOldPasswordSimilarToNewOne = BCrypt.checkpw(dto.getOldPassword(), user.get().getPassword());
+        if (!isOldPasswordSimilarToNewOne) /* Compare old password and new password */
+            return CompletableFuture.completedFuture(ResponseEntity.ok(new MessageResponse("Old password is correct!")));
+
+        changeUserPassword(user.get(), dto.getNewPassword());
+        return CompletableFuture.completedFuture(ResponseEntity.ok(new MessageResponse("Changed successfully!")));
+    }
+
+    @Async
+    public CompletableFuture<String> validatePasswordResetToken(String token) {
+        final Calendar cal = Calendar.getInstance();
+        final Optional<PasswordResetToken> passToken = _passwordResetTokenRepository.findByToken(token);
+        if (passToken.isEmpty()) return CompletableFuture.completedFuture("not existent");
+        boolean isTokenExpired = passToken.get().getExpiryDate().before(cal.getTime());
+        boolean isTokenFound = passToken != null;
+        return !isTokenFound ? CompletableFuture.completedFuture("invalid")
+                : isTokenExpired ? CompletableFuture.completedFuture("expired")
+                : null;
+    }
+
+    public void changeUserPassword(User user, String password) {
+        user.setPassword(encoder.encode(password));
+        _userRepository.save(user);
     }
 }

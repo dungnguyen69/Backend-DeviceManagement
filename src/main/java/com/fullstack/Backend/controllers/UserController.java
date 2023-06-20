@@ -2,6 +2,7 @@ package com.fullstack.Backend.controllers;
 
 import com.fullstack.Backend.dto.users.FilterUserDTO;
 import com.fullstack.Backend.dto.users.LoginDTO;
+import com.fullstack.Backend.dto.users.PasswordDTO;
 import com.fullstack.Backend.dto.users.RegisterDTO;
 import com.fullstack.Backend.services.IUserService;
 import jakarta.mail.MessagingException;
@@ -34,6 +35,7 @@ public class UserController {
     IUserService _userService;
 
     @PostMapping("/login")
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public CompletableFuture<ResponseEntity<Object>> authenticateUser(@Valid @RequestBody LoginDTO loginRequest) {
         /* If the authentication process is successful,
         we can get User’s information such as username, password,
@@ -46,7 +48,9 @@ public class UserController {
     }
 
     @PostMapping("/register")
-    public CompletableFuture<ResponseEntity<Object>> registerUser(@Valid @RequestBody RegisterDTO registerRequest, HttpServletRequest request) throws MessagingException, UnsupportedEncodingException {
+    public CompletableFuture<ResponseEntity<Object>> registerUser(
+            @Valid @RequestBody RegisterDTO registerRequest,
+            HttpServletRequest request) throws MessagingException, UnsupportedEncodingException {
         return _userService.registerUser(registerRequest, getSiteURL(request));
     }
 
@@ -73,7 +77,23 @@ public class UserController {
 
     @GetMapping("/resendRegistrationToken")
     public CompletableFuture<ResponseEntity<Object>> resendRegistrationToken(
-            HttpServletRequest request, @RequestParam("token") String existingToken) throws ExecutionException, InterruptedException, MessagingException {
-        return _userService.resendRegistrationToken(getSiteURL(request),existingToken);
+            HttpServletRequest request,
+            @RequestParam("token") String existingToken) throws ExecutionException, InterruptedException, MessagingException {
+        return _userService.resendRegistrationToken(getSiteURL(request), existingToken);
+    }
+
+    @PostMapping("/resetPassword")
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
+    public CompletableFuture<ResponseEntity<Object>> resetPassword(
+            HttpServletRequest request,
+            @RequestParam("email") String userEmail) throws ExecutionException, InterruptedException, MessagingException {
+        return _userService.resetPassword(getSiteURL(request), userEmail);
+    }
+
+    @PostMapping("/changePassword")
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
+    public CompletableFuture<ResponseEntity<Object>> showChangePasswordPage(
+            @Valid @RequestBody PasswordDTO dto) throws ExecutionException, InterruptedException, MessagingException {
+        return _userService.changePassword(dto);
     }
 }
