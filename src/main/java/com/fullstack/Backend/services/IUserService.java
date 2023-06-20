@@ -59,7 +59,5 @@ public interface IUserService {
 
     public CompletableFuture<User> findByToken(String token);
 
-    public CompletableFuture<ResponseEntity<Object>> sendForgotPasswordEmail(String siteURL, String email) throws ExecutionException, InterruptedException, MessagingException;
-
     public CompletableFuture<ResponseEntity<Object>> saveForgotPassword(ForgotPasswordDTO dto) throws ExecutionException, InterruptedException, MessagingException;
 }

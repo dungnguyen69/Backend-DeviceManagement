@@ -105,13 +105,6 @@ public class UserController {
         return _userService.saveResetPassword(dto);
     }
 
-    @PostMapping("/forgot_password")
-    public CompletableFuture<ResponseEntity<Object>> sendForgotPasswordEmail(
-            HttpServletRequest request,
-            @RequestParam("email") String userEmail) throws ExecutionException, InterruptedException, MessagingException {
-        return _userService.sendForgotPasswordEmail(getSiteURL(request), userEmail);
-    }
-
     @PostMapping("/save_forgot_password")
     public CompletableFuture<ResponseEntity<Object>> saveForgotPassword(
             @Valid @RequestBody ForgotPasswordDTO dto) throws ExecutionException, InterruptedException, MessagingException {

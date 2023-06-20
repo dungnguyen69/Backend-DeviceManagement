@@ -71,7 +71,6 @@ public class UserService implements IUserService {
         return CompletableFuture.completedFuture(_userRepository.findById(id).orElseThrow(null));
     }
 
-
     @Override
     public CompletableFuture<Boolean> doesUserExist(int id) {
         return CompletableFuture.completedFuture(_userRepository.existsById((long) id));
@@ -322,13 +321,14 @@ public class UserService implements IUserService {
     @Async
     @Override
     public CompletableFuture<ResponseEntity<Object>> sendResetPasswordEmail(String siteURL, String userEmail) throws ExecutionException, InterruptedException, MessagingException {
-        User user = findByEmail(userEmail).get();
-        if (user == null)
+        String token = RandomString.make(64);
+        CompletableFuture<User> user = findByEmail(userEmail);
+        if (user.get() == null)
             return CompletableFuture.completedFuture(ResponseEntity
                     .badRequest()
                     .body(new MessageResponse("User is not existent!")));
 
-        PasswordResetToken existingToken = findUserFromResetPasswordToken(user).get();
+        PasswordResetToken existingToken = findUserFromResetPasswordToken(user.get()).get();
         if (existingToken != null) {
             PasswordResetToken newToken = generateResetPasswordToken(existingToken.getToken()).get(); /* Change old token to new token and return it */
             User updateDuser = newToken.getUser();
@@ -336,13 +336,11 @@ public class UserService implements IUserService {
             sendResetPasswordEmail(updateDuser, verifyURL);
             return CompletableFuture.completedFuture(ResponseEntity.ok(new MessageResponse("Sent successfully!")));
         }
-        String token = RandomString.make(64);
-        createPasswordResetTokenForUser(user, token);
+        createPasswordResetTokenForUser(user.get(), token);
         String verifyURL = siteURL + "/api/users/reset_password?token=" + token;
-        sendResetPasswordEmail(user, verifyURL);
+        sendResetPasswordEmail(user.get(), verifyURL);
         return CompletableFuture.completedFuture(ResponseEntity.ok(new MessageResponse("Sent successfully!")));
     }
-
     @Async
     @Override
     public CompletableFuture<ResponseEntity<Object>> saveResetPassword(ResetPasswordDTO dto) throws ExecutionException, InterruptedException, MessagingException {
@@ -389,27 +387,7 @@ public class UserService implements IUserService {
                 : null;
     }
 
-    @Async
-    @Override
-    public CompletableFuture<ResponseEntity<Object>> sendForgotPasswordEmail(String siteURL, String email) throws ExecutionException, InterruptedException, MessagingException {
-        String token = RandomString.make(64);
-        CompletableFuture<User> user = findByEmail(email);
-        if (user == null)
-            return CompletableFuture.completedFuture(ResponseEntity
-                    .badRequest()
-                    .body(new MessageResponse("Could not find any customer with the email" + email)));
 
-        CompletableFuture<PasswordResetToken> pwt = findUserFromResetPasswordToken(user.get());
-        if (pwt == null) {
-            createPasswordResetTokenForUser(user.get(), token);
-            return CompletableFuture.completedFuture(ResponseEntity.ok(new MessageResponse("Sent successfully!")));
-        }
-        pwt.get().setToken(token);
-        _passwordResetTokenRepository.save(pwt.get());
-        String verifyURL = siteURL + "/api/users/reset_password?token=" + token;
-        sendResetPasswordEmail(user.get(), verifyURL);
-        return CompletableFuture.completedFuture(ResponseEntity.ok(new MessageResponse("Sent successfully!")));
-    }
 
     @Async
     private CompletableFuture<List<UserDTO>> getPage(List<UserDTO> sourceList, int pageIndex, int pageSize) {
@@ -423,6 +401,8 @@ public class UserService implements IUserService {
         return CompletableFuture.completedFuture(sourceList.subList(fromIndex, Math.min(fromIndex + pageSize, sourceList.size())));
     }
 
+
+    @Async
     private boolean emailExists(String email) {
         return _userRepository.existsByEmail(email);
     }
@@ -449,6 +429,7 @@ public class UserService implements IUserService {
 
     }
 
+    @Async
     private boolean nameExists(String email) {
         return _userRepository.existsByUserName(email);
     }
