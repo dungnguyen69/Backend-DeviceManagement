@@ -4,7 +4,7 @@ import com.fullstack.Backend.validation.annotations.ValidPassword;
 import lombok.Data;
 
 @Data
-public class PasswordDTO {
+public class ResetPasswordDTO {
     private String oldPassword;
 
     private  String token;

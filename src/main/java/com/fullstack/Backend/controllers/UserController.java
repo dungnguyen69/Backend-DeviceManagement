@@ -1,9 +1,7 @@
 package com.fullstack.Backend.controllers;
 
-import com.fullstack.Backend.dto.users.FilterUserDTO;
-import com.fullstack.Backend.dto.users.LoginDTO;
-import com.fullstack.Backend.dto.users.PasswordDTO;
-import com.fullstack.Backend.dto.users.RegisterDTO;
+import com.fullstack.Backend.dto.users.*;
+import com.fullstack.Backend.responses.users.MessageResponse;
 import com.fullstack.Backend.services.IUserService;
 import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -82,18 +80,41 @@ public class UserController {
         return _userService.resendRegistrationToken(getSiteURL(request), existingToken);
     }
 
-    @PostMapping("/resetPassword")
-    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
-    public CompletableFuture<ResponseEntity<Object>> resetPassword(
+    @PostMapping("/reset_password")
+    public CompletableFuture<ResponseEntity<Object>> sendResetPasswordEmail(
             HttpServletRequest request,
             @RequestParam("email") String userEmail) throws ExecutionException, InterruptedException, MessagingException {
-        return _userService.resetPassword(getSiteURL(request), userEmail);
+        return _userService.sendResetPasswordEmail(getSiteURL(request), userEmail);
     }
 
-    @PostMapping("/changePassword")
-    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
+    /* For reset password and forgot password   */
+    @GetMapping("/reset_password")
     public CompletableFuture<ResponseEntity<Object>> showChangePasswordPage(
-            @Valid @RequestBody PasswordDTO dto) throws ExecutionException, InterruptedException, MessagingException {
-        return _userService.changePassword(dto);
+            @RequestParam String token) throws ExecutionException, InterruptedException, MessagingException {
+        if (_userService.validatePasswordResetToken(token).get() != null)
+            return CompletableFuture.completedFuture(ResponseEntity
+                    .badRequest()
+                    .body(new MessageResponse("User is not existent because token is " + _userService.validatePasswordResetToken(token).get())));
+
+        return CompletableFuture.completedFuture(ResponseEntity.ok(new MessageResponse("Token is valid!")));
+    }
+
+    @PostMapping("/save_reset_password")
+    public CompletableFuture<ResponseEntity<Object>> saveResetPassword(
+            @Valid @RequestBody ResetPasswordDTO dto) throws ExecutionException, InterruptedException, MessagingException {
+        return _userService.saveResetPassword(dto);
+    }
+
+    @PostMapping("/forgot_password")
+    public CompletableFuture<ResponseEntity<Object>> sendForgotPasswordEmail(
+            HttpServletRequest request,
+            @RequestParam("email") String userEmail) throws ExecutionException, InterruptedException, MessagingException {
+        return _userService.sendForgotPasswordEmail(getSiteURL(request), userEmail);
+    }
+
+    @PostMapping("/save_forgot_password")
+    public CompletableFuture<ResponseEntity<Object>> saveForgotPassword(
+            @Valid @RequestBody ForgotPasswordDTO dto) throws ExecutionException, InterruptedException, MessagingException {
+        return _userService.saveForgotPassword(dto);
     }
 }
