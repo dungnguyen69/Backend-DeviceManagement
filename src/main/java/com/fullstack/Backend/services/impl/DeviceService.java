@@ -52,31 +52,31 @@ import jakarta.servlet.http.HttpServletResponse;
 public class DeviceService implements IDeviceService {
 
     @Autowired
-    private IDeviceRepository _deviceRepository;
+    IDeviceRepository _deviceRepository;
 
     @Autowired
-    private IItemTypeService _itemTypeService;
+    IItemTypeService _itemTypeService;
 
     @Autowired
-    private IRamService _ramService;
+    IRamService _ramService;
 
     @Autowired
-    private IPlatformService _platformService;
+    IPlatformService _platformService;
 
     @Autowired
-    private IScreenService _screenService;
+    IScreenService _screenService;
 
     @Autowired
-    private IStorageService _storageService;
+    IStorageService _storageService;
 
     @Autowired
-    private IUserService _employeeService;
+    IUserService _employeeService;
 
     @Autowired
-    private IKeeperOrderService _keeperOrderService;
+    IKeeperOrderService _keeperOrderService;
 
     @Autowired
-    private IRequestService _requestService;
+    IRequestService _requestService;
 
 
     @Async

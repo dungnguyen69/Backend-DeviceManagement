@@ -23,14 +23,6 @@ public interface IRequestService {
                                                                               String sortBy, String sortDir, RequestFilterDTO requestFilter)
             throws InterruptedException, ExecutionException;
 
-    public int getTotalPages(int pageSize, int listSize);
-
-    public void formatFilter(RequestFilterDTO requestFilter);
-
-    public CompletableFuture<List<Request>> getPage(List<Request> sourceList, int pageIndex, int pageSize);
-
-    public CompletableFuture<List<Request>> fetchFilteredRequest(RequestFilterDTO requestFilter, List<Request> requests);
-
     public CompletableFuture<KeywordSuggestionResponse> getSuggestKeywordRequests(int employeeId, int fieldColumn, String keyword,
                                                                                   RequestFilterDTO requestFilter) throws InterruptedException, ExecutionException;
 

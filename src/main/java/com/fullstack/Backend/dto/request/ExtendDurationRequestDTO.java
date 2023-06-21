@@ -11,10 +11,7 @@ import java.util.Date;
 @Data
 public class ExtendDurationRequestDTO {
     @DateTimeFormat(pattern = "yyyy-MM-dd")
-    @NotNull
-    @NotEmpty
     private Date returnDate;
-    @NotNull
     @NotEmpty
     private int deviceId;
     @NotNull

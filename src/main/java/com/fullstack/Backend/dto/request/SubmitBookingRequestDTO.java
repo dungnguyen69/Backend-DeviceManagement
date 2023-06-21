@@ -16,12 +16,10 @@ import java.util.List;
 @NoArgsConstructor
 public class SubmitBookingRequestDTO {
     List<RequestInput> requestsList;
-
     @Getter
     @Setter
     @AllArgsConstructor
     public static class RequestInput {
-        @NotNull
         @NotEmpty
         private int deviceId;
         @NotNull
@@ -30,10 +28,8 @@ public class SubmitBookingRequestDTO {
         @NotNull
         @NotEmpty
         private String nextKeeper;
-        @NotNull
         @NotEmpty
         private Date bookingDate;
-        @NotNull
         @NotEmpty
         private Date returnDate;
     }

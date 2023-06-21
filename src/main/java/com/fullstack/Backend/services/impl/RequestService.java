@@ -17,6 +17,7 @@ import com.fullstack.Backend.utils.RequestFails;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.text.ParseException;
@@ -39,6 +40,7 @@ public class RequestService implements IRequestService {
     @Autowired
     IDeviceRepository _deviceRepository;
 
+    @Async
     @Override
     public CompletableFuture<SubmitBookingResponse> submitBookingRequest(SubmitBookingRequestDTO requests) throws InterruptedException, ExecutionException {
         List<RequestFails> requestFails = new ArrayList<RequestFails>();
@@ -203,6 +205,7 @@ public class RequestService implements IRequestService {
         return CompletableFuture.completedFuture(response);
     }
 
+    @Async
     @Override
     public CompletableFuture<ShowRequestsResponse> showRequestListsWithPaging(int employeeId, int pageIndex, int pageSize, String sortBy, String sortDir, RequestFilterDTO requestFilter)
             throws InterruptedException, ExecutionException {
@@ -224,78 +227,11 @@ public class RequestService implements IRequestService {
         return CompletableFuture.completedFuture(response);
     }
 
-    @Override
-    public int getTotalPages(int pageSize, int listSize) {
-        if (listSize == 0)
-            return 1;
-
-        if (listSize % pageSize == 0)
-            return listSize / pageSize;
-
-        return (listSize / pageSize) + 1;
-    }
-
-    @Override
-    public void formatFilter(RequestFilterDTO requestFilter) {
-        if (requestFilter.getRequester() != null)
-            requestFilter.setRequester(requestFilter.getRequester().trim().toLowerCase());
-
-        if (requestFilter.getCurrentKeeper() != null)
-            requestFilter.setCurrentKeeper(requestFilter.getCurrentKeeper().trim().toLowerCase());
-
-        if (requestFilter.getNextKeeper() != null)
-            requestFilter.setNextKeeper(requestFilter.getNextKeeper().trim().toLowerCase());
-
-        if (requestFilter.getDevice() != null)
-            requestFilter.setDevice(requestFilter.getDevice().trim().toLowerCase());
-    }
-
-    @Override
-    public CompletableFuture<List<Request>> getPage(List<Request> sourceList, int pageIndex, int pageSize) {
-        if (pageSize <= 0 || pageIndex <= 0)
-            throw new IllegalArgumentException("invalid page size: " + pageSize);
-
-        int fromIndex = (pageIndex - 1) * pageSize;
-        if (sourceList == null || sourceList.size() <= fromIndex)
-            return CompletableFuture.completedFuture(Collections.emptyList());
-
-        return CompletableFuture.completedFuture(sourceList.subList(fromIndex, Math.min(fromIndex + pageSize, sourceList.size())));
-    }
-
-    @Override
-    public CompletableFuture<List<Request>> fetchFilteredRequest(RequestFilterDTO requestFilter, List<Request> requests) {
-        if (requestFilter.getRequestId() != null)
-            requests = requests.stream().filter(request -> request.getRequestId().equals(requestFilter.getRequestId())).collect(Collectors.toList());
-
-        if (requestFilter.getDevice() != null)
-            requests = requests.stream().filter(request -> request.getDevice().getName().toLowerCase().equals(requestFilter.getDevice())).collect(Collectors.toList());
-
-        if (requestFilter.getRequester() != null)
-            requests = requests.stream().filter(request -> request.getRequester().getUserName().toLowerCase().equals(requestFilter.getRequester())).collect(Collectors.toList());
-
-        if (requestFilter.getCurrentKeeper() != null)
-            requests = requests.stream().filter(request -> request.getCurrentKeeper().getUserName().toLowerCase().equals(requestFilter.getCurrentKeeper())).collect(Collectors.toList());
-
-        if (requestFilter.getNextKeeper() != null)
-            requests = requests.stream().filter(request -> request.getNextKeeper().getUserName().toLowerCase().equals(requestFilter.getNextKeeper())).collect(Collectors.toList());
-
-        if (requestFilter.getRequestStatus() != null)
-            requests = requests.stream().filter(request -> request.getRequestStatus().name().equalsIgnoreCase(requestFilter.getRequestStatus())).collect(Collectors.toList());
-
-        if (requestFilter.getBookingDate() != null)
-            requests = requests.stream().filter(request -> request.getBookingDate().after(requestFilter.getBookingDate())).collect(Collectors.toList());
-
-        if (requestFilter.getReturnDate() != null)
-            requests = requests.stream().filter(request -> request.getReturnDate().before(requestFilter.getReturnDate())).collect(Collectors.toList());
-
-        return CompletableFuture.completedFuture(requests);
-    }
-
+    @Async
     @Override
     public CompletableFuture<KeywordSuggestionResponse> getSuggestKeywordRequests(int employeeId, int fieldColumn, String keyword, RequestFilterDTO requestFilter) throws InterruptedException, ExecutionException {
         Set<String> keywordList = new HashSet<>();
         Sort sort = Sort.by("Id").ascending();
-
         List<Request> requests = _requestRepository.findAllRequest(employeeId, sort);
         formatFilter(requestFilter);
         requests = fetchFilteredRequest(requestFilter, requests).get();
@@ -315,12 +251,12 @@ public class RequestService implements IRequestService {
         response.setKeywordList(keywordList);
         return CompletableFuture.completedFuture(response);
     }
-
+    @Async
     @Override
     public CompletableFuture<ResponseEntity<Object>> updateRequestStatus(UpdateStatusRequestDTO requestDTO) throws InterruptedException, ExecutionException {
         Optional<Request> request = _requestRepository.findById((long) requestDTO.getRequestId());
         /* If the request in the database does not exist */
-        if (request == null) return CompletableFuture.completedFuture(new ResponseEntity<>(false, NOT_FOUND));
+        if (request.isEmpty()) return CompletableFuture.completedFuture(new ResponseEntity<>(false, NOT_FOUND));
         /* If the SUBMITTED request's request status was IDENTICAL to that of request in the DATABASE
          *  and request status must NOT be EXTENDING
          * */
@@ -360,7 +296,7 @@ public class RequestService implements IRequestService {
                 int keeperNo = 0;
                 KeeperOrder keeperOrder = new KeeperOrder();
                 if (keeperOrderList.size() != 0) /* Get the latest keeper order's number */
-                    keeperNo = keeperOrderList.stream().max(Comparator.comparing(k -> k.getKeeperNo())).map(k -> k.getKeeperNo()).get();
+                    keeperNo = keeperOrderList.stream().max(Comparator.comparing(KeeperOrder::getKeeperNo)).map(KeeperOrder::getKeeperNo).get();
                 keeperOrder.setDevice(request.get().getDevice());
                 keeperOrder.setKeeper(request.get().getNextKeeper());
                 keeperOrder.setKeeperNo(keeperNo + 1);  /* By virtue of being a new keeper order, keeperNo is increased */
@@ -401,6 +337,7 @@ public class RequestService implements IRequestService {
         return CompletableFuture.completedFuture(new ResponseEntity<>(true, OK));
     }
 
+    @Async
     @Override
     public CompletableFuture<ResponseEntity<Object>> extendDurationRequest(ExtendDurationRequestDTO request) throws InterruptedException, ExecutionException, ParseException {
         /*
@@ -457,13 +394,80 @@ public class RequestService implements IRequestService {
         return CompletableFuture.completedFuture(new ResponseEntity<>("Send request successfully", OK));
     }
 
+    @Async
     @Override
-    public CompletableFuture<Request> findAnOccupiedRequest(int nextKeeperId, int deviceId) throws InterruptedException, ExecutionException, ParseException {
+    public CompletableFuture<Request> findAnOccupiedRequest(int nextKeeperId, int deviceId) {
         return CompletableFuture.completedFuture(_requestRepository.findAnOccupiedRequest(nextKeeperId, deviceId));
     }
 
     @Override
-    public void updateRequest(Request request) throws InterruptedException, ExecutionException {
+    public void updateRequest(Request request) {
         _requestRepository.save(request);
     }
+
+    @Async
+    private CompletableFuture<List<Request>> getPage(List<Request> sourceList, int pageIndex, int pageSize) {
+        if (pageSize <= 0 || pageIndex <= 0)
+            throw new IllegalArgumentException("invalid page size: " + pageSize);
+
+        int fromIndex = (pageIndex - 1) * pageSize;
+        if (sourceList == null || sourceList.size() <= fromIndex)
+            return CompletableFuture.completedFuture(Collections.emptyList());
+
+        return CompletableFuture.completedFuture(sourceList.subList(fromIndex, Math.min(fromIndex + pageSize, sourceList.size())));
+    }
+
+    @Async
+    private CompletableFuture<List<Request>> fetchFilteredRequest(RequestFilterDTO requestFilter, List<Request> requests) {
+        if (requestFilter.getRequestId() != null)
+            requests = requests.stream().filter(request -> request.getRequestId().equals(requestFilter.getRequestId())).collect(Collectors.toList());
+
+        if (requestFilter.getDevice() != null)
+            requests = requests.stream().filter(request -> request.getDevice().getName().toLowerCase().equals(requestFilter.getDevice())).collect(Collectors.toList());
+
+        if (requestFilter.getRequester() != null)
+            requests = requests.stream().filter(request -> request.getRequester().getUserName().toLowerCase().equals(requestFilter.getRequester())).collect(Collectors.toList());
+
+        if (requestFilter.getCurrentKeeper() != null)
+            requests = requests.stream().filter(request -> request.getCurrentKeeper().getUserName().toLowerCase().equals(requestFilter.getCurrentKeeper())).collect(Collectors.toList());
+
+        if (requestFilter.getNextKeeper() != null)
+            requests = requests.stream().filter(request -> request.getNextKeeper().getUserName().toLowerCase().equals(requestFilter.getNextKeeper())).collect(Collectors.toList());
+
+        if (requestFilter.getRequestStatus() != null)
+            requests = requests.stream().filter(request -> request.getRequestStatus().name().equalsIgnoreCase(requestFilter.getRequestStatus())).collect(Collectors.toList());
+
+        if (requestFilter.getBookingDate() != null)
+            requests = requests.stream().filter(request -> request.getBookingDate().after(requestFilter.getBookingDate())).collect(Collectors.toList());
+
+        if (requestFilter.getReturnDate() != null)
+            requests = requests.stream().filter(request -> request.getReturnDate().before(requestFilter.getReturnDate())).collect(Collectors.toList());
+
+        return CompletableFuture.completedFuture(requests);
+    }
+
+    private int getTotalPages(int pageSize, int listSize) {
+        if (listSize == 0)
+            return 1;
+
+        if (listSize % pageSize == 0)
+            return listSize / pageSize;
+
+        return (listSize / pageSize) + 1;
+    }
+
+    private void formatFilter(RequestFilterDTO requestFilter) {
+        if (requestFilter.getRequester() != null)
+            requestFilter.setRequester(requestFilter.getRequester().trim().toLowerCase());
+
+        if (requestFilter.getCurrentKeeper() != null)
+            requestFilter.setCurrentKeeper(requestFilter.getCurrentKeeper().trim().toLowerCase());
+
+        if (requestFilter.getNextKeeper() != null)
+            requestFilter.setNextKeeper(requestFilter.getNextKeeper().trim().toLowerCase());
+
+        if (requestFilter.getDevice() != null)
+            requestFilter.setDevice(requestFilter.getDevice().trim().toLowerCase());
+    }
+
 }
