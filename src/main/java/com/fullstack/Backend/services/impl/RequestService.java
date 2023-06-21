@@ -75,6 +75,7 @@ public class RequestService implements IRequestService {
             requestFail.setScreenSize(device.getScreen().getSize().toString().trim());
             requestFail.setInventoryNumber(device.getInventoryNumber().trim());
             requestFail.setSerialNumber(device.getSerialNumber().trim());
+
             boolean isDeviceUsable = !device.getStatus().name().equalsIgnoreCase("broken") && !device.getStatus().name().equalsIgnoreCase("unavailable"),
                     isNextKeeperValid = nextKeeper != null && !request.getNextKeeper().trim().equalsIgnoreCase(device.getOwner().getUserName()),
                     isDateInvalid = request.getBookingDate() == null && request.getReturnDate() == null,
@@ -209,10 +210,9 @@ public class RequestService implements IRequestService {
     @Override
     public CompletableFuture<ShowRequestsResponse> showRequestListsWithPaging(int employeeId, int pageIndex, int pageSize, String sortBy, String sortDir, RequestFilterDTO requestFilter)
             throws InterruptedException, ExecutionException {
-        formatFilter(requestFilter);
         Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
         List<Request> requests = _requestRepository.findAllRequest(employeeId, sort);
-        requests = fetchFilteredRequest(requestFilter, requests).get();
+        requests = getAllDevices(requestFilter, requests).get();
         List<String> requestStatusList = requests.stream().map(c -> c.getRequestStatus().name()).distinct().collect(Collectors.toList());
         int totalElements = requests.size();
         requests = getPage(requests, pageIndex, pageSize).get();
@@ -233,8 +233,7 @@ public class RequestService implements IRequestService {
         Set<String> keywordList = new HashSet<>();
         Sort sort = Sort.by("Id").ascending();
         List<Request> requests = _requestRepository.findAllRequest(employeeId, sort);
-        formatFilter(requestFilter);
-        requests = fetchFilteredRequest(requestFilter, requests).get();
+        requests = getAllDevices(requestFilter, requests).get();
         switch (fieldColumn) {
             case REQUEST_REQUEST_ID_COLUMN ->
                     keywordList = requests.stream().map(Request::getRequestId).filter(requestId -> requestId.contains(keyword.strip().toLowerCase())).collect(Collectors.toSet());
@@ -251,6 +250,7 @@ public class RequestService implements IRequestService {
         response.setKeywordList(keywordList);
         return CompletableFuture.completedFuture(response);
     }
+
     @Async
     @Override
     public CompletableFuture<ResponseEntity<Object>> updateRequestStatus(UpdateStatusRequestDTO requestDTO) throws InterruptedException, ExecutionException {
@@ -267,21 +267,8 @@ public class RequestService implements IRequestService {
                 request.get().setRequestStatus(RequestStatus.APPROVED);
                 request.get().setApprovalDate(new Date());
                 _requestRepository.save(request.get());
-                /* Change all related pending requests' status except the SUBMITTED request to CANCELLED */
-                List<Request> relatedRequests = _requestRepository.findDeviceRelatedApprovedRequest(request.get().getId(), request.get().getCurrentKeeper_Id(), request.get().getDevice().getId(), PENDING);
-                if (relatedRequests != null) {
-                    for (Request relatedRequest : relatedRequests) {
-                        relatedRequest.setRequestStatus(RequestStatus.CANCELLED);
-                        relatedRequest.setCancelledDate(new Date());
-                        _requestRepository.save(relatedRequest);
-                    }
-                }
-                /* Change device status to OCCUPIED when a request is approved */
-                Device device = _deviceRepository.findById(request.get().getDevice().getId());
-                if (device.getStatus() != Status.OCCUPIED) {
-                    device.setStatus(Status.OCCUPIED);
-                    _deviceRepository.save(device);
-                }
+                cancelRelatedPendingRequest(request.get());
+                changeDeviceStatus(request.get());
             }
             case REJECTED -> {
                 request.get().setRequestStatus(RequestStatus.REJECTED);
@@ -293,10 +280,8 @@ public class RequestService implements IRequestService {
                 request.get().setTransferredDate(new Date());
                 _requestRepository.save(request.get());
                 List<KeeperOrder> keeperOrderList = _keeperOrderService.getKeeperOrderListByDeviceId(request.get().getDevice().getId()).get();
-                int keeperNo = 0;
+                int keeperNo = returnKeeperNo(keeperOrderList);
                 KeeperOrder keeperOrder = new KeeperOrder();
-                if (keeperOrderList.size() != 0) /* Get the latest keeper order's number */
-                    keeperNo = keeperOrderList.stream().max(Comparator.comparing(KeeperOrder::getKeeperNo)).map(KeeperOrder::getKeeperNo).get();
                 keeperOrder.setDevice(request.get().getDevice());
                 keeperOrder.setKeeper(request.get().getNextKeeper());
                 keeperOrder.setKeeperNo(keeperNo + 1);  /* By virtue of being a new keeper order, keeperNo is increased */
@@ -313,18 +298,11 @@ public class RequestService implements IRequestService {
              * */
             case EXTENDING -> {
                 /* The request will change its status and update approval date */
-                request.get().setRequestStatus(RequestStatus.TRANSFERRED); /* ? */
+                /* Accept extending */
+                request.get().setRequestStatus(RequestStatus.TRANSFERRED);
                 request.get().setApprovalDate(new Date());
                 _requestRepository.save(request.get());
-                /* The OLD request will change its status to CANCELLED */
-                List<Request> preExtendDurationRequest = _requestRepository.findDeviceRelatedApprovedRequest(request.get().getId(), request.get().getCurrentKeeper_Id(), request.get().getDevice().getId(), TRANSFERRED);
-                if (preExtendDurationRequest != null) {
-                    for (Request relatedRequest : preExtendDurationRequest) {
-                        relatedRequest.setRequestStatus(RequestStatus.CANCELLED);
-                        relatedRequest.setCancelledDate(new Date());
-                        _requestRepository.save(relatedRequest);
-                    }
-                }
+                changeOldRequest(request.get());
                 /* UPDATE order's return date */
                 KeeperOrder updatedKeeperOrder = _keeperOrderService.findKeeperOrderByDeviceIdAndKeeperId(
                         request.get().getDevice().getId(),
@@ -348,35 +326,12 @@ public class RequestService implements IRequestService {
          * */
         CompletableFuture<User> nextKeeper = _employeeService.findByUsername(request.getNextKeeper());
         Device device = _deviceRepository.findById(request.getDeviceId());
-        if (request.getReturnDate() == null)
-            return CompletableFuture.completedFuture(new ResponseEntity<>("Return date must not be empty!", NOT_ACCEPTABLE));
-        if (nextKeeper.get() == null)
-            return CompletableFuture.completedFuture(new ResponseEntity<>("Next keeper is not existent", NOT_FOUND));
-        if (device == null)
-            return CompletableFuture.completedFuture(new ResponseEntity<>("Device is not existent", NOT_FOUND));
-        Request r = findAnOccupiedRequest(nextKeeper.get().getId(), device.getId()).get();
-        if (r == null)
-            return CompletableFuture.completedFuture(new ResponseEntity<>("Request is not existent", NOT_FOUND));
-        if (request.getReturnDate().before(r.getReturnDate()))
-            return CompletableFuture.completedFuture(new ResponseEntity<>("Return date must be after than the available current return date!", NOT_FOUND));
-
-        /* Find the previous order to extend duration and validate the return date */
-        List<KeeperOrder> keeperOrderList = _keeperOrderService.getKeeperOrderListByDeviceId(device.getId()).get();
-        KeeperOrder currentKeeperOrder = new KeeperOrder();
-        KeeperOrder previousKeeperOrder;
-        for (KeeperOrder k : keeperOrderList) {
-            if (k.getKeeper().getId() == nextKeeper.get().getId())
-                currentKeeperOrder = k;
-        }
-        if (currentKeeperOrder == null)
-            return CompletableFuture.completedFuture(new ResponseEntity<>("Request is not approved", NOT_FOUND));
-        if (currentKeeperOrder.getKeeperNo() > 1) {
-            int currentOrder = currentKeeperOrder.getKeeperNo();
-            previousKeeperOrder = keeperOrderList.stream().filter(k -> k.getKeeperNo() == currentOrder - 1).findFirst().get();
-            if (request.getReturnDate().after(previousKeeperOrder.getDueDate()))
-                return CompletableFuture.completedFuture(new ResponseEntity<>("Return date exceeds the allowed duration!", NOT_ACCEPTABLE));
-        }
+        if (checkExtendDurationRequest(request, nextKeeper.get(), device).get() != null)
+            return CompletableFuture.completedFuture(new ResponseEntity<>(checkExtendDurationRequest(request, nextKeeper.get(), device).get(), NOT_FOUND));
+        if (validateViaPreviousOrder(request, device, nextKeeper.get()).get() != null)
+            return CompletableFuture.completedFuture(new ResponseEntity<>(validateViaPreviousOrder(request, device, nextKeeper.get()).get(), NOT_FOUND));
         /* */
+        Request r = findAnOccupiedRequest(nextKeeper.get().getId(), device.getId()).get();
         Request postExtendDurationRequest = new Request();
         postExtendDurationRequest.setRequester_Id(r.getRequester_Id());
         postExtendDurationRequest.setRequestId(r.getRequestId());
@@ -470,4 +425,100 @@ public class RequestService implements IRequestService {
             requestFilter.setDevice(requestFilter.getDevice().trim().toLowerCase());
     }
 
+    @Async
+    private CompletableFuture<List<Request>> getAllDevices(RequestFilterDTO requestFilter, List<Request> requests) throws ExecutionException, InterruptedException {
+        formatFilter(requestFilter);
+        requests = fetchFilteredRequest(requestFilter, requests).get();
+        return CompletableFuture.completedFuture(requests);
+    }
+
+    /* The OLD request will change its status to CANCELLED */
+    private void changeOldRequest(Request request) {
+        List<Request> preExtendDurationRequest = _requestRepository.findDeviceRelatedApprovedRequest(request.getId(), request.getCurrentKeeper_Id(), request.getDevice().getId(), TRANSFERRED);
+        if (preExtendDurationRequest != null) {
+            for (Request relatedRequest : preExtendDurationRequest) {
+                relatedRequest.setRequestStatus(RequestStatus.CANCELLED);
+                relatedRequest.setCancelledDate(new Date());
+                _requestRepository.save(relatedRequest);
+            }
+        }
+    }
+
+    /* Change device status to OCCUPIED when a request is approved */
+    private void changeDeviceStatus(Request request) {
+        Device device = _deviceRepository.findById(request.getDevice().getId());
+        if (device.getStatus() != Status.OCCUPIED) {
+            device.setStatus(Status.OCCUPIED);
+            _deviceRepository.save(device);
+        }
+    }
+
+    /* Get the latest keeper order's number */
+    private int returnKeeperNo(List<KeeperOrder> keeperOrderList) {
+        int keeperNo = 0;
+        if (keeperOrderList.size() != 0)
+            keeperNo = keeperOrderList.stream().max(Comparator.comparing(KeeperOrder::getKeeperNo)).map(KeeperOrder::getKeeperNo).get();
+        return keeperNo;
+    }
+
+    /* Change all related pending requests' status except the SUBMITTED request to CANCELLED */
+    private void cancelRelatedPendingRequest(Request request) {
+        List<Request> relatedRequests = _requestRepository.findDeviceRelatedApprovedRequest(request.getId(), request.getCurrentKeeper_Id(), request.getDevice().getId(), PENDING);
+        if (relatedRequests != null) {
+            for (Request relatedRequest : relatedRequests) {
+                relatedRequest.setRequestStatus(RequestStatus.CANCELLED);
+                relatedRequest.setCancelledDate(new Date());
+                _requestRepository.save(relatedRequest);
+            }
+        }
+    }
+
+    @Async
+    private CompletableFuture<KeeperOrder> returnCurrentKeeperOrder(List<KeeperOrder> keeperOrderList, Device device, User nextKeeper) throws ExecutionException, InterruptedException {
+        KeeperOrder currentKeeperOrder = new KeeperOrder();
+        for (KeeperOrder k : keeperOrderList) {
+            if (k.getKeeper().getId() == nextKeeper.getId())
+                currentKeeperOrder = k;
+        }
+        return CompletableFuture.completedFuture(currentKeeperOrder);
+    }
+
+    @Async
+    private CompletableFuture<String> checkExtendDurationRequest(ExtendDurationRequestDTO request, User nextKeeper, Device device) throws ExecutionException, InterruptedException {
+        if (request.getReturnDate() == null)
+            return CompletableFuture.completedFuture("Return date must not be empty!");
+        if (nextKeeper == null)
+            return CompletableFuture.completedFuture("Next keeper is not existent)");
+        if (device == null)
+            return CompletableFuture.completedFuture("Device is not existent");
+        Request r = findAnOccupiedRequest(nextKeeper.getId(), device.getId()).get();
+        if (r == null)
+            return CompletableFuture.completedFuture("Request is not existent");
+        if (request.getReturnDate().before(r.getReturnDate()))
+            return CompletableFuture.completedFuture("Return date must be after than the available current return date!");
+        return CompletableFuture.completedFuture(null);
+    }
+
+    /* Find the previous order to extend duration and validate the return date */
+    @Async
+    private CompletableFuture<String> validateViaPreviousOrder(ExtendDurationRequestDTO request, Device device, User nextKeeper) throws ExecutionException, InterruptedException {
+        List<KeeperOrder> keeperOrderList = _keeperOrderService.getKeeperOrderListByDeviceId(device.getId()).get();
+        KeeperOrder currentKeeperOrder = returnCurrentKeeperOrder(keeperOrderList, device, nextKeeper).get();
+        if (currentKeeperOrder == null)
+            return CompletableFuture.completedFuture("Request is not approved");
+        if (currentKeeperOrder.getKeeperNo() > 1) {
+            int currentOrder = currentKeeperOrder.getKeeperNo();
+            if (invalidReturnDate(request, keeperOrderList, currentOrder).get() != null)
+                return CompletableFuture.completedFuture(invalidReturnDate(request, keeperOrderList, currentOrder).get());
+        }
+        return CompletableFuture.completedFuture(null);
+    }
+
+    @Async
+    private CompletableFuture<String> invalidReturnDate(ExtendDurationRequestDTO request, List<KeeperOrder> keeperOrderList, int currentOrder) {
+        KeeperOrder previousKeeperOrder = keeperOrderList.stream().filter(k -> k.getKeeperNo() == currentOrder - 1).findFirst().get();
+        if (request.getReturnDate().after(previousKeeperOrder.getDueDate()))
+            return CompletableFuture.completedFuture("Return date exceeds the allowed duration!");
+        return CompletableFuture.completedFuture(null);
+    }
 }
