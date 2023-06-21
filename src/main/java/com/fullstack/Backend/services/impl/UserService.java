@@ -213,13 +213,6 @@ public class UserService implements IUserService {
     @Async
     @Override
     public CompletableFuture<ResponseEntity<Object>> verify(String verificationCode) throws ExecutionException, InterruptedException {
-        /* User user = _userRepository.findByVerificationCode(verificationCode);
-        if (user == null || user.isEnabled())
-            return CompletableFuture.completedFuture(ResponseEntity
-                    .badRequest()
-                    .body(new MessageResponse("Error: Sorry, we could not verify account. It maybe already verified,\n" +
-                            "        or verification code is incorrect.")));*/
-
         VerificationToken verificationToken = getVerificationToken(verificationCode).get();
         if (verificationToken == null || verificationToken.getUser().isEnabled())
             return CompletableFuture.completedFuture(ResponseEntity

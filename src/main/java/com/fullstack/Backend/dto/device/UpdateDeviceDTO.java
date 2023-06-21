@@ -9,7 +9,6 @@ import com.fullstack.Backend.enums.Status;
 
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -17,25 +16,18 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class UpdateDeviceDTO {
     private int id;
-    @NotNull
     @NotEmpty
     private String name;
-    @NotNull
     @NotEmpty
     private int statusId;
-    @NotNull
     @NotEmpty
     private int platformId;
-    @NotNull
     @NotEmpty
     private int itemTypeId;
-    @NotNull
     @NotEmpty
     private int ramId;
-    @NotNull
     @NotEmpty
     private int screenId;
-    @NotNull
     @NotEmpty
     private int storageId;
     @NotNull
@@ -44,17 +36,13 @@ public class UpdateDeviceDTO {
     @NotNull
     @NotEmpty
     private String serialNumber;
-    @NotNull
     @NotEmpty
     private int originId;
-    @NotNull
     @NotEmpty
     private int projectId;
     private Integer ownerId;
     private Integer keeperId;
     private String comments;
-    private Date createdDate;
-    private Date updatedDate;
     private Date bookingDate;
     private Date returnDate;
 
@@ -72,8 +60,6 @@ public class UpdateDeviceDTO {
         this.comments = device.getComments();
         this.projectId = Project.valueOf(device.getProject().toString()).ordinal();
         this.originId = Origin.valueOf(device.getOrigin().toString()).ordinal();
-        this.createdDate = device.getCreatedDate();
-        this.updatedDate = device.getUpdatedDate();
         this.bookingDate = device.getBookingDate();
         this.returnDate = device.getReturnDate();
     }

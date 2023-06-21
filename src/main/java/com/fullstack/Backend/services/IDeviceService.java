@@ -2,20 +2,13 @@ package com.fullstack.Backend.services;
 
 import java.io.IOException;
 import java.text.ParseException;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-
 import com.fullstack.Backend.dto.device.*;
 import com.fullstack.Backend.dto.request.ReturnKeepDeviceDTO;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
-
-import com.fullstack.Backend.entities.Device;
 import com.fullstack.Backend.responses.device.DropdownValuesResponse;
-import com.fullstack.Backend.utils.dropdowns.OriginList;
-import com.fullstack.Backend.utils.dropdowns.ProjectList;
-import com.fullstack.Backend.utils.dropdowns.StatusList;
 
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -31,8 +24,6 @@ public interface IDeviceService {
 
     public CompletableFuture<ResponseEntity<Object>> updateDevice(int deviceId, UpdateDeviceDTO device) throws ExecutionException, InterruptedException;
 
-    public void formatFilter(FilterDeviceDTO deviceFilterDTO);
-
     public CompletableFuture<ResponseEntity<Object>> deleteDevice(int deviceId);
 
     public void exportToExcel(HttpServletResponse response) throws IOException, ExecutionException, InterruptedException;
@@ -45,37 +36,16 @@ public interface IDeviceService {
     public CompletableFuture<ResponseEntity<Object>> getSuggestKeywordDevices(int fieldColumn, String keyword,
                                                                               FilterDeviceDTO dto) throws InterruptedException, ExecutionException;
 
-    public int getTotalPages(int pageSize, int listSize);
-
-    public CompletableFuture<List<Device>> fetchFilteredDevice(FilterDeviceDTO dto, List<Device> devices);
-
-    public CompletableFuture<List<DeviceDTO>> getPage(List<DeviceDTO> sourceList, int pageIndex, int pageSize);
-
     public CompletableFuture<DropdownValuesResponse> getDropDownValues()
             throws InterruptedException, ExecutionException;
 
-    public CompletableFuture<List<StatusList>> getStatusList();
-
-    public CompletableFuture<List<ProjectList>> getProjectList();
-
-    public CompletableFuture<List<OriginList>> getOriginList();
-
     public CompletableFuture<Boolean> doesDeviceExist(int deviceId);
-
-    public CompletableFuture<List<DeviceDTO>> convertEntityToDTO(List<Device> devices) throws ExecutionException, InterruptedException;
-
-    public CompletableFuture<List<DeviceDTO>> getDevicesOfOwner(int ownerId, FilterDeviceDTO dto, String sortBy, String sortDir) throws ExecutionException, InterruptedException;
-
-    public CompletableFuture<List<KeepingDeviceDTO>> getDevicesOfKeeper(int keeperId, FilterDeviceDTO dto) throws ExecutionException, InterruptedException;
 
     public CompletableFuture<ResponseEntity<Object>> getSuggestKeywordOwnedDevices(int ownerId, int fieldColumn, String keyword,
                                                                                    FilterDeviceDTO dto) throws InterruptedException, ExecutionException;
 
     public CompletableFuture<ResponseEntity<Object>> getSuggestKeywordKeepingDevices(int keeperId, int fieldColumn, String keyword,
                                                                                      FilterDeviceDTO dto) throws InterruptedException, ExecutionException;
-
-    public CompletableFuture<List<DeviceDTO>> applyFilterBookingAndReturnDateForDevices(FilterDeviceDTO dto, List<DeviceDTO> devices);
-
     public CompletableFuture<ResponseEntity<Object>> updateReturnKeepDevice(ReturnKeepDeviceDTO request) throws ExecutionException, InterruptedException, ParseException;
 
     public CompletableFuture<ResponseEntity<Object>> updateReturnOwnedDevice(ReturnKeepDeviceDTO request) throws ExecutionException, InterruptedException, ParseException;
@@ -84,7 +54,4 @@ public interface IDeviceService {
 
     public CompletableFuture<ResponseEntity<Object>> showKeepingDevicesWithPaging(int keeperId, int pageIndex, int pageSize, FilterDeviceDTO dto) throws ExecutionException, InterruptedException;
 
-    public CompletableFuture<List<KeepingDeviceDTO>> fetchFilteredKeepingDevice(FilterDeviceDTO dto, List<KeepingDeviceDTO> devices);
-
-    public CompletableFuture<List<KeepingDeviceDTO>> getPageForKeepingDevices(List<KeepingDeviceDTO> sourceList, int pageIndex, int pageSize);
 }

@@ -13,25 +13,18 @@ import lombok.Setter;
 public class AddDeviceDTO {
 	@NotEmpty(message = "Name is mandatory.")
 	private String name;
-	@NotNull
 	@NotEmpty
 	private int statusId;
-	@NotNull
 	@NotEmpty
 	private int platformId;
-	@NotNull
 	@NotEmpty
 	private int itemTypeId;
-	@NotNull
 	@NotEmpty
 	private int ramId;
-	@NotNull
 	@NotEmpty
 	private int screenId;
-	@NotNull
 	@NotEmpty
 	private int storageId;
-	@NotNull
 	@NotEmpty
 	private int ownerId;
 	@NotNull
@@ -40,10 +33,8 @@ public class AddDeviceDTO {
 	@NotNull
 	@NotEmpty(message = "Serial Number is mandatory.")
 	private String serialNumber;
-	@NotNull
 	@NotEmpty
 	private int originId;
-	@NotNull
 	@NotEmpty
 	private int projectId;
 	private String comments;
