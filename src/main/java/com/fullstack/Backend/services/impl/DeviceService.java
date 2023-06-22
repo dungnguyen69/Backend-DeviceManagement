@@ -78,6 +78,17 @@ public class DeviceService implements IDeviceService {
     @Autowired
     IRequestService _requestService;
 
+    @Async
+    @Override
+    public CompletableFuture<Device> getDeviceById(int deviceId) {
+        return CompletableFuture.completedFuture(_deviceRepository.findById(deviceId));
+    }
+
+    @Override
+    public void save(Device device) {
+        _deviceRepository.save(device);
+    }
+
 
     @Async
     @Override

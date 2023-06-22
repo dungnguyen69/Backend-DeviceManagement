@@ -6,6 +6,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import com.fullstack.Backend.dto.device.*;
 import com.fullstack.Backend.dto.request.ReturnKeepDeviceDTO;
+import com.fullstack.Backend.entities.Device;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
 import com.fullstack.Backend.responses.device.DropdownValuesResponse;
@@ -13,6 +14,8 @@ import com.fullstack.Backend.responses.device.DropdownValuesResponse;
 import jakarta.servlet.http.HttpServletResponse;
 
 public interface IDeviceService {
+    public CompletableFuture<Device> getDeviceById(int deviceId);
+
     public CompletableFuture<ResponseEntity<Object>> showDevicesWithPaging(int pageIndex, int pageSize,
                                                                            String sortBy, String sortDir, FilterDeviceDTO dto)
             throws InterruptedException, ExecutionException;
@@ -54,4 +57,5 @@ public interface IDeviceService {
 
     public CompletableFuture<ResponseEntity<Object>> showKeepingDevicesWithPaging(int keeperId, int pageIndex, int pageSize, FilterDeviceDTO dto) throws ExecutionException, InterruptedException;
 
+    public void save(Device device);
 }
