@@ -49,32 +49,19 @@ public class RequestService implements IRequestService {
         /* Were a list empty */
         if (requests.getRequestsList().size() == 0) {
             RequestFails requestFail = new RequestFails();
-            requestFail.setErrorMessage("You didn't submit requests");
-            requestFails.add(requestFail);
+            addToRequestFails(requestFails, requestFail, "You didn't submit requests");
         }
         for (var request : requests.getRequestsList()) {
             RequestFails requestFail = new RequestFails();
-            requestFail.setRequester(request.getRequester().trim());
-            requestFail.setNextKeeper(request.getNextKeeper().trim());
-            requestFail.setBookingDate(request.getBookingDate());
-            requestFail.setReturnDate(request.getReturnDate());
             User requester = _employeeService.findByUsername(request.getRequester().trim()).get(),
                     nextKeeper = _employeeService.findByUsername(request.getNextKeeper().trim()).get();
             if (!_deviceService.doesDeviceExist(request.getDeviceId()).get()) {
-                requestFail.setErrorMessage("The device you submitted is not existed");
-                requestFails.add(requestFail);
+                addToRequestFails(requestFails, requestFail, "The device you submitted is not existed");
                 continue;
             }
             Device device = _deviceService.getDeviceById(request.getDeviceId()).get();
-            requestFail.setDeviceName(device.getName().trim());
-            requestFail.setPlatformName(device.getPlatform().getName().trim());
-            requestFail.setPlatformVersion(device.getPlatform().getVersion().trim());
-            requestFail.setItemType(device.getItemType().getName().trim());
-            requestFail.setRamSize(device.getRam().getSize().toString().trim());
-            requestFail.setStorageSize(device.getStorage().getSize().toString().trim());
-            requestFail.setScreenSize(device.getScreen().getSize().toString().trim());
-            requestFail.setInventoryNumber(device.getInventoryNumber().trim());
-            requestFail.setSerialNumber(device.getSerialNumber().trim());
+            setUpRequestFail(requestFail, request, device);
+            User owner = _employeeService.findByUsername(device.getOwner().getUserName()).get();
 
             boolean isDeviceUsable = !device.getStatus().name().equalsIgnoreCase("broken") && !device.getStatus().name().equalsIgnoreCase("unavailable"),
                     isNextKeeperValid = nextKeeper != null && !request.getNextKeeper().trim().equalsIgnoreCase(device.getOwner().getUserName()),
@@ -82,34 +69,28 @@ public class RequestService implements IRequestService {
                     isRequesterInvalid = requester == null,
                     isBookingGreaterThanReturnDate = Objects.requireNonNull(request.getBookingDate()).before(Objects.requireNonNull(request.getReturnDate()));
             if (!isDeviceUsable) {
-                requestFail.setErrorMessage("The device you submitted is unusable");
-                requestFails.add(requestFail);
+                addToRequestFails(requestFails, requestFail, "The device you submitted is unusable");
                 continue;
             }
             if (isRequesterInvalid) {
-                requestFail.setErrorMessage("The requester must be non-null");
-                requestFails.add(requestFail);
+                addToRequestFails(requestFails, requestFail, "The requester must be non-null");
                 continue;
             }
             if (!isNextKeeperValid) {
-                requestFail.setErrorMessage("The next keeper you submitted must be non-null or not identical to a device's owner");
-                requestFails.add(requestFail);
+                addToRequestFails(requestFails, requestFail, "The next keeper you submitted must be non-null or not identical to a device's owner");
                 continue;
             }
             if (isDateInvalid) {
-                requestFail.setErrorMessage("The dates you submitted must be non-null");
-                requestFails.add(requestFail);
+                addToRequestFails(requestFails, requestFail, "The dates you submitted must be non-null");
                 continue;
             }
             if (!isBookingGreaterThanReturnDate) {
-                requestFail.setErrorMessage("The booking date must be less than return date");
-                requestFails.add(requestFail);
+                addToRequestFails(requestFails, requestFail, "The booking date must be less than return date");
                 continue;
             }
-            CompletableFuture<List<KeeperOrder>> keeperOrderList = _keeperOrderService.getKeeperOrderListByDeviceId(request.getDeviceId());
-            if (keeperOrderList.get().size() == 3) {
-                requestFail.setErrorMessage("Keeper number exceeds the allowance of times");
-                requestFails.add(requestFail);
+            CompletableFuture<List<KeeperOrder>> keeperOrderListByDeviceId = _keeperOrderService.getKeeperOrderListByDeviceId(request.getDeviceId());
+            if (keeperOrderListByDeviceId.get().size() == 3) {
+                addToRequestFails(requestFails, requestFail, "Keeper number exceeds the allowance of times");
                 continue;
             }
             String requestId = UUID.randomUUID().toString().replace("-", "");
@@ -122,41 +103,26 @@ public class RequestService implements IRequestService {
             requestData.setDevice_Id(device.getId());
             requestData.setCreatedDate(new Date());
 
-            boolean areRequestsIdentical = false;
-            for (Request r : requestSuccessful) {
-                if (r.getDevice_Id() == requestData.getDevice_Id() && r.getRequester_Id() == requestData.getRequester_Id() && r.getNextKeeper_Id() == requestData.getNextKeeper_Id()) {
-                    areRequestsIdentical = true;
-                    break;
-                }
-            }
             /* There are more than 2 identical requests when SUBMITTING */
-            if (areRequestsIdentical) {
-                requestFail.setErrorMessage("There are more than 2 identical requests when submitting");
-                requestFails.add(requestFail);
+            if (checkRequestWhenSubmitting(requestSuccessful, requestData)) {
+                addToRequestFails(requestFails, requestFail, "There are more than 2 identical requests when submitting");
                 continue;
             }
-
-            /* The requests whose device was never approved before but was not returned*/
-            if (keeperOrderList.get().size() == 0) {
-                User owner = _employeeService.findByUsername(device.getOwner().getUserName()).get();
-                boolean isRequestRepetitive = _requestRepository.findRepetitiveRequest(requester.getId(), owner.getId(), nextKeeper.getId(), device.getId()) != null;
+            /* Order number = 1*/
+            if (keeperOrderListByDeviceId.get().size() == 0) {
                 /* The submitted request is already existent in the database (the current keeper is the owner)*/
-                if (isRequestRepetitive) {
-                    requestFail.setErrorMessage("The submitted request is already existent in the database");
-                    requestFails.add(requestFail);
+                if (isSubmittedRequestExistentInDatabase(requester.getId(), owner.getId(), nextKeeper.getId(), device.getId())) {
+                    addToRequestFails(requestFails, requestFail, "The submitted request is already existent in the database");
                     continue;
                 }
                 /*
                 the OWNER of the booked device concurs the NEXT KEEPER to keep it
                 */
-                requestData.setAccepter_Id(owner.getId());
-                requestData.setCurrentKeeper_Id(owner.getId());
-                requestData.setRequestStatus(RequestStatus.values()[PENDING]);
-                requestSuccessful.add(requestData);
+                addRequestToList(requestData, requestSuccessful, owner.getId());
             }
 
-            /* The requests whose device was approved before but was not returned */
-            for (KeeperOrder keeperOrder : keeperOrderList.get()) {
+            /*  Order number > 1 */
+            for (KeeperOrder keeperOrder : keeperOrderListByDeviceId.get()) {
                 boolean areDatesInDuration = request.getBookingDate().before(request.getReturnDate()) && request.getBookingDate().after(keeperOrder.getBookingDate()) && request.getReturnDate().before(keeperOrder.getDueDate());
 
                 /* B borrowed A's
@@ -164,8 +130,7 @@ public class RequestService implements IRequestService {
                    A and B cannot borrow C's
                 */
                 if (nextKeeper.getId() == keeperOrder.getKeeper().getId()) {
-                    requestFail.setErrorMessage("The next keeper is existent in keeper order. Please try another next keeper");
-                    requestFails.add(requestFail);
+                    addToRequestFails(requestFails, requestFail, "The next keeper is existent in keeper order. Please try another next keeper");
                     break;
                 }
                 /*  1: B borrowed A's from 1/7 - 1/10
@@ -173,31 +138,24 @@ public class RequestService implements IRequestService {
                  *  3: D borrowed C's from 2/8 - 15/8
                  *  Hence, Booking date and return date must be
                  *  in the valid date range of the latest keeper order.
+                 *  Ex: 3's request must be from 2/8 - 31/8
                  * */
                 if (!areDatesInDuration) {
-                    requestFail.setErrorMessage("The booking date and/or return date are out of keeper order's date range");
-                    requestFails.add(requestFail);
+                    addToRequestFails(requestFails, requestFail, "The booking date and/or return date are out of keeper order's date range");
                     break;
                 }
-
-                boolean isRequestRepetitive = _requestRepository.findRepetitiveRequest(requester.getId(), keeperOrder.getKeeper().getId(), nextKeeper.getId(), device.getId()) != null;
                 /* The submitted request is already existent in the database (the current keeper is not the owner) */
-                if (isRequestRepetitive) {
-                    requestFail.setErrorMessage("Your request is repetitive");
-                    requestFails.add(requestFail);
+                if (isSubmittedRequestExistentInDatabase(requester.getId(), keeperOrder.getKeeper().getId(), nextKeeper.getId(), device.getId())) {
+                    addToRequestFails(requestFails, requestFail, "Your request is repetitive");
                     break;
                 }
-                /* A keeper order's no > 0
-                and someone keeping the booked device
-                concurs the NEXT KEEPER to keep it
+                /*
+                someone keeping the booked device concurs the NEXT KEEPER to keep it
                 */
-                requestData.setAccepter_Id(keeperOrder.getKeeper().getId());
-                requestData.setCurrentKeeper_Id(keeperOrder.getKeeper().getId());
-                requestData.setRequestStatus(RequestStatus.values()[PENDING]);
-                requestSuccessful.add(requestData);
+                addRequestToList(requestData, requestSuccessful, keeperOrder.getKeeper().getId());
             }
         }
-        if (requestFails.size() > 0) {
+        if (requestFails.size() > 0) { /* if there are fails */
             response.setFailedRequestsList(requestFails);
             return CompletableFuture.completedFuture(response);
         }
@@ -265,21 +223,18 @@ public class RequestService implements IRequestService {
             return CompletableFuture.completedFuture(new ResponseEntity<>(false, NOT_ACCEPTABLE));
         switch (requestDTO.getRequestStatus()) {
             case APPROVED -> {
-                request.get().setRequestStatus(RequestStatus.APPROVED);
                 request.get().setApprovalDate(new Date());
-                _requestRepository.save(request.get());
+                changeStatus(request.get(), RequestStatus.APPROVED);
                 cancelRelatedPendingRequest(request.get());
                 changeDeviceStatus(request.get());
             }
             case REJECTED -> {
-                request.get().setRequestStatus(RequestStatus.REJECTED);
                 request.get().setApprovalDate(new Date());
-                _requestRepository.save(request.get());
+                changeStatus(request.get(), RequestStatus.REJECTED);
             }
             case TRANSFERRED -> {
-                request.get().setRequestStatus(RequestStatus.TRANSFERRED);
                 request.get().setTransferredDate(new Date());
-                _requestRepository.save(request.get());
+                changeStatus(request.get(), RequestStatus.TRANSFERRED);
                 List<KeeperOrder> keeperOrderList = _keeperOrderService.getKeeperOrderListByDeviceId(request.get().getDevice().getId()).get();
                 int keeperNo = returnKeeperNo(keeperOrderList);
                 KeeperOrder keeperOrder = new KeeperOrder();
@@ -300,9 +255,8 @@ public class RequestService implements IRequestService {
             case EXTENDING -> {
                 /* The request will change its status and update approval date */
                 /* Accept extending */
-                request.get().setRequestStatus(RequestStatus.TRANSFERRED);
                 request.get().setApprovalDate(new Date());
-                _requestRepository.save(request.get());
+                changeStatus(request.get(), RequestStatus.TRANSFERRED);
                 changeOldRequest(request.get());
                 /* UPDATE order's return date */
                 KeeperOrder updatedKeeperOrder = _keeperOrderService.findKeeperOrderByDeviceIdAndKeeperId(
@@ -323,14 +277,30 @@ public class RequestService implements IRequestService {
          *  Find the current request via next keeper, device and status
          *  Find the previous order to have the max duration for the device
          *  Create a new request for sending requests to the person accepting reviews it
-         *
          * */
         CompletableFuture<User> nextKeeper = _employeeService.findByUsername(request.getNextKeeper());
         Device device = _deviceService.getDeviceById(request.getDeviceId()).get();
         if (checkExtendDurationRequest(request, nextKeeper.get(), device) != null)
             return CompletableFuture.completedFuture(new ResponseEntity<>(checkExtendDurationRequest(request, nextKeeper.get(), device), NOT_FOUND));
-        if (validateViaPreviousOrder(request, device, nextKeeper.get()) != null)
-            return CompletableFuture.completedFuture(new ResponseEntity<>(validateViaPreviousOrder(request, device, nextKeeper.get()), NOT_FOUND));
+
+        List<KeeperOrder> keeperOrderByDeviceIdList = _keeperOrderService.getKeeperOrderListByDeviceId(device.getId()).get();
+        KeeperOrder currentKeeperOrder = returnCurrentKeeperOrder(keeperOrderByDeviceIdList, nextKeeper.get()).get();
+
+        /* There is no UNRETURNED keeper order pertaining to provided device ID */
+        if (invalidCurrentOrder(currentKeeperOrder))
+            return CompletableFuture.completedFuture(new ResponseEntity<>("Request is not approved", NOT_FOUND));
+
+        if (isKeeperNoGreaterThan1(currentKeeperOrder)) {
+            int currentOrderNumber = currentKeeperOrder.getKeeperNo();
+            /* A: 1/9 - 1/11
+             *  B: 16/9 - 15/10
+             *  return date of B cannot be before 15/10
+             *  and cannot exceed 1/10
+             * */
+            if (doesReturnDateExceedLimitation(request, keeperOrderByDeviceIdList, currentOrderNumber))
+                return CompletableFuture.completedFuture(new ResponseEntity<>("Return date exceeds the allowed duration!", NOT_FOUND));
+        }
+
         /* */
         Request r = findAnOccupiedRequest(nextKeeper.get().getId(), device.getId()).get();
         Request postExtendDurationRequest = new Request();
@@ -434,14 +404,14 @@ public class RequestService implements IRequestService {
     }
 
 
-    private boolean isPreExtendDurationRequestExistent(List<Request> preExtendDurationRequest) {
-        return preExtendDurationRequest != null;
+    private boolean isRequestListInvalid(List<Request> requestList) {
+        return requestList != null;
     }
 
     /* The OLD transferred request will change its status to CANCELLED (EXTENDING) */
-    private void changeOldRequest(Request request)  {
+    private void changeOldRequest(Request request) {
         List<Request> preExtendDurationRequest = _requestRepository.findDeviceRelatedApprovedRequest(request.getId(), request.getCurrentKeeper_Id(), request.getDevice().getId(), TRANSFERRED);
-        if (isPreExtendDurationRequestExistent(preExtendDurationRequest)) {
+        if (isRequestListInvalid(preExtendDurationRequest)) {
             for (Request relatedRequest : preExtendDurationRequest) {
                 relatedRequest.setRequestStatus(RequestStatus.CANCELLED);
                 relatedRequest.setCancelledDate(new Date());
@@ -467,7 +437,7 @@ public class RequestService implements IRequestService {
     /* Cancel all related pending requests except the SUBMITTED request */
     private void cancelRelatedPendingRequest(Request request) {
         List<Request> relatedRequests = _requestRepository.findDeviceRelatedApprovedRequest(request.getId(), request.getCurrentKeeper_Id(), request.getDevice().getId(), PENDING);
-        if (relatedRequests != null) {
+        if (isRequestListInvalid(relatedRequests)) {
             for (Request relatedRequest : relatedRequests) {
                 relatedRequest.setRequestStatus(RequestStatus.CANCELLED);
                 relatedRequest.setCancelledDate(new Date());
@@ -477,7 +447,7 @@ public class RequestService implements IRequestService {
     }
 
     @Async
-    private CompletableFuture<KeeperOrder> returnCurrentKeeperOrder(List<KeeperOrder> keeperOrderList, User nextKeeper){
+    private CompletableFuture<KeeperOrder> returnCurrentKeeperOrder(List<KeeperOrder> keeperOrderList, User nextKeeper) {
         KeeperOrder currentKeeperOrder = new KeeperOrder();
         for (KeeperOrder k : keeperOrderList) {
             if (k.getKeeper().getId() == nextKeeper.getId())
@@ -489,45 +459,97 @@ public class RequestService implements IRequestService {
     private String checkExtendDurationRequest(ExtendDurationRequestDTO request, User nextKeeper, Device device) throws ExecutionException, InterruptedException {
         if (request.getReturnDate() == null)
             return "Return date must not be empty!";
-        if (nextKeeper == null)
+        if (isUserInvalid(nextKeeper))
             return "Next keeper is not existent)";
-        if (device == null)
+        if (isDeviceInvalid(device))
             return "Device is not existent";
-        Request r = findAnOccupiedRequest(nextKeeper.getId(), device.getId()).get();
-        if (r == null)
+        Request currentRequest = findAnOccupiedRequest(nextKeeper.getId(), device.getId()).get();
+        if (isRequestInvalid(currentRequest))
             return "Request is not existent";
-        if (request.getReturnDate().before(r.getReturnDate()))
+        /* A: 1/9 - 1/11
+         *  B: 16/9 - 15/10
+         *  return date of B cannot be before 15/10
+         * */
+        if (isReturnDateBeforeCurrentRequest(request, currentRequest))
             return "Return date must be after than the available current return date!";
         return null;
+    }
+
+    private boolean isUserInvalid(User user) {
+        return user == null;
+    }
+
+    private boolean isDeviceInvalid(Device device) {
+        return device == null;
+    }
+
+    private boolean isRequestInvalid(Request request) {
+        return request == null;
+    }
+
+    private boolean isReturnDateBeforeCurrentRequest(ExtendDurationRequestDTO request, Request currentRequest) {
+        return request.getReturnDate().before(currentRequest.getReturnDate());
     }
 
     private boolean invalidCurrentOrder(KeeperOrder currentKeeperOrder) {
         return currentKeeperOrder == null;
     }
 
-    /* Find the previous order to extend duration and validate the return date */
-    private String validateViaPreviousOrder(ExtendDurationRequestDTO request, Device device, User nextKeeper) throws ExecutionException, InterruptedException {
-        List<KeeperOrder> keeperOrderList = _keeperOrderService.getKeeperOrderListByDeviceId(device.getId()).get();
-        KeeperOrder currentKeeperOrder = returnCurrentKeeperOrder(keeperOrderList, nextKeeper).get();
-
-        if (invalidCurrentOrder(currentKeeperOrder))
-            return "Request is not approved";
-
-        if (isKeeperNoGreaterThan1(currentKeeperOrder)) {
-            int currentOrder = currentKeeperOrder.getKeeperNo();
-            if (invalidReturnDate(request, keeperOrderList, currentOrder) != null)
-                return invalidReturnDate(request, keeperOrderList, currentOrder);
-        }
-        return null;
-    }
-
     private boolean isKeeperNoGreaterThan1(KeeperOrder currentKeeperOrder) {
         return currentKeeperOrder.getKeeperNo() > 1;
     }
 
-    private String invalidReturnDate(ExtendDurationRequestDTO request, List<KeeperOrder> keeperOrderList, int currentOrder) {
-        KeeperOrder previousKeeperOrder = keeperOrderList.stream().filter(k -> k.getKeeperNo() == currentOrder - 1).findFirst().get();
-        boolean invalidReturnDate = request.getReturnDate().after(previousKeeperOrder.getDueDate());
-        return invalidReturnDate ? "Return date exceeds the allowed duration!" : null;
+    private boolean doesReturnDateExceedLimitation(ExtendDurationRequestDTO request, List<KeeperOrder> keeperOrderList, int currentOrderNumber) {
+        KeeperOrder previousKeeperOrder = keeperOrderList.stream().filter(k -> k.getKeeperNo() == currentOrderNumber - 1).findFirst().get();
+        return request.getReturnDate().after(previousKeeperOrder.getDueDate());
+    }
+
+    private void changeStatus(Request request, RequestStatus requestStatus) {
+        request.setRequestStatus(requestStatus);
+        _requestRepository.save(request);
+    }
+
+    private void setUpRequestFail(RequestFails requestFail, SubmitBookingRequestDTO.RequestInput request, Device device) {
+        requestFail.setRequester(request.getRequester().trim());
+        requestFail.setNextKeeper(request.getNextKeeper().trim());
+        requestFail.setBookingDate(request.getBookingDate());
+        requestFail.setReturnDate(request.getReturnDate());
+        requestFail.setDeviceName(device.getName().trim());
+        requestFail.setPlatformName(device.getPlatform().getName().trim());
+        requestFail.setPlatformVersion(device.getPlatform().getVersion().trim());
+        requestFail.setItemType(device.getItemType().getName().trim());
+        requestFail.setRamSize(device.getRam().getSize().toString().trim());
+        requestFail.setStorageSize(device.getStorage().getSize().toString().trim());
+        requestFail.setScreenSize(device.getScreen().getSize().toString().trim());
+        requestFail.setInventoryNumber(device.getInventoryNumber().trim());
+        requestFail.setSerialNumber(device.getSerialNumber().trim());
+    }
+
+    private void addToRequestFails(List<RequestFails> requestFails, RequestFails requestFail, String errorMessage) {
+        requestFail.setErrorMessage(errorMessage);
+        requestFails.add(requestFail);
+    }
+
+    private boolean isSubmittedRequestExistentInDatabase(int requesterId, int ownerId, int nextKeeperId, int deviceId) {
+        return _requestRepository.findRepetitiveRequest(requesterId, ownerId, nextKeeperId, deviceId) != null;
+    }
+
+    private boolean areSubmittedRequestIdentical(Request oldRequest, Request newRequest) {
+        return oldRequest.getDevice_Id() == newRequest.getDevice_Id() && oldRequest.getRequester_Id() == newRequest.getRequester_Id() && oldRequest.getNextKeeper_Id() == newRequest.getNextKeeper_Id();
+    }
+
+    private boolean checkRequestWhenSubmitting(List<Request> requestSuccessful, Request requestData) {
+        for (Request oldRequest : requestSuccessful) {
+            if (areSubmittedRequestIdentical(oldRequest, requestData))
+                return true;
+        }
+        return false;
+    }
+
+    private void addRequestToList(Request requestData, List<Request> requestSuccessful, int userId) {
+        requestData.setAccepter_Id(userId);
+        requestData.setCurrentKeeper_Id(userId);
+        requestData.setRequestStatus(RequestStatus.values()[PENDING]);
+        requestSuccessful.add(requestData);
     }
 }

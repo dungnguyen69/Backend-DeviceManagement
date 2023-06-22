@@ -11,6 +11,8 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import static com.fullstack.Backend.constant.constant.*;
+
 public interface IRequestRepository extends JpaRepository<Request, Long>, JpaSpecificationExecutor<Request> {
     public static final String FIND_ALL_REQUESTS_BY_EMPLOYEE_ID = "SELECT r FROM Request r WHERE "
             + "currentKeeper_Id = :employeeId "
@@ -26,12 +28,12 @@ public interface IRequestRepository extends JpaRepository<Request, Long>, JpaSpe
             + "AND r.currentKeeper_Id = :currentKeeperId "
             + "AND r.nextKeeper_Id = :nextKeeperId "
             + "AND r.device_Id = :deviceId "
-            + "AND r.requestStatus IN (0,4)";
+            + "AND r.requestStatus IN (" + APPROVED + "," + PENDING + ")";
 
     public static final String FIND_AN_OCCUPIED_REQUEST = "SELECT r FROM Request r WHERE "
             + "r.nextKeeper_Id = :nextKeeperId "
             + "AND r.device_Id = :deviceId "
-            + "AND r.requestStatus = 3";
+            + "AND r.requestStatus = " + TRANSFERRED;
 
     @Query(FIND_ALL_REQUESTS_BY_EMPLOYEE_ID)
     public List<Request> findAllRequest(int employeeId, Sort sort);
