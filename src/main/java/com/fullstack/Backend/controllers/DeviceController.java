@@ -12,16 +12,7 @@ import java.util.concurrent.ExecutionException;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import static com.fullstack.Backend.constant.constant.*;
@@ -49,7 +40,7 @@ public class DeviceController {
             @RequestParam(defaultValue = DEFAULT_PAGE_SIZE, required = false) int pageSize,
             @RequestParam(defaultValue = DEFAULT_SORT_BY, required = false) String sortBy,
             @RequestParam(defaultValue = DEFAULT_SORT_DIRECTION, required = false) String sortDir,
-            @DateTimeFormat(pattern = "yyyy-MM-dd") FilterDeviceDTO deviceFilterDTO) throws InterruptedException, ExecutionException {
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) FilterDeviceDTO deviceFilterDTO) throws InterruptedException, ExecutionException {
         return _deviceService.showDevicesWithPaging(pageNo, pageSize, sortBy, sortDir, deviceFilterDTO);
     }
 
@@ -80,7 +71,8 @@ public class DeviceController {
     @ResponseBody
     public CompletableFuture<ResponseEntity<Object>> getSuggestKeywordDevices(
             @RequestParam(name = "column") int fieldColumn,
-            @RequestParam(name = "keyword") String keyword, FilterDeviceDTO device)
+            @RequestParam(name = "keyword") String keyword,
+            FilterDeviceDTO device)
             throws InterruptedException, ExecutionException {
         return _deviceService.getSuggestKeywordDevices(fieldColumn,
                 keyword, device);

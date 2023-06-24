@@ -38,7 +38,7 @@ public class RequestService implements IRequestService {
     @Autowired
     IKeeperOrderService _keeperOrderService;
     @Autowired
-    IDeviceService _deviceService;
+    IDeviceRepository _deviceRepository;
 
     @Async
     @Override
@@ -55,11 +55,11 @@ public class RequestService implements IRequestService {
             RequestFails requestFail = new RequestFails();
             User requester = _employeeService.findByUsername(request.getRequester().trim()).get(),
                     nextKeeper = _employeeService.findByUsername(request.getNextKeeper().trim()).get();
-            if (!_deviceService.doesDeviceExist(request.getDeviceId()).get()) {
+            if (!_deviceRepository.existsById((long) request.getDeviceId())) {
                 addToRequestFails(requestFails, requestFail, "The device you submitted is not existed");
                 continue;
             }
-            Device device = _deviceService.getDeviceById(request.getDeviceId()).get();
+            Device device = _deviceRepository.findById(request.getDeviceId());
             setUpRequestFail(requestFail, request, device);
             User owner = _employeeService.findByUsername(device.getOwner().getUserName()).get();
 
@@ -279,7 +279,7 @@ public class RequestService implements IRequestService {
          *  Create a new request for sending requests to the person accepting reviews it
          * */
         CompletableFuture<User> nextKeeper = _employeeService.findByUsername(request.getNextKeeper());
-        Device device = _deviceService.getDeviceById(request.getDeviceId()).get();
+        Device device = _deviceRepository.findById(request.getDeviceId());
         if (checkExtendDurationRequest(request, nextKeeper.get(), device) != null)
             return CompletableFuture.completedFuture(new ResponseEntity<>(checkExtendDurationRequest(request, nextKeeper.get(), device), NOT_FOUND));
 
@@ -422,10 +422,10 @@ public class RequestService implements IRequestService {
 
     /* Change device status to OCCUPIED when a request is approved */
     private void changeDeviceStatus(Request request) throws ExecutionException, InterruptedException {
-        Device device = _deviceService.getDeviceById(request.getDevice().getId()).get();
+        Device device = _deviceRepository.findById(request.getDevice().getId());
         if (device.getStatus() != Status.OCCUPIED) {
             device.setStatus(Status.OCCUPIED);
-            _deviceService.save(device);
+            _deviceRepository.save(device);
         }
     }
 
