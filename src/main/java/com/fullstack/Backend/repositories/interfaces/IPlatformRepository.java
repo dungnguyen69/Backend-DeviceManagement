@@ -13,7 +13,7 @@ public interface IPlatformRepository extends JpaRepository<Platform, Long> {
 	public static final String FIND_PLATFORM_VERSION = "SELECT version FROM Platform";
 	public static final String FIND_PLATFORM_NAME_VERSION = "SELECT name,version FROM Platform";
 	public static final String FIND_PLATFORM = "SELECT p FROM Platform p WHERE name = :name and version = :version";
-	public static final String FETCH_PLATFORM = "SELECT Id, name, version FROM Platform";
+	public static final String FETCH_PLATFORM = "SELECT p FROM Platform p";
 
 	@Query(FIND_PLATFORM_NAME)
 	public List<String> findPlatformName();

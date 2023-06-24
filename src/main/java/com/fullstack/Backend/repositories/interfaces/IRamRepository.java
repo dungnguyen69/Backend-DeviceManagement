@@ -9,7 +9,7 @@ import com.fullstack.Backend.utils.dropdowns.RamList;
 public interface IRamRepository extends JpaRepository<Ram, Long> {
 	public static final String FIND_RAM_SIZES = "SELECT size FROM Ram";
 	public static final String FIND_RAM = "SELECT r FROM Ram r WHERE size = :size";
-	public static final String FETCH_RAMS = "SELECT Id, size FROM Ram";
+	public static final String FETCH_RAMS = "SELECT r FROM Ram r";
 	
 	@Query(FIND_RAM_SIZES)
 	public List<String> findRamSize();

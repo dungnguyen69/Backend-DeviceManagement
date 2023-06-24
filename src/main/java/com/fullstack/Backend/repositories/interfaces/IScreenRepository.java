@@ -9,7 +9,7 @@ import com.fullstack.Backend.utils.dropdowns.ScreenList;
 public interface IScreenRepository extends JpaRepository<Screen, Long> {
 	public static final String FIND_SCREEN_SIZES = "SELECT size FROM Screen";
 	public static final String FIND_SCREEN = "SELECT s FROM Screen s WHERE size = :size";
-	public static final String FETCH_SCREENS= "SELECT Id, size FROM Screen";
+	public static final String FETCH_SCREENS= "SELECT s FROM Screen s";
 
 	@Query(FIND_SCREEN_SIZES)
 	public List<String> findScreenSize();

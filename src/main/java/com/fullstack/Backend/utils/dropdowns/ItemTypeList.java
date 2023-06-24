@@ -2,6 +2,6 @@ package com.fullstack.Backend.utils.dropdowns;
 
 
 public interface ItemTypeList {
-	String getId();
+	int getId();
 	String getName();
 }

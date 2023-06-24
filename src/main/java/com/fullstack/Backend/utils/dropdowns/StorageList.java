@@ -2,6 +2,6 @@ package com.fullstack.Backend.utils.dropdowns;
 
 
 public interface StorageList {
-	String getId();
+	int getId();
 	String getSize();
 }

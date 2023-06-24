@@ -1,6 +1,6 @@
 package com.fullstack.Backend.utils.dropdowns;
 
 public interface ScreenList {
-	String getId();
+	int getId();
 	String getSize();
 }

@@ -1,6 +1,6 @@
 package com.fullstack.Backend.utils.dropdowns;
 
 public interface RamList {
-	String getId();
+	int getId();
 	String getSize();
 }

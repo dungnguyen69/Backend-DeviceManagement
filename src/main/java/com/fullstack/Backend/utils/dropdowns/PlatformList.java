@@ -1,7 +1,7 @@
 package com.fullstack.Backend.utils.dropdowns;
 
 public interface PlatformList {
-	String getId();
+	int getId();
 	String getName();
 	String getVersion();
 }
