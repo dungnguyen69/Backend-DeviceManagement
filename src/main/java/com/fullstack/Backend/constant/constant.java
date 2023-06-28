@@ -25,6 +25,12 @@ public class constant {
     public static final int REQUEST_REQUESTER_COLUMN = 2;
     public static final int REQUEST_CURRENT_KEEPER_COLUMN = 3;
     public static final int REQUEST_NEXT_KEEPER_COLUMN = 4;
+
+    public static final int USER_ID_COLUMN = 0;
+    public static final int USER_NAME_COLUMN = 1;
+    public static final int USER_FIRST_NAME_COLUMN = 2;
+
+
     // For import
     public static final int DEVICE_NAME = 0;
     public static final int DEVICE_STATUS = 1;

@@ -115,7 +115,7 @@ public class Device extends BaseEntity {
     private Date returnDate;
 
     public void loadToEntity(AddDeviceDTO addDeviceDTO) {
-        this.name = addDeviceDTO.getName();
+        this.name = addDeviceDTO.getDeviceName();
         this.itemTypeId = addDeviceDTO.getItemTypeId();
         this.status = Status.values()[addDeviceDTO.getStatusId()];
         this.platformId = addDeviceDTO.getPlatformId();
@@ -127,7 +127,6 @@ public class Device extends BaseEntity {
         this.comments = addDeviceDTO.getComments();
         this.project = Project.values()[addDeviceDTO.getProjectId()];
         this.origin = Origin.values()[addDeviceDTO.getOriginId()];
-        this.ownerId = addDeviceDTO.getOwnerId();
         this.setCreatedDate(new Date());
     }
 }
