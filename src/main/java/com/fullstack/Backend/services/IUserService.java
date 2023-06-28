@@ -5,12 +5,14 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
+import com.fullstack.Backend.dto.device.FilterDeviceDTO;
 import com.fullstack.Backend.dto.users.*;
 import com.fullstack.Backend.entities.PasswordResetToken;
 import com.fullstack.Backend.entities.User;
 import com.fullstack.Backend.entities.VerificationToken;
 import jakarta.mail.MessagingException;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.core.Authentication;
 
 public interface IUserService {
@@ -60,4 +62,7 @@ public interface IUserService {
     public CompletableFuture<User> findByToken(String token);
 
     public CompletableFuture<ResponseEntity<Object>> saveForgotPassword(ForgotPasswordDTO dto) throws ExecutionException, InterruptedException, MessagingException;
+
+    public CompletableFuture<ResponseEntity<Object>> getSuggestKeywordUsers(int fieldColumn, String keyword, FilterUserDTO filter) throws InterruptedException, ExecutionException;
+
 }
