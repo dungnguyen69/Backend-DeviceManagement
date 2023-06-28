@@ -19,5 +19,5 @@ import lombok.Setter;
 @Table(name = "Screens")
 public class Screen extends BaseEntity{
 	@Column(nullable = false)
-	private Long size;
+	private String size;
 }
