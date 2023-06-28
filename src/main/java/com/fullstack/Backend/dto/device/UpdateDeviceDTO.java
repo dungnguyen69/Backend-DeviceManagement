@@ -16,32 +16,19 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class UpdateDeviceDTO {
     private int id;
-    @NotEmpty
     private String name;
-    @NotEmpty
     private int statusId;
-    @NotEmpty
     private int platformId;
-    @NotEmpty
     private int itemTypeId;
-    @NotEmpty
     private int ramId;
-    @NotEmpty
     private int screenId;
-    @NotEmpty
     private int storageId;
-    @NotNull
-    @NotEmpty
     private String inventoryNumber;
-    @NotNull
-    @NotEmpty
     private String serialNumber;
-    @NotEmpty
     private int originId;
-    @NotEmpty
     private int projectId;
-    private Integer ownerId;
-    private Integer keeperId;
+    private String owner;
+    private String keeper;
     private String comments;
     private Date bookingDate;
     private Date returnDate;
