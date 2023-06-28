@@ -1,5 +1,4 @@
 package com.fullstack.Backend.controllers;
-
 import com.fullstack.Backend.dto.users.*;
 import com.fullstack.Backend.responses.users.MessageResponse;
 import com.fullstack.Backend.services.IUserService;
@@ -22,7 +21,7 @@ import java.util.concurrent.ExecutionException;
 import static com.fullstack.Backend.constant.constant.*;
 import static com.fullstack.Backend.constant.constant.DEFAULT_SORT_DIRECTION;
 
-@CrossOrigin(origins = "*", maxAge = 3600)
+//@CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
@@ -109,5 +108,15 @@ public class UserController {
     public CompletableFuture<ResponseEntity<Object>> saveForgotPassword(
             @Valid @RequestBody ForgotPasswordDTO dto) throws ExecutionException, InterruptedException, MessagingException {
         return _userService.saveForgotPassword(dto);
+    }
+
+    @GetMapping("/suggestion")
+    @ResponseBody
+    public CompletableFuture<ResponseEntity<Object>> getSuggestKeywordDevices(
+            @RequestParam(name = "column") int fieldColumn,
+            @RequestParam(name = "keyword") String keyword,
+            FilterUserDTO filter)
+            throws InterruptedException, ExecutionException {
+        return _userService.getSuggestKeywordUsers(fieldColumn, keyword, filter);
     }
 }

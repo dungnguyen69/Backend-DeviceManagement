@@ -6,14 +6,15 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
+import com.fullstack.Backend.dto.device.DeviceDTO;
+import com.fullstack.Backend.dto.device.FilterDeviceDTO;
 import com.fullstack.Backend.dto.users.*;
-import com.fullstack.Backend.entities.PasswordResetToken;
-import com.fullstack.Backend.entities.SystemRole;
-import com.fullstack.Backend.entities.VerificationToken;
+import com.fullstack.Backend.entities.*;
 import com.fullstack.Backend.enums.Role;
 import com.fullstack.Backend.repositories.interfaces.IPasswordResetTokenRepository;
 import com.fullstack.Backend.repositories.interfaces.ISystemRoleRepository;
 import com.fullstack.Backend.repositories.interfaces.IVerificationTokenRepository;
+import com.fullstack.Backend.responses.device.KeywordSuggestionResponse;
 import com.fullstack.Backend.responses.users.JwtResponse;
 import com.fullstack.Backend.responses.users.MessageResponse;
 import com.fullstack.Backend.responses.users.UsersResponse;
@@ -33,11 +34,11 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import com.fullstack.Backend.entities.User;
 import com.fullstack.Backend.repositories.interfaces.IUserRepository;
 import com.fullstack.Backend.services.IUserService;
 
-import static com.fullstack.Backend.constant.constant.FROM_ADDRESS;
+import static com.fullstack.Backend.constant.constant.*;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.OK;
 
 
@@ -79,7 +80,7 @@ public class UserService implements IUserService {
     @Async
     @Override
     public CompletableFuture<User> findByUsername(String username) {
-        return CompletableFuture.completedFuture(_userRepository.findByUserName(username).orElseThrow(null));
+        return CompletableFuture.completedFuture(_userRepository.findByUserName(username).orElse(null));
     }
 
     @Async
@@ -334,6 +335,7 @@ public class UserService implements IUserService {
         sendResetPasswordEmail(user.get(), verifyURL);
         return CompletableFuture.completedFuture(ResponseEntity.ok(new MessageResponse("Sent successfully!")));
     }
+
     @Async
     @Override
     public CompletableFuture<ResponseEntity<Object>> saveResetPassword(ResetPasswordDTO dto) throws ExecutionException, InterruptedException, MessagingException {
@@ -380,7 +382,51 @@ public class UserService implements IUserService {
                 : null;
     }
 
+    @Async()
+    @Override
+    public CompletableFuture<ResponseEntity<Object>> getSuggestKeywordUsers(int fieldColumn, String keyword, FilterUserDTO filter) throws InterruptedException, ExecutionException {
+        if (keyword.trim().isBlank())
+            return CompletableFuture.completedFuture(ResponseEntity.status(NOT_FOUND).body("Keyword must be non-null"));
 
+        List<User> users = _userRepository.findAll();
+        List<UserDTO> deviceList = getAllDevices(users, filter).get();
+        Set<String> keywordList = selectColumnForKeywordSuggestion(deviceList, keyword, fieldColumn).get();
+        KeywordSuggestionResponse response = new KeywordSuggestionResponse();
+        response.setKeywordList(keywordList);
+        return CompletableFuture.completedFuture(new ResponseEntity<>(response, OK));
+    }
+
+    @Async
+    private CompletableFuture<List<UserDTO>> getAllDevices(List<User> users, FilterUserDTO filter) throws ExecutionException, InterruptedException {
+        formatFilter(filter); /* Remove spaces and make input text become lowercase*/
+        users = fetchFilteredUsers(filter, users).get(); /*List of devices after filtering*/
+        List<UserDTO> deviceList = convertEntityToDTO(users).get();
+        return CompletableFuture.completedFuture(deviceList);
+    }
+
+    @Async
+    private CompletableFuture<List<UserDTO>> convertEntityToDTO(List<User> users) throws ExecutionException, InterruptedException {
+        List<UserDTO> userList = users.stream().map(UserDTO::new).collect(Collectors.toList());
+        return CompletableFuture.completedFuture(userList);
+    }
+
+    @Async
+    private CompletableFuture<Set<String>> selectColumnForKeywordSuggestion(List<UserDTO> userList, String keyword, int fieldColumn) {
+        Set<String> keywordList = new HashSet<>();
+        switch (fieldColumn) { /*Fetch only one column*/
+            case USER_NAME_COLUMN -> keywordList = userList.stream()
+                    .map(UserDTO::getUserName)
+                    .filter(userName -> userName.toLowerCase().contains(keyword.strip().toLowerCase()))
+                    .limit(20)
+                    .collect(Collectors.toSet());
+            case USER_FIRST_NAME_COLUMN -> keywordList = userList.stream()
+                    .map(UserDTO::getFirstName)
+                    .filter(firstName -> firstName.toLowerCase().contains(keyword.strip().toLowerCase()))
+                    .limit(20)
+                    .collect(Collectors.toSet());
+        }
+        return CompletableFuture.completedFuture(keywordList);
+    }
 
     @Async
     private CompletableFuture<List<UserDTO>> getPage(List<UserDTO> sourceList, int pageIndex, int pageSize) {
