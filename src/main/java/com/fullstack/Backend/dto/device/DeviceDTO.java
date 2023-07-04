@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
+@NoArgsConstructor
 public class DeviceDTO {
     @JsonProperty("Id")
     public int Id;
@@ -22,11 +23,11 @@ public class DeviceDTO {
     @JsonProperty("PlatformVersion")
     public String PlatformVersion;
     @JsonProperty("RamSize")
-    public Long RamSize;
+    public String RamSize;
     @JsonProperty("ScreenSize")
-    public Long ScreenSize;
+    public String ScreenSize;
     @JsonProperty("StorageSize")
-    public Long StorageSize;
+    public String StorageSize;
     @JsonProperty("InventoryNumber")
     public String InventoryNumber;
     @JsonProperty("SerialNumber")

@@ -15,7 +15,7 @@ public interface IStorageRepository extends JpaRepository<Storage, Long> {
 	public List<String> findStorageSize();
 	
 	@Query(FIND_STORAGE)
-	public Storage findBySize(int size);
+	public Storage findBySize(String size);
 	
 	@Query(value = FETCH_STORAGE)
 	public List<StorageList> fetchStorage();

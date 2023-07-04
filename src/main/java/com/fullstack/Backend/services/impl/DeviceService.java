@@ -650,11 +650,11 @@ public class DeviceService implements IDeviceService {
         if (deviceFilter.getItemType() != null)
             devices = devices.stream().filter(device -> device.getItemType().getName().equalsIgnoreCase(deviceFilter.getItemType())).collect(Collectors.toList());
         if (deviceFilter.getRam() != null)
-            devices = devices.stream().filter(device -> device.getRam().getSize().toString().toLowerCase().equals(deviceFilter.getRam())).collect(Collectors.toList());
+            devices = devices.stream().filter(device -> device.getRam().getSize().equalsIgnoreCase(deviceFilter.getRam())).collect(Collectors.toList());
         if (deviceFilter.getScreen() != null)
-            devices = devices.stream().filter(device -> device.getStorage().getSize().toString().toLowerCase().equals(deviceFilter.getScreen())).collect(Collectors.toList());
+            devices = devices.stream().filter(device -> device.getScreen().getSize().equalsIgnoreCase(deviceFilter.getScreen())).collect(Collectors.toList());
         if (deviceFilter.getStorage() != null)
-            devices = devices.stream().filter(device -> device.getStorage().getSize().toString().toLowerCase().equals(deviceFilter.getStorage())).collect(Collectors.toList());
+            devices = devices.stream().filter(device -> device.getStorage().getSize().equalsIgnoreCase(deviceFilter.getStorage())).collect(Collectors.toList());
         if (deviceFilter.getOwner() != null)
             devices = devices.stream().filter(device -> device.getOwner().getUserName().toLowerCase().equals(deviceFilter.getOwner())).collect(Collectors.toList());
         if (deviceFilter.getOrigin() != null)

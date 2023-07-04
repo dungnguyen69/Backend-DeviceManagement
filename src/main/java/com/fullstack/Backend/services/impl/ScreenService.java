@@ -20,7 +20,7 @@ public class ScreenService implements IScreenService {
 
 	@Async
 	@Override
-	public CompletableFuture<Screen> findBySize(int size) {
+	public CompletableFuture<Screen> findBySize(String size) {
 		return CompletableFuture.completedFuture(_screenRepository.findBySize(size));
 	}
 

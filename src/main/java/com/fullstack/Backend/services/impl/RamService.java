@@ -20,7 +20,7 @@ public class RamService implements IRamService {
 
     @Async
     @Override
-    public CompletableFuture<Ram> findBySize(int size) {
+    public CompletableFuture<Ram> findBySize(String size) {
         return CompletableFuture.completedFuture(_ramRepository.findBySize(size));
     }
 

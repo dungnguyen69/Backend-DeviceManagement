@@ -19,7 +19,7 @@ public class StorageService implements IStorageService {
 	IStorageRepository _storageRepository;
 	@Async
 	@Override
-	public CompletableFuture<Storage> findBySize(int size) {
+	public CompletableFuture<Storage> findBySize(String size) {
 		return CompletableFuture.completedFuture(_storageRepository.findBySize(size));
 	}
 

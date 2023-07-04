@@ -15,7 +15,7 @@ public interface IRamRepository extends JpaRepository<Ram, Long> {
 	public List<String> findRamSize();
 
 	@Query(FIND_RAM)
-	public Ram findBySize(int size);
+	public Ram findBySize(String size);
 	
 	@Query(FETCH_RAMS)
 	public List<RamList> fetchRams();

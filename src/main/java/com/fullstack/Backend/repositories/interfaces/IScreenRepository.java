@@ -15,7 +15,7 @@ public interface IScreenRepository extends JpaRepository<Screen, Long> {
 	public List<String> findScreenSize();
 
 	@Query(FIND_SCREEN)
-	public Screen findBySize(int size);
+	public Screen findBySize(String size);
 	
 	@Query(FETCH_SCREENS)
 	public List<ScreenList> fetchScreen();
