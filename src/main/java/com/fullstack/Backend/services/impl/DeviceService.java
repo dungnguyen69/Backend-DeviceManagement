@@ -260,6 +260,7 @@ public class DeviceService implements IDeviceService {
         deviceExcelTemplate.export(response, dropDownListsDTO);
     }
 
+    /* Check if rows are empty*/
     @Async
     @Override
     public CompletableFuture<ResponseEntity<Object>> importToDb(MultipartFile file) throws Exception {
@@ -726,61 +727,39 @@ public class DeviceService implements IDeviceService {
                     .filter(device -> device.getReturnDate() != null)
                     .filter(device -> device.getReturnDate().before(deviceFilter.getReturnDate()))
                     .collect(Collectors.toList());
+        if (deviceFilter.getKeeper() != null)
+            devices = devices.stream().filter(device -> device.getKeeper().equalsIgnoreCase(deviceFilter.getKeeper())).collect(Collectors.toList());
         return CompletableFuture.completedFuture(devices);
     }
 
     @Async
     private CompletableFuture<Set<String>> selectColumnForKeywordSuggestion(List<DeviceDTO> deviceList, String keyword, int fieldColumn) {
         Set<String> keywordList = new HashSet<>();
+        Stream<String> mappedDeviceList = null;
         switch (fieldColumn) { /*Fetch only one column*/
-            case DEVICE_NAME_COLUMN -> keywordList = deviceList.stream()
-                    .map(DeviceDTO::getDeviceName)
-                    .filter(deviceName -> deviceName.toLowerCase().contains(keyword.strip().toLowerCase()))
-                    .limit(20)
-                    .collect(Collectors.toSet());
-            case DEVICE_PLATFORM_NAME_COLUMN -> keywordList = deviceList.stream()
-                    .map(DeviceDTO::getPlatformName)
-                    .filter(platformName -> platformName.toLowerCase().contains(keyword.strip().toLowerCase()))
-                    .limit(20)
-                    .collect(Collectors.toSet());
-            case DEVICE_PLATFORM_VERSION_COLUMN -> keywordList = deviceList.stream()
-                    .map(DeviceDTO::getPlatformVersion)
-                    .filter(platformVersion -> platformVersion.toLowerCase().contains(keyword.strip().toLowerCase()))
-                    .limit(20)
-                    .collect(Collectors.toSet());
-            case DEVICE_RAM_COLUMN -> keywordList = deviceList.stream()
-                    .filter(device -> device.getRamSize().toString().contains(keyword))
-                    .map(device -> device.getRamSize().toString())
-                    .limit(20)
-                    .collect(Collectors.toSet());
-            case DEVICE_SCREEN_COLUMN -> keywordList = deviceList.stream()
-                    .filter(device -> device.getScreenSize().toString().contains(keyword))
-                    .map(device -> device.getScreenSize().toString())
-                    .limit(20)
-                    .collect(Collectors.toSet());
-            case DEVICE_STORAGE_COLUMN -> keywordList = deviceList.stream()
-                    .filter(device -> device.getStorageSize().toString().contains(keyword))
-                    .map(device -> device.getStorageSize().toString())
-                    .limit(20)
-                    .collect(Collectors.toSet());
-            case DEVICE_OWNER_COLUMN -> keywordList = deviceList.stream()
-                    .map(DeviceDTO::getOwner)
-                    .filter(owner -> owner.toLowerCase().contains(keyword.strip().toLowerCase()))
-                    .limit(20)
-                    .collect(Collectors.toSet());
-            case DEVICE_INVENTORY_NUMBER_COLUMN -> keywordList = deviceList.stream()
-                    .map(DeviceDTO::getInventoryNumber)
-                    .filter(inventoryNumber -> inventoryNumber.toLowerCase().contains(keyword.strip().toLowerCase()))
-                    .limit(20)
-                    .collect(Collectors.toSet());
-            case DEVICE_SERIAL_NUMBER_COLUMN -> keywordList = deviceList.stream()
-                    .map(DeviceDTO::getSerialNumber)
-                    .filter(serialNumber -> serialNumber.toLowerCase().contains(keyword.strip().toLowerCase()))
-                    .limit(20)
-                    .collect(Collectors.toSet());
-            case DEVICE_KEEPER_COLUMN -> keywordList = deviceList.stream()
-                    .map(DeviceDTO::getKeeper)
-                    .filter(keeper -> keeper.toLowerCase().contains(keyword.strip().toLowerCase()))
+            case DEVICE_NAME_COLUMN -> mappedDeviceList = deviceList.stream()
+                    .map(DeviceDTO::getDeviceName);
+            case DEVICE_PLATFORM_NAME_COLUMN -> mappedDeviceList = deviceList.stream()
+                    .map(DeviceDTO::getPlatformName);
+            case DEVICE_PLATFORM_VERSION_COLUMN -> mappedDeviceList = deviceList.stream()
+                    .map(DeviceDTO::getPlatformVersion);
+            case DEVICE_RAM_COLUMN -> mappedDeviceList = deviceList.stream()
+                    .map(DeviceDTO::getRamSize);
+            case DEVICE_SCREEN_COLUMN -> mappedDeviceList = deviceList.stream()
+                    .map(DeviceDTO::getScreenSize);
+            case DEVICE_STORAGE_COLUMN -> mappedDeviceList = deviceList.stream()
+                    .map(DeviceDTO::getStorageSize);
+            case DEVICE_OWNER_COLUMN -> mappedDeviceList = deviceList.stream()
+                    .map(DeviceDTO::getOwner);
+            case DEVICE_INVENTORY_NUMBER_COLUMN -> mappedDeviceList = deviceList.stream()
+                    .map(DeviceDTO::getInventoryNumber);
+            case DEVICE_SERIAL_NUMBER_COLUMN -> mappedDeviceList = deviceList.stream()
+                    .map(DeviceDTO::getSerialNumber);
+            case DEVICE_KEEPER_COLUMN -> mappedDeviceList = deviceList.stream()
+                    .map(DeviceDTO::getKeeper);
+        }
+        if(mappedDeviceList != null){
+            keywordList = mappedDeviceList.filter(element -> element.toLowerCase().contains(keyword.strip().toLowerCase()))
                     .limit(20)
                     .collect(Collectors.toSet());
         }
@@ -790,55 +769,32 @@ public class DeviceService implements IDeviceService {
     @Async
     private CompletableFuture<Set<String>> selectColumnForKeepingDevicesKeywordSuggestion(List<KeepingDeviceDTO> deviceList, String keyword, int fieldColumn) {
         Set<String> keywordList = new HashSet<>();
+        Stream<String> mappedDeviceList = null;
         switch (fieldColumn) { /*Fetch only one column*/
-            case DEVICE_NAME_COLUMN -> keywordList = deviceList.stream()
-                    .map(KeepingDeviceDTO::getDeviceName)
-                    .filter(deviceName -> deviceName.toLowerCase().contains(keyword.strip().toLowerCase()))
-                    .limit(20)
-                    .collect(Collectors.toSet());
-            case DEVICE_PLATFORM_NAME_COLUMN -> keywordList = deviceList.stream()
-                    .map(KeepingDeviceDTO::getPlatformName)
-                    .filter(platformName -> platformName.toLowerCase().contains(keyword.strip().toLowerCase()))
-                    .limit(20)
-                    .collect(Collectors.toSet());
-            case DEVICE_PLATFORM_VERSION_COLUMN -> keywordList = deviceList.stream()
-                    .map(KeepingDeviceDTO::getPlatformVersion)
-                    .filter(platformVersion -> platformVersion.toLowerCase().contains(keyword.strip().toLowerCase()))
-                    .limit(20)
-                    .collect(Collectors.toSet());
-            case DEVICE_RAM_COLUMN -> keywordList = deviceList.stream()
-                    .filter(device -> device.getRamSize().toString().contains(keyword.strip()))
-                    .map(device -> device.getRamSize().toString())
-                    .limit(20)
-                    .collect(Collectors.toSet());
-            case DEVICE_SCREEN_COLUMN -> keywordList = deviceList.stream()
-                    .filter(device -> device.getScreenSize().toString().contains(keyword.strip()))
-                    .map(device -> device.getScreenSize().toString())
-                    .limit(20)
-                    .collect(Collectors.toSet());
-            case DEVICE_STORAGE_COLUMN -> keywordList = deviceList.stream()
-                    .filter(device -> device.getStorageSize().toString().contains(keyword.strip()))
-                    .map(device -> device.getStorageSize().toString())
-                    .limit(20)
-                    .collect(Collectors.toSet());
-            case DEVICE_OWNER_COLUMN -> keywordList = deviceList.stream()
-                    .map(KeepingDeviceDTO::getOwner)
-                    .filter(owner -> owner.toLowerCase().contains(keyword.strip().toLowerCase()))
-                    .limit(20)
-                    .collect(Collectors.toSet());
-            case DEVICE_INVENTORY_NUMBER_COLUMN -> keywordList = deviceList.stream()
-                    .map(KeepingDeviceDTO::getInventoryNumber)
-                    .filter(inventoryNumber -> inventoryNumber.toLowerCase().contains(keyword.strip().toLowerCase()))
-                    .limit(20)
-                    .collect(Collectors.toSet());
-            case DEVICE_SERIAL_NUMBER_COLUMN -> keywordList = deviceList.stream()
-                    .map(KeepingDeviceDTO::getSerialNumber)
-                    .filter(serialNumber -> serialNumber.toLowerCase().contains(keyword.strip().toLowerCase()))
-                    .limit(20)
-                    .collect(Collectors.toSet());
-            case DEVICE_KEEPER_COLUMN -> keywordList = deviceList.stream()
-                    .map(KeepingDeviceDTO::getKeeper)
-                    .filter(keeper -> keeper.toLowerCase().contains(keyword.strip().toLowerCase()))
+            case DEVICE_NAME_COLUMN -> mappedDeviceList = deviceList.stream()
+                    .map(KeepingDeviceDTO::getDeviceName);
+            case DEVICE_PLATFORM_NAME_COLUMN -> mappedDeviceList = deviceList.stream()
+                    .map(KeepingDeviceDTO::getPlatformName);
+            case DEVICE_PLATFORM_VERSION_COLUMN -> mappedDeviceList = deviceList.stream()
+                    .map(KeepingDeviceDTO::getPlatformVersion);
+            case DEVICE_RAM_COLUMN -> mappedDeviceList = deviceList.stream()
+                    .map(KeepingDeviceDTO::getRamSize);
+            case DEVICE_SCREEN_COLUMN -> mappedDeviceList = deviceList.stream()
+                    .map(KeepingDeviceDTO::getScreenSize);
+            case DEVICE_STORAGE_COLUMN -> mappedDeviceList = deviceList.stream()
+                    .map(KeepingDeviceDTO::getStorageSize);
+            case DEVICE_OWNER_COLUMN -> mappedDeviceList = deviceList.stream()
+                    .map(KeepingDeviceDTO::getOwner);
+            case DEVICE_INVENTORY_NUMBER_COLUMN -> mappedDeviceList = deviceList.stream()
+                    .map(KeepingDeviceDTO::getInventoryNumber);
+            case DEVICE_SERIAL_NUMBER_COLUMN -> mappedDeviceList = deviceList.stream()
+                    .map(KeepingDeviceDTO::getSerialNumber);
+            case DEVICE_KEEPER_COLUMN -> mappedDeviceList = deviceList.stream()
+                    .map(KeepingDeviceDTO::getKeeper);
+        }
+        if(mappedDeviceList != null){
+            keywordList = mappedDeviceList
+                    .filter(element -> element.toLowerCase().contains(keyword.strip().toLowerCase()))
                     .limit(20)
                     .collect(Collectors.toSet());
         }
@@ -965,11 +921,11 @@ public class DeviceService implements IDeviceService {
         if (deviceFilter.getItemType() != null)
             devices = devices.stream().filter(device -> device.getItemType().toLowerCase().equals(deviceFilter.getItemType())).collect(Collectors.toList());
         if (deviceFilter.getRam() != null)
-            devices = devices.stream().filter(device -> device.getRamSize().toString().toLowerCase().equals(deviceFilter.getRam())).collect(Collectors.toList());
+            devices = devices.stream().filter(device -> device.getRamSize().toLowerCase().equals(deviceFilter.getRam())).collect(Collectors.toList());
         if (deviceFilter.getScreen() != null)
-            devices = devices.stream().filter(device -> device.getStorageSize().toString().toLowerCase().equals(deviceFilter.getScreen())).collect(Collectors.toList());
+            devices = devices.stream().filter(device -> device.getStorageSize().toLowerCase().equals(deviceFilter.getScreen())).collect(Collectors.toList());
         if (deviceFilter.getStorage() != null)
-            devices = devices.stream().filter(device -> device.getStorageSize().toString().toLowerCase().equals(deviceFilter.getStorage())).collect(Collectors.toList());
+            devices = devices.stream().filter(device -> device.getStorageSize().toLowerCase().equals(deviceFilter.getStorage())).collect(Collectors.toList());
         if (deviceFilter.getOwner() != null)
             devices = devices.stream().filter(device -> device.getOwner().toLowerCase().equals(deviceFilter.getOwner())).collect(Collectors.toList());
         if (deviceFilter.getKeeper() != null)
@@ -985,142 +941,99 @@ public class DeviceService implements IDeviceService {
         if (deviceFilter.getProject() != null)
             devices = devices.stream().filter(device -> device.getProject().equalsIgnoreCase(deviceFilter.getProject())).collect(Collectors.toList());
         if (deviceFilter.getBookingDate() != null)
-            devices = devices.stream()
-                    .filter(device -> device.getBookingDate() != null)
-                    .filter(device -> device.getBookingDate().after(deviceFilter.getBookingDate()))
-                    .collect(Collectors.toList());
+            devices = devices.stream().filter(device -> device.getBookingDate() != null).filter(device -> device.getBookingDate().after(deviceFilter.getBookingDate())).collect(Collectors.toList());
         if (deviceFilter.getReturnDate() != null)
-            devices = devices.stream()
-                    .filter(device -> device.getReturnDate() != null)
-                    .filter(device -> device.getReturnDate().before(deviceFilter.getReturnDate()))
-                    .collect(Collectors.toList());
+            devices = devices.stream().filter(device -> device.getReturnDate() != null).filter(device -> device.getReturnDate().before(deviceFilter.getReturnDate())).collect(Collectors.toList());
         return CompletableFuture.completedFuture(devices);
     }
 
     private void checkFieldsWhenAddingDevice(List<ErrorMessage> errors, AddDeviceDTO dto) throws ExecutionException, InterruptedException {
+        String serverTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date());
         if (useNonExistent(dto.getOwner()).get()) {
-            ErrorMessage error = new ErrorMessage(NOT_FOUND,
-                    "Owner does not exist",
-                    new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
+            ErrorMessage error = new ErrorMessage(NOT_FOUND, "Owner does not exist", serverTime);
             errors.add(error);
         }
         if (isSerialNumberExistent(dto.getSerialNumber()).get()) {
-            ErrorMessage error = new ErrorMessage(BAD_REQUEST,
-                    "Serial number value of this device is already existed",
-                    new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
+            ErrorMessage error = new ErrorMessage(BAD_REQUEST, "Serial number value of this device is already existed", serverTime);
             errors.add(error);
         }
         if (isItemTypeInvalid(dto.getItemTypeId()).get()) {
-            ErrorMessage error = new ErrorMessage(NOT_FOUND,
-                    "Item type value of this device is non existent",
-                    new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
+            ErrorMessage error = new ErrorMessage(NOT_FOUND, "Item type value of this device is non existent", serverTime);
             errors.add(error);
         }
         if (isRamInvalid(dto.getRamId()).get()) {
-            ErrorMessage error = new ErrorMessage(NOT_FOUND,
-                    "Ram value of this device is non existent",
-                    new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
+            ErrorMessage error = new ErrorMessage(NOT_FOUND, "Ram value of this device is non existent", serverTime);
             errors.add(error);
         }
         if (isStorageInvalid(dto.getStorageId()).get()) {
-            ErrorMessage error = new ErrorMessage(NOT_FOUND,
-                    "Storage value of this device is non existent",
-                    new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
+            ErrorMessage error = new ErrorMessage(NOT_FOUND, "Storage value of this device is non existent", serverTime);
             errors.add(error);
         }
         if (isScreenInvalid(dto.getScreenId()).get()) {
-            ErrorMessage error = new ErrorMessage(NOT_FOUND,
-                    "Screen value of this device is non existent",
-                    new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
+            ErrorMessage error = new ErrorMessage(NOT_FOUND, "Screen value of this device is non existent", serverTime);
             error.setMessage("Screen value of this device is non existent");
             errors.add(error);
         }
         if (isPlatformInvalid(dto.getPlatformId()).get()) {
-            ErrorMessage error = new ErrorMessage(NOT_FOUND,
-                    "Platform value of this device is non existent",
-                    new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
+            ErrorMessage error = new ErrorMessage(NOT_FOUND, "Platform value of this device is non existent", serverTime);
             errors.add(error);
         }
         if (isStatusInvalid(dto.getStatusId()).get()) {
-            ErrorMessage error = new ErrorMessage(NOT_FOUND,
-                    "Status value of this device is non existent",
-                    new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
+            ErrorMessage error = new ErrorMessage(NOT_FOUND, "Status value of this device is non existent", serverTime);
             errors.add(error);
         }
         if (isOriginInvalid(dto.getOriginId()).get()) {
-            ErrorMessage error = new ErrorMessage(NOT_FOUND,
-                    "Origin value of this device is non existent",
-                    new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
+            ErrorMessage error = new ErrorMessage(NOT_FOUND, "Origin value of this device is non existent", serverTime);
             errors.add(error);
         }
         if (isProjectInvalid(dto.getProjectId()).get()) {
             ErrorMessage error = new ErrorMessage(NOT_FOUND,
-                    "Project value of this device is non existent",
-                    new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
+                    "Project value of this device is non existent", serverTime);
             errors.add(error);
         }
     }
 
     private void checkFieldsWhenUpdatingDevice(List<ErrorMessage> errors, UpdateDeviceDTO dto, int deviceId) throws ExecutionException, InterruptedException {
+        String serverTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date());
         if (useNonExistent(dto.getOwner()).get()) {
-            ErrorMessage error = new ErrorMessage(NOT_FOUND,
-                    "Owner does not exist",
-                    new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
+            ErrorMessage error = new ErrorMessage(NOT_FOUND, "Owner does not exist", serverTime);
             errors.add(error);
         }
         if (isSerialNumberExistentExceptUpdatedDevice(deviceId, dto.getSerialNumber()).get()) {
-            ErrorMessage error = new ErrorMessage(BAD_REQUEST,
-                    "Serial number value of this device is already existed",
-                    new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
+            ErrorMessage error = new ErrorMessage(BAD_REQUEST, "Serial number value of this device is already existed", serverTime);
             errors.add(error);
         }
         if (isItemTypeInvalid(dto.getItemTypeId()).get()) {
-            ErrorMessage error = new ErrorMessage(NOT_FOUND,
-                    "Item type value of this device is non existent",
-                    new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
+            ErrorMessage error = new ErrorMessage(NOT_FOUND, "Item type value of this device is non existent", serverTime);
             errors.add(error);
         }
         if (isRamInvalid(dto.getRamId()).get()) {
-            ErrorMessage error = new ErrorMessage(NOT_FOUND,
-                    "Ram value of this device is non existent",
-                    new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
+            ErrorMessage error = new ErrorMessage(NOT_FOUND, "Ram value of this device is non existent", serverTime);
             errors.add(error);
         }
         if (isStorageInvalid(dto.getStorageId()).get()) {
-            ErrorMessage error = new ErrorMessage(NOT_FOUND,
-                    "Storage value of this device is non existent",
-                    new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
+            ErrorMessage error = new ErrorMessage(NOT_FOUND, "Storage value of this device is non existent", serverTime);
             errors.add(error);
         }
         if (isScreenInvalid(dto.getScreenId()).get()) {
-            ErrorMessage error = new ErrorMessage(NOT_FOUND,
-                    "Screen value of this device is non existent",
-                    new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
+            ErrorMessage error = new ErrorMessage(NOT_FOUND, "Screen value of this device is non existent", serverTime);
             error.setMessage("Screen value of this device is non existent");
             errors.add(error);
         }
         if (isPlatformInvalid(dto.getPlatformId()).get()) {
-            ErrorMessage error = new ErrorMessage(NOT_FOUND,
-                    "Platform value of this device is non existent",
-                    new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
+            ErrorMessage error = new ErrorMessage(NOT_FOUND, "Platform value of this device is non existent", serverTime);
             errors.add(error);
         }
         if (isStatusInvalid(dto.getStatusId()).get()) {
-            ErrorMessage error = new ErrorMessage(NOT_FOUND,
-                    "Status value of this device is non existent",
-                    new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
+            ErrorMessage error = new ErrorMessage(NOT_FOUND, "Status value of this device is non existent", serverTime);
             errors.add(error);
         }
         if (isOriginInvalid(dto.getOriginId()).get()) {
-            ErrorMessage error = new ErrorMessage(NOT_FOUND,
-                    "Origin value of this device is non existent",
-                    new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
+            ErrorMessage error = new ErrorMessage(NOT_FOUND, "Origin value of this device is non existent", serverTime);
             errors.add(error);
         }
         if (isProjectInvalid(dto.getProjectId()).get()) {
-            ErrorMessage error = new ErrorMessage(NOT_FOUND,
-                    "Project value of this device is non existent",
-                    new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
+            ErrorMessage error = new ErrorMessage(NOT_FOUND, "Project value of this device is non existent", serverTime);
             errors.add(error);
         }
     }
