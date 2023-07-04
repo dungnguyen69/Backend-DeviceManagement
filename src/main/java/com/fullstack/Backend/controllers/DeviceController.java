@@ -10,6 +10,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -99,7 +100,7 @@ public class DeviceController {
         _deviceService.downloadTemplate(response);
     }
 
-    @PostMapping("/warehouse/import")
+    @PostMapping(value="/warehouse/import", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
     @ResponseBody
     public CompletableFuture<ResponseEntity<Object>> importFile(
             @RequestParam("file") MultipartFile file)

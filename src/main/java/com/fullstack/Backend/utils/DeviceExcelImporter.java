@@ -43,7 +43,7 @@ public class DeviceExcelImporter {
 
 	public static int getNumberOfNonEmptyCells(XSSFSheet sheet, int columnIndex) {
 		int numOfNonEmptyCells = 0;
-		for (int i = 0; i <= sheet.getLastRowNum(); i++) {
+		for (int i = 1; i <= sheet.getLastRowNum(); i++) {
 			Row row = sheet.getRow(i);
 			if (row != null) {
 				Cell cell = row.getCell(columnIndex);

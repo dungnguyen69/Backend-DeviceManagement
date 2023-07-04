@@ -138,7 +138,7 @@ public class DeviceExcelTemplate {
 		Row row = sheet.createRow(1);
 		int columnCount = 0;
 		for (int i = 0; i < 13; i++) {
-			createCell(row, columnCount++, "", cellStyle);
+			createCell(row, columnCount++, null, cellStyle);
 		}
 	}
 

@@ -266,17 +266,18 @@ public class DeviceService implements IDeviceService {
         List<Device> deviceList = new ArrayList<>();
         List<String> errors = new ArrayList<>();
         String message;
-
         if (DeviceExcelImporter.hasExcelFormat(file)) {
             if (!file.isEmpty()) {
                 XSSFWorkbook workBook = new XSSFWorkbook(file.getInputStream());
                 XSSFSheet sheet = workBook.getSheet("Devices");
                 if (sheet == null)
-                    return CompletableFuture.completedFuture(new ResponseEntity<>("Sheet \"Devices\" is nonexistent", NOT_FOUND));
+                    return CompletableFuture.completedFuture(new ResponseEntity<>(new ErrorMessage
+                            (NOT_FOUND,"Sheet \"Devices\" is nonexistent",new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date())), NOT_FOUND));
                 int numberOfRows = DeviceExcelImporter.getNumberOfNonEmptyCells(sheet, 0);
                 if (numberOfRows == 0)
-                    return CompletableFuture.completedFuture(new ResponseEntity<>("Sheet must be not empty", BAD_REQUEST));
-                for (int rowIndex = 1; rowIndex < numberOfRows; rowIndex++) {
+                    return CompletableFuture.completedFuture(new ResponseEntity<>(new ErrorMessage
+                            (NOT_FOUND,"Sheet must be not empty",new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date())), BAD_REQUEST));
+                for (int rowIndex = 1; rowIndex <= numberOfRows; rowIndex++) {
                     Row currentRow = sheet.getRow(rowIndex);
                     String[] platformString = currentRow.getCell(DEVICE_PLATFORM).toString().split(",");
                     String name = currentRow.getCell(DEVICE_NAME).toString().strip(),
@@ -284,9 +285,9 @@ public class DeviceService implements IDeviceService {
                             serialNumber = currentRow.getCell(DEVICE_SERIAL_NUMBER).toString().strip(),
                             comments = currentRow.getCell(DEVICE_COMMENTS).toString();
                     CompletableFuture<ItemType> itemType = _itemTypeService.findByName(currentRow.getCell(DEVICE_ITEM_TYPE).toString().strip());
-                    CompletableFuture<Ram> ram = _ramService.findBySize((int) currentRow.getCell(DEVICE_RAM).getNumericCellValue());
-                    CompletableFuture<Screen> screen = _screenService.findBySize((int) currentRow.getCell(DEVICE_SCREEN).getNumericCellValue());
-                    CompletableFuture<Storage> storage = _storageService.findBySize((int) currentRow.getCell(DEVICE_STORAGE).getNumericCellValue());
+                    CompletableFuture<Ram> ram = _ramService.findBySize(currentRow.getCell(DEVICE_RAM).toString().strip());
+                    CompletableFuture<Screen> screen = _screenService.findBySize(currentRow.getCell(DEVICE_SCREEN).toString().strip());
+                    CompletableFuture<Storage> storage = _storageService.findBySize(currentRow.getCell(DEVICE_STORAGE).toString().strip());
                     CompletableFuture<User> owner = _employeeService.findByUsername(currentRow.getCell(DEVICE_OWNER).toString().strip());
                     String statusString = currentRow.getCell(DEVICE_STATUS).toString().strip(),
                             originString = currentRow.getCell(DEVICE_ORIGIN).toString().strip(),
@@ -295,7 +296,7 @@ public class DeviceService implements IDeviceService {
                     int rowInExcel = rowIndex + 1; /* Display which row yields error */
                     if (platformString.length != 2) {
                         errors.add("Platform at row " + rowInExcel + " is not valid");
-                        break;
+                        continue;
                     }
                     String platformName = platformString[0].strip(), platformVersion = platformString[1].strip();
                     CompletableFuture<Platform> platform = _platformService.findByNameAndVersion(platformName, platformVersion);
@@ -323,7 +324,6 @@ public class DeviceService implements IDeviceService {
                         errors.add("Origin at row " + rowInExcel + " is not valid");
                     if (statusString.isBlank())
                         errors.add("Status at row " + rowInExcel + " is not valid");
-
                     /* Display list of error fields */
                     if (!errors.isEmpty()) {
                         ImportError importError = new ImportError(errors);
@@ -359,7 +359,6 @@ public class DeviceService implements IDeviceService {
                 }
                 workBook.close();
             }
-
             try {
                 _deviceRepository.saveAll(deviceList);
                 message = "Uploaded the file successfully: " + file.getOriginalFilename();
