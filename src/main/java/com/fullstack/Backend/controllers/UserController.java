@@ -21,7 +21,7 @@ import java.util.concurrent.ExecutionException;
 import static com.fullstack.Backend.constant.constant.*;
 import static com.fullstack.Backend.constant.constant.DEFAULT_SORT_DIRECTION;
 
-//@CrossOrigin(origins = "*", maxAge = 3600)
+@CrossOrigin(origins = "http://localhost:4200", maxAge = 3600, allowCredentials="true")
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
@@ -32,7 +32,6 @@ public class UserController {
     IUserService _userService;
 
     @PostMapping("/login")
-    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public CompletableFuture<ResponseEntity<Object>> authenticateUser(@Valid @RequestBody LoginDTO loginRequest) {
         /* If the authentication process is successful,
         we can get User’s information such as username, password,

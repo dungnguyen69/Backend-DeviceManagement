@@ -6,8 +6,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
-import com.fullstack.Backend.dto.device.DeviceDTO;
-import com.fullstack.Backend.dto.device.FilterDeviceDTO;
 import com.fullstack.Backend.dto.users.*;
 import com.fullstack.Backend.entities.*;
 import com.fullstack.Backend.enums.Role;
@@ -24,6 +22,8 @@ import jakarta.mail.internet.MimeMessage;
 import jakarta.transaction.Transactional;
 import net.bytebuddy.utility.RandomString;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -116,12 +116,13 @@ public class UserService implements IUserService {
     @Override
     public CompletableFuture<ResponseEntity<Object>> authenticateUser(LoginDTO loginRequest, Authentication authentication) {
         SecurityContextHolder.getContext().setAuthentication(authentication);
-        String jwt = jwtUtils.generateJwtToken(authentication);
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        ResponseCookie jwtCookie = jwtUtils.generateJwtCookie(userDetails);
         List<String> roles = userDetails.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toList());
-        return CompletableFuture.completedFuture(ResponseEntity.ok(new JwtResponse(jwt,
+        return CompletableFuture.completedFuture(ResponseEntity.ok().header(
+                HttpHeaders.SET_COOKIE, jwtCookie.toString()).body(new JwtResponse(
                 userDetails.getUser().getId(),
                 userDetails.getUsername(),
                 userDetails.getEmail(),
@@ -156,39 +157,17 @@ public class UserService implements IUserService {
         user.setBadgeId(registerRequest.getBadgeId());
         user.setCreatedDate(new Date());
         user.setEnabled(false);
-        Set<String> strRoles = registerRequest.getRole();
         Set<SystemRole> roles = new HashSet<>();
-        if (strRoles == null) {
-            SystemRole userRole = _systemRoleRepository.findByName(Role.ROLE_USER.name())
-                    .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
-            roles.add(userRole);
-        } else {
-            strRoles.forEach(role -> {
-                switch (role) {
-                    case "admin" -> {
-                        SystemRole adminRole = _systemRoleRepository.findByName(Role.ROLE_USER.name())
-                                .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
-                        roles.add(adminRole);
-                    }
-                    case "mod" -> {
-                        SystemRole modRole = _systemRoleRepository.findByName(Role.ROLE_MODERATOR.name())
-                                .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
-                        roles.add(modRole);
-                    }
-                    default -> {
-                        SystemRole userRole = _systemRoleRepository.findByName(Role.ROLE_ADMIN.name())
-                                .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
-                        roles.add(userRole);
-                    }
-                }
-            });
-        }
+        SystemRole userRole = _systemRoleRepository.findByName(Role.ROLE_USER.name())
+                .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
+        roles.add(userRole);
         user.setSystemRoles(roles);
         _userRepository.save(user);
         createVerificationToken(user, token);
         String verifyURL = siteURL + "/api/users/verify?code=" + token;
         sendVerificationEmail(user, verifyURL);
-        return CompletableFuture.completedFuture(ResponseEntity.ok(new MessageResponse("User registered successfully!")));
+        return CompletableFuture.completedFuture(ResponseEntity.ok(new
+                MessageResponse("User registered successfully!")));
     }
 
     @Override
@@ -439,7 +418,6 @@ public class UserService implements IUserService {
 
         return CompletableFuture.completedFuture(sourceList.subList(fromIndex, Math.min(fromIndex + pageSize, sourceList.size())));
     }
-
 
     @Async
     private boolean emailExists(String email) {

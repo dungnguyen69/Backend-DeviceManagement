@@ -46,20 +46,10 @@ public class AuthTokenFilter extends OncePerRequestFilter {
         } catch (Exception e) {
             logger.error("Cannot set user authentication: {}", e);
         }
-
-
-        response.addHeader("Access-Control-Allow-Origin","*");
-        response.setHeader("Access-Control-Allow-Methods", "POST, GET, PUT,DELETE, OPTIONS");
-        response.setHeader("Access-Control-Allow-Headers", "Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers,Content-Disposition");
-        response.setHeader("Access-Control-Allow-Credentials", "true");
         filterChain.doFilter(request, response);
     }
 
     private String parseJwt(HttpServletRequest request) {
-        String headerAuth = request.getHeader("Authorization");
-        if (StringUtils.hasText(headerAuth)) {
-            return headerAuth;
-        }
-        return null;
+        return jwtUtils.getJwtFromCookies(request);
     }
 }
