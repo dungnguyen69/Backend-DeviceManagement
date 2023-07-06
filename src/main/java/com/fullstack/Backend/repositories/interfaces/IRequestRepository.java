@@ -19,7 +19,7 @@ public interface IRequestRepository extends JpaRepository<Request, Long>, JpaSpe
             + "OR nextKeeper_Id = :employeeId "
             + "OR requester_Id = :employeeId";
     public static final String FIND_IDENTICAL_DEVICE_RELATED_PENDING_REQUESTS = "SELECT r FROM Request r WHERE "
-            + "r.Id != :requestId "
+            + "r.Id <> :requestId "
             + "AND r.currentKeeper_Id = :currentKeeperId "
             + "AND r.device_Id = :deviceId "
             + "AND r.requestStatus = :requestStatus";

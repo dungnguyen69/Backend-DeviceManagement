@@ -1,7 +1,6 @@
 package com.fullstack.Backend.services;
 
 import java.text.ParseException;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
@@ -11,7 +10,6 @@ import com.fullstack.Backend.dto.request.SubmitBookingRequestDTO;
 import com.fullstack.Backend.dto.request.UpdateStatusRequestDTO;
 import com.fullstack.Backend.entities.Request;
 import com.fullstack.Backend.responses.device.KeywordSuggestionResponse;
-import com.fullstack.Backend.responses.request.ShowRequestsResponse;
 import com.fullstack.Backend.responses.request.SubmitBookingResponse;
 import org.springframework.http.ResponseEntity;
 
@@ -19,8 +17,8 @@ public interface IRequestService {
     public CompletableFuture<SubmitBookingResponse> submitBookingRequest(SubmitBookingRequestDTO requests)
             throws InterruptedException, ExecutionException;
 
-    public CompletableFuture<ShowRequestsResponse> showRequestListsWithPaging(int employeeId, int pageIndex, int pageSize,
-                                                                              String sortBy, String sortDir, RequestFilterDTO requestFilter)
+    public CompletableFuture<ResponseEntity<Object>> showRequestListsWithPaging(int employeeId, int pageIndex, int pageSize,
+                                                                                String sortBy, String sortDir, RequestFilterDTO requestFilter)
             throws InterruptedException, ExecutionException;
 
     public CompletableFuture<KeywordSuggestionResponse> getSuggestKeywordRequests(int employeeId, int fieldColumn, String keyword,

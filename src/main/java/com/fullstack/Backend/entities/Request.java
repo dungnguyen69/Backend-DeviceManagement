@@ -58,8 +58,7 @@ public class Request extends BaseEntity {
     private int device_Id;
 
     @Column(nullable = false)
-    @Enumerated(EnumType.ORDINAL)
-    private RequestStatus requestStatus;
+    private int requestStatus;
 
     @Column()
     private Date approvalDate;

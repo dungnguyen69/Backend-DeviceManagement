@@ -20,9 +20,6 @@ public class RegisterDTO {
     @Size(max = 50)
     @ValidEmail
     private String email;
-    @NotNull
-    @NotEmpty
-    private Set<String> role;
 
     @NotNull
     @NotEmpty

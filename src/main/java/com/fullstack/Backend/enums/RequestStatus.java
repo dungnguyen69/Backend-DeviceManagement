@@ -1,5 +1,19 @@
 package com.fullstack.Backend.enums;
 
+import java.util.Arrays;
+import java.util.Optional;
+
 public enum RequestStatus {
-	APPROVED, REJECTED, CANCELLED, TRANSFERRED, PENDING, RETURNED, EXTENDING;
+	APPROVED(0), REJECTED(1), CANCELLED(2), TRANSFERRED(3), PENDING(4), RETURNED(5), EXTENDING(6);
+
+	private int id;
+	RequestStatus(int id) {
+		this.id = id;
+	}
+
+	public static Optional<RequestStatus> fromNumber(int text) {
+		return Arrays.stream(values())
+				.filter(e -> e.id == text)
+				.findFirst();
+	}
 }

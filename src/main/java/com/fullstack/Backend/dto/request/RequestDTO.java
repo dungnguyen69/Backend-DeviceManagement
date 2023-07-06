@@ -2,6 +2,7 @@ package com.fullstack.Backend.dto.request;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fullstack.Backend.entities.Request;
+import com.fullstack.Backend.enums.RequestStatus;
 
 import java.util.Date;
 
@@ -44,7 +45,7 @@ public class RequestDTO {
         this.current_keeper = request.getCurrentKeeper().getUserName();
         this.next_keeper = request.getNextKeeper().getUserName();
         this.accepter = request.getAccepter().getUserName();
-        this.request_status = request.getRequestStatus().name();
+        this.request_status = RequestStatus.fromNumber(request.getRequestStatus()).get().toString();
         this.device_name = request.getDevice().getName();
         this.BookingDate = request.getBookingDate();
         this.ReturnDate = request.getReturnDate();

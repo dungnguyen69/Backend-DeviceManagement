@@ -19,8 +19,6 @@ public class RequestFilterDTO {
     private String device;
     private String requester;
     private String requestStatus;
-    @DateTimeFormat(pattern = "yyyy-MM-dd")
     private Date bookingDate;
-    @DateTimeFormat(pattern = "yyyy-MM-dd")
     private Date returnDate;
 }
