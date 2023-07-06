@@ -26,6 +26,7 @@ import com.fullstack.Backend.services.IDeviceService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 
+@CrossOrigin(origins = "http://localhost:4200", maxAge = 3600, allowCredentials = "true")
 @RestController
 @RequestMapping("/api/devices")
 public class DeviceController {
@@ -36,6 +37,7 @@ public class DeviceController {
     IRequestService _requestService;
 
     @GetMapping("/warehouse")
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public CompletableFuture<ResponseEntity<Object>> showDevicesWithPaging(
             @RequestParam(defaultValue = DEFAULT_PAGE_NUMBER, required = false) int pageNo,
             @RequestParam(defaultValue = DEFAULT_PAGE_SIZE, required = false) int pageSize,
@@ -46,6 +48,7 @@ public class DeviceController {
     }
 
     @GetMapping("/warehouse/{id}")
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public CompletableFuture<ResponseEntity<Object>> getDetailDevice(
             @PathVariable(value = "id") int deviceId)
             throws InterruptedException, ExecutionException {
@@ -54,6 +57,7 @@ public class DeviceController {
 
     @PostMapping("/warehouse")
     @ResponseBody
+    @PreAuthorize("hasRole('MODERATOR') or hasRole('ADMIN')")
     public CompletableFuture<ResponseEntity<Object>> addANewDevice(
             @Valid @RequestBody AddDeviceDTO device)
             throws InterruptedException, ExecutionException {
@@ -62,6 +66,7 @@ public class DeviceController {
 
     @PutMapping("/warehouse/{id}")
     @ResponseBody
+    @PreAuthorize("hasRole('MODERATOR') or hasRole('ADMIN')")
     public CompletableFuture<ResponseEntity<Object>> updateDevice(
             @PathVariable(value = "id") int deviceId,
             @Valid @RequestBody UpdateDeviceDTO device) throws InterruptedException, ExecutionException {
@@ -70,6 +75,7 @@ public class DeviceController {
 
     @GetMapping("/warehouse/suggestion")
     @ResponseBody
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public CompletableFuture<ResponseEntity<Object>> getSuggestKeywordDevices(
             @RequestParam(name = "column") int fieldColumn,
             @RequestParam(name = "keyword") String keyword,
@@ -81,6 +87,7 @@ public class DeviceController {
 
     @DeleteMapping("/warehouse/{id}")
     @ResponseBody
+    @PreAuthorize("hasRole('MODERATOR') or hasRole('ADMIN')")
     public CompletableFuture<ResponseEntity<Object>> deleteDevice(
             @PathVariable(value = "id") int deviceId)
             throws InterruptedException, ExecutionException {
@@ -89,19 +96,22 @@ public class DeviceController {
 
     @GetMapping("/warehouse/export")
     @ResponseBody
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public void exportToExcel(HttpServletResponse response) throws IOException, ExecutionException, InterruptedException {
         _deviceService.exportToExcel(response);
     }
 
     @GetMapping("/warehouse/download-template")
     @ResponseBody
+    @PreAuthorize("hasRole('MODERATOR') or hasRole('ADMIN')")
     public void downloadTemplateImport(HttpServletResponse response)
             throws IOException, InterruptedException, ExecutionException {
         _deviceService.downloadTemplate(response);
     }
 
-    @PostMapping(value="/warehouse/import", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
+    @PostMapping(value = "/warehouse/import", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
     @ResponseBody
+    @PreAuthorize("hasRole('MODERATOR') or hasRole('ADMIN')")
     public CompletableFuture<ResponseEntity<Object>> importFile(
             @RequestParam("file") MultipartFile file)
             throws Exception {
@@ -110,6 +120,8 @@ public class DeviceController {
 
     @GetMapping("/warehouse/drop-down-values")
     @ResponseBody
+    @PreAuthorize("hasRole('MODERATOR') or hasRole('ADMIN')")
+
     public CompletableFuture<DropdownValuesResponse> getDropdownValues()
             throws IOException, InterruptedException, ExecutionException {
         return _deviceService.getDropDownValues();

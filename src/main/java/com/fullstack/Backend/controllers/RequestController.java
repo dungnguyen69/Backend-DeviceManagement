@@ -2,7 +2,6 @@ package com.fullstack.Backend.controllers;
 
 import com.fullstack.Backend.dto.request.*;
 import com.fullstack.Backend.responses.device.KeywordSuggestionResponse;
-import com.fullstack.Backend.responses.request.ShowRequestsResponse;
 import com.fullstack.Backend.responses.request.SubmitBookingResponse;
 import com.fullstack.Backend.services.IRequestService;
 import jakarta.validation.Valid;
@@ -19,7 +18,7 @@ import java.util.concurrent.ExecutionException;
 import static com.fullstack.Backend.constant.constant.*;
 import static org.springframework.http.HttpStatus.*;
 
-@CrossOrigin(origins = "*", maxAge = 3600)
+@CrossOrigin(origins = "http://localhost:4200", maxAge = 3600, allowCredentials = "true")
 @RestController
 @RequestMapping("/api/requests")
 public class RequestController {
@@ -28,22 +27,19 @@ public class RequestController {
 
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
-    public ResponseEntity<Object> getRequestsWithPaging(
+    public CompletableFuture<ResponseEntity<Object>> getRequestsWithPaging(
             @PathVariable(value = "id") int employeeId,
             @RequestParam(defaultValue = DEFAULT_PAGE_NUMBER, required = false) int pageNo,
             @RequestParam(defaultValue = DEFAULT_PAGE_SIZE, required = false) int pageSize,
             @RequestParam(defaultValue = DEFAULT_SORT_BY, required = false) String sortBy,
             @RequestParam(defaultValue = DEFAULT_SORT_DIRECTION, required = false) String sortDir,
-            @DateTimeFormat(pattern = "yyyy-MM-dd") RequestFilterDTO requestFilterDTO) throws InterruptedException, ExecutionException {
-        CompletableFuture<ShowRequestsResponse> response = _requestService.showRequestListsWithPaging(employeeId, pageNo,
-                pageSize, sortBy, sortDir, requestFilterDTO);
-        if (response.get().getTotalElements() != EMPTY_LIST)
-            return new ResponseEntity<>(response.get(), OK);
-        return new ResponseEntity<>(NO_CONTENT);
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) RequestFilterDTO requestFilterDTO) throws InterruptedException, ExecutionException {
+        return _requestService.showRequestListsWithPaging(employeeId, pageNo, pageSize, sortBy, sortDir, requestFilterDTO);
     }
 
     @PostMapping("/submissions")
     @ResponseBody
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<Object> submitBookingRequest(
             @Valid @RequestBody SubmitBookingRequestDTO requests)
             throws InterruptedException, ExecutionException {
@@ -53,6 +49,7 @@ public class RequestController {
 
     @GetMapping("/suggestions/{id}")
     @ResponseBody
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public ResponseEntity<Object> getSuggestKeywordRequests(
             @PathVariable(value = "id") int employeeId,
             @RequestParam(name = "column") int fieldColumn,
