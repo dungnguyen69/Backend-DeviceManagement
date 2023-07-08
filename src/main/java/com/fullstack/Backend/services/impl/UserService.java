@@ -5,6 +5,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.fullstack.Backend.dto.users.*;
 import com.fullstack.Backend.entities.*;
@@ -22,6 +23,7 @@ import jakarta.mail.internet.MimeMessage;
 import jakarta.transaction.Transactional;
 import net.bytebuddy.utility.RandomString;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
@@ -366,9 +368,8 @@ public class UserService implements IUserService {
     public CompletableFuture<ResponseEntity<Object>> getSuggestKeywordUsers(int fieldColumn, String keyword, FilterUserDTO filter) throws InterruptedException, ExecutionException {
         if (keyword.trim().isBlank())
             return CompletableFuture.completedFuture(ResponseEntity.status(NOT_FOUND).body("Keyword must be non-null"));
-
         List<User> users = _userRepository.findAll();
-        List<UserDTO> deviceList = getAllDevices(users, filter).get();
+        List<UserDTO> deviceList = getAllUser(users, filter).get();
         Set<String> keywordList = selectColumnForKeywordSuggestion(deviceList, keyword, fieldColumn).get();
         KeywordSuggestionResponse response = new KeywordSuggestionResponse();
         response.setKeywordList(keywordList);
@@ -376,7 +377,7 @@ public class UserService implements IUserService {
     }
 
     @Async
-    private CompletableFuture<List<UserDTO>> getAllDevices(List<User> users, FilterUserDTO filter) throws ExecutionException, InterruptedException {
+    private CompletableFuture<List<UserDTO>> getAllUser(List<User> users, FilterUserDTO filter) throws ExecutionException, InterruptedException {
         formatFilter(filter); /* Remove spaces and make input text become lowercase*/
         users = fetchFilteredUsers(filter, users).get(); /*List of devices after filtering*/
         List<UserDTO> deviceList = convertEntityToDTO(users).get();
@@ -392,15 +393,24 @@ public class UserService implements IUserService {
     @Async
     private CompletableFuture<Set<String>> selectColumnForKeywordSuggestion(List<UserDTO> userList, String keyword, int fieldColumn) {
         Set<String> keywordList = new HashSet<>();
+        Stream<String> mappedDeviceList = null;
         switch (fieldColumn) { /*Fetch only one column*/
-            case USER_NAME_COLUMN -> keywordList = userList.stream()
-                    .map(UserDTO::getUserName)
-                    .filter(userName -> userName.toLowerCase().contains(keyword.strip().toLowerCase()))
-                    .limit(20)
-                    .collect(Collectors.toSet());
-            case USER_FIRST_NAME_COLUMN -> keywordList = userList.stream()
-                    .map(UserDTO::getFirstName)
-                    .filter(firstName -> firstName.toLowerCase().contains(keyword.strip().toLowerCase()))
+            case USER_BADGE_ID_COLUMN -> mappedDeviceList = userList.stream()
+                    .map(UserDTO::getBadgeId);
+            case USER_NAME_COLUMN -> mappedDeviceList = userList.stream()
+                    .map(UserDTO::getUserName);
+            case USER_FIRST_NAME_COLUMN -> mappedDeviceList = userList.stream()
+                    .map(UserDTO::getFirstName);
+            case USER_LAST_NAME_COLUMN -> mappedDeviceList = userList.stream()
+                    .map(UserDTO::getLastName);
+            case USER_EMAIL_COLUMN -> mappedDeviceList = userList.stream()
+                    .map(UserDTO::getEmail);
+            case USER_PHONE_NUMBER_COLUMN -> mappedDeviceList = userList.stream()
+                    .map(UserDTO::getPhoneNumber);
+        }
+        if (mappedDeviceList != null) {
+            keywordList = mappedDeviceList
+                    .filter(element -> element.toLowerCase().contains(keyword.strip().toLowerCase()))
                     .limit(20)
                     .collect(Collectors.toSet());
         }
