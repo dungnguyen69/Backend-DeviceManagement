@@ -33,8 +33,6 @@ public class DeviceController {
 
     @Autowired
     IDeviceService _deviceService;
-    @Autowired
-    IRequestService _requestService;
 
     @GetMapping("/warehouse")
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
@@ -120,8 +118,7 @@ public class DeviceController {
 
     @GetMapping("/warehouse/drop-down-values")
     @ResponseBody
-    @PreAuthorize("hasRole('MODERATOR') or hasRole('ADMIN')")
-
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public CompletableFuture<DropdownValuesResponse> getDropdownValues()
             throws IOException, InterruptedException, ExecutionException {
         return _deviceService.getDropDownValues();

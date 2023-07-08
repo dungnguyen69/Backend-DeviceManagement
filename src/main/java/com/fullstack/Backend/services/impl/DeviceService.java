@@ -101,6 +101,7 @@ public class DeviceService implements IDeviceService {
         List<String> originList = deviceList.stream().map(DeviceDTO::getOrigin).distinct().collect(Collectors.toList());
         List<String> projectList = deviceList.stream().map(DeviceDTO::getProject).distinct().collect(Collectors.toList());
         List<String> itemTypeList = deviceList.stream().map(DeviceDTO::getItemType).distinct().collect(Collectors.toList());
+        List<String> keeperNumberOptions = List.of(new String[]{"LESS THAN 3", "EQUAL TO 3"});
         /* */
         int totalElements = deviceList.size();
         deviceList = getPage(deviceList, pageIndex, pageSize).get(); /*Pagination*/
@@ -115,6 +116,7 @@ public class DeviceService implements IDeviceService {
         deviceResponse.setOriginList(originList);
         deviceResponse.setProjectList(projectList);
         deviceResponse.setItemTypeList(itemTypeList);
+        deviceResponse.setKeeperNumberOptions(keeperNumberOptions);
         return CompletableFuture.completedFuture(new ResponseEntity<>(deviceResponse, OK));
     }
 
@@ -272,12 +274,12 @@ public class DeviceService implements IDeviceService {
             if (!file.isEmpty()) {
                 XSSFWorkbook workBook = new XSSFWorkbook(file.getInputStream());
                 XSSFSheet sheet = workBook.getSheet("Devices");
-                if (sheet == null){
+                if (sheet == null) {
                     ErrorMessage errorMessage = new ErrorMessage(NOT_FOUND, "Sheet \"Devices\" is nonexistent", serverTime);
                     return CompletableFuture.completedFuture(new ResponseEntity<>(errorMessage, NOT_FOUND));
                 }
                 int numberOfRows = DeviceExcelImporter.getNumberOfNonEmptyCells(sheet, 0);
-                if (numberOfRows == 0){
+                if (numberOfRows == 0) {
                     ErrorMessage errorMessage = new ErrorMessage(NOT_FOUND, "Sheet must be not empty", serverTime);
                     return CompletableFuture.completedFuture(new ResponseEntity<>(errorMessage, BAD_REQUEST));
                 }
@@ -684,8 +686,6 @@ public class DeviceService implements IDeviceService {
         Status[] statusCode = Status.values();
         List<StatusList> statusList = new ArrayList<StatusList>();
         for (int i = 0; i < statusCode.length; i++) {
-            if (i == 2)
-                continue;
             StatusList item = new StatusList(i, statusCode[i].toString());
             statusList.add(item);
         }
@@ -739,6 +739,13 @@ public class DeviceService implements IDeviceService {
                     .collect(Collectors.toList());
         if (deviceFilter.getKeeper() != null)
             devices = devices.stream().filter(device -> device.getKeeper().equalsIgnoreCase(deviceFilter.getKeeper())).collect(Collectors.toList());
+
+        if (deviceFilter.getKeeperNo() != null){ //"LESS THAN 3", "EQUAL TO 3"
+            if(deviceFilter.getKeeperNo().equalsIgnoreCase("less than 3"))
+                devices = devices.stream().filter(device -> device.getKeeperNumber() < 3 && (device.getStatus().equalsIgnoreCase("OCCUPIED") || device.getStatus().equalsIgnoreCase("VACANT"))).collect(Collectors.toList());
+            else
+                devices = devices.stream().filter(device -> device.getKeeperNumber() == 3 && device.getStatus().equalsIgnoreCase("OCCUPIED")).collect(Collectors.toList());
+        }
         return CompletableFuture.completedFuture(devices);
     }
 
@@ -879,6 +886,7 @@ public class DeviceService implements IDeviceService {
             }
             Optional<KeeperOrder> keeperOrder = keeperOrderList.get().stream().max(Comparator.comparing(KeeperOrder::getKeeperNo)); /* Get the latest keeper order of a device*/
             deviceDTO.setKeeper(keeperOrder.get().getKeeper().getUserName()); /* Add keeper order information to devices*/
+            deviceDTO.setKeeperNumber(keeperOrder.get().getKeeperNo());
             deviceDTO.setBookingDate(keeperOrder.get().getBookingDate());
             deviceDTO.setReturnDate(keeperOrder.get().getDueDate());
             deviceList.add(deviceDTO);
