@@ -21,6 +21,8 @@ public class RequestDTO {
     public String request_status;
     @JsonProperty("device_name")
     public String device_name;
+    @JsonProperty("device_id")
+    public int device_id;
     @JsonProperty("accepter")
     public String accepter;
     @JsonProperty("BookingDate")
@@ -47,6 +49,7 @@ public class RequestDTO {
         this.accepter = request.getAccepter().getUserName();
         this.request_status = RequestStatus.fromNumber(request.getRequestStatus()).get().toString();
         this.device_name = request.getDevice().getName();
+        this.device_id = request.getDevice().getId();
         this.BookingDate = request.getBookingDate();
         this.ReturnDate = request.getReturnDate();
         this.created_date = request.getCreatedDate();

@@ -21,8 +21,9 @@ public class RequestFails {
 
     private Date returnDate;
 
-    private String deviceName;
+    private int deviceId;
 
+    private String deviceName;
 
     private List<String> errorMessage;
 }

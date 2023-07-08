@@ -61,15 +61,17 @@ public class RequestController {
         return new ResponseEntity<>(response.get(), OK);
     }
 
-    @PutMapping("/status-update")
+    @PostMapping("/status-update")
     @ResponseBody
-    public CompletableFuture<ResponseEntity<Object>> updateRequestStatus(UpdateStatusRequestDTO request)
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
+    public CompletableFuture<ResponseEntity<Object>> updateRequestStatus(@RequestBody UpdateStatusRequestDTO request)
             throws InterruptedException, ExecutionException {
         return _requestService.updateRequestStatus(request);
     }
 
     @PostMapping("/extend-duration")
     @ResponseBody
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public CompletableFuture<ResponseEntity<Object>> extendDurationRequest(
             @DateTimeFormat(pattern = "yyyy-MM-dd") ExtendDurationRequestDTO request)
             throws InterruptedException, ExecutionException, ParseException {

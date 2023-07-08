@@ -14,6 +14,7 @@ import java.util.Date;
 @AllArgsConstructor
 public class RequestFilterDTO {
     private String requestId;
+    private String approver;
     private String currentKeeper;
     private String nextKeeper;
     private String device;

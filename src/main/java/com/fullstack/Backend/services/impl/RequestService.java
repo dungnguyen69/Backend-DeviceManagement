@@ -25,6 +25,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.fullstack.Backend.constant.constant.*;
 import static org.springframework.http.HttpStatus.*;
@@ -78,9 +79,13 @@ public class RequestService implements IRequestService {
             requestData.setReturnDate(request.getReturnDate());
             requestData.setDevice_Id(device.getId());
             requestData.setCreatedDate(new Date());
-
             if (checkRequestWhenSubmitting(requestSuccessful, requestData)) {
                 error.add("There are more than 2 identical requests when submitting");
+                addToRequestFails(requestFails, requestFail, error);
+                continue;
+            }
+            if (checkWhenDevicesAreSimilar(requestSuccessful, requestData)) {
+                error.add("There are more than 2 identical devices when submitting");
                 addToRequestFails(requestFails, requestFail, error);
                 continue;
             }
@@ -144,17 +149,23 @@ public class RequestService implements IRequestService {
         Sort sort = Sort.by("Id").ascending();
         List<Request> requests = _requestRepository.findAllRequest(employeeId, sort);
         requests = getAllDevices(requestFilter, requests).get();
+        Stream<String> mappedDeviceList = null;
         switch (fieldColumn) {
-            case REQUEST_REQUEST_ID_COLUMN ->
-                    keywordList = requests.stream().map(Request::getRequestId).filter(requestId -> requestId.contains(keyword.strip().toLowerCase())).collect(Collectors.toSet());
-            case REQUEST_DEVICE_NAME_COLUMN ->
-                    keywordList = requests.stream().filter(request -> request.getDevice().getName().toLowerCase().contains(keyword.strip().toLowerCase())).map(r -> r.getDevice().getName()).collect(Collectors.toSet());
+            case REQUEST_REQUEST_ID_COLUMN -> mappedDeviceList = requests.stream().map(Request::getRequestId);
+            case REQUEST_DEVICE_NAME_COLUMN -> mappedDeviceList = requests.stream().map(r -> r.getDevice().getName());
             case REQUEST_REQUESTER_COLUMN ->
-                    keywordList = requests.stream().filter(request -> request.getRequester().getUserName().toLowerCase().contains(keyword.strip().toLowerCase())).map(r -> r.getRequester().getUserName()).collect(Collectors.toSet());
+                    mappedDeviceList = requests.stream().map(r -> r.getRequester().getUserName());
             case REQUEST_CURRENT_KEEPER_COLUMN ->
-                    keywordList = requests.stream().filter(request -> request.getCurrentKeeper().getUserName().toLowerCase().contains(keyword.strip().toLowerCase())).map(r -> r.getCurrentKeeper().getUserName()).collect(Collectors.toSet());
+                    mappedDeviceList = requests.stream().map(r -> r.getCurrentKeeper().getUserName());
             case REQUEST_NEXT_KEEPER_COLUMN ->
-                    keywordList = requests.stream().filter(request -> request.getNextKeeper().getUserName().toLowerCase().contains(keyword.strip().toLowerCase())).map(r -> r.getNextKeeper().getUserName()).collect(Collectors.toSet());
+                    mappedDeviceList = requests.stream().map(r -> r.getNextKeeper().getUserName());
+            case REQUEST_APPROVER_COLUMN ->
+                    mappedDeviceList = requests.stream().map(r -> r.getAccepter().getUserName());
+        }
+        if (mappedDeviceList != null) {
+            keywordList = mappedDeviceList.filter(element -> element.toLowerCase().contains(keyword.strip().toLowerCase()))
+                    .limit(20)
+                    .collect(Collectors.toSet());
         }
         KeywordSuggestionResponse response = new KeywordSuggestionResponse();
         response.setKeywordList(keywordList);
@@ -180,9 +191,9 @@ public class RequestService implements IRequestService {
                 cancelRelatedPendingRequest(request.get());
                 changeDeviceStatus(request.get());
             }
-            case REJECTED -> {
+            case CANCELLED -> {
                 request.get().setApprovalDate(new Date());
-                changeStatus(request.get(), REJECTED);
+                changeStatus(request.get(), CANCELLED);
             }
             case TRANSFERRED -> {
                 request.get().setTransferredDate(new Date());
@@ -299,6 +310,9 @@ public class RequestService implements IRequestService {
         if (requestFilter.getDevice() != null)
             requests = requests.stream().filter(request -> request.getDevice().getName().toLowerCase().equals(requestFilter.getDevice())).collect(Collectors.toList());
 
+        if (requestFilter.getApprover() != null)
+            requests = requests.stream().filter(request -> request.getAccepter().getUserName().toLowerCase().equals(requestFilter.getApprover())).collect(Collectors.toList());
+
         if (requestFilter.getRequester() != null)
             requests = requests.stream().filter(request -> request.getRequester().getUserName().toLowerCase().equals(requestFilter.getRequester())).collect(Collectors.toList());
 
@@ -333,6 +347,9 @@ public class RequestService implements IRequestService {
     private void formatFilter(RequestFilterDTO requestFilter) {
         if (requestFilter.getRequester() != null)
             requestFilter.setRequester(requestFilter.getRequester().trim().toLowerCase());
+
+        if (requestFilter.getApprover() != null)
+            requestFilter.setApprover(requestFilter.getApprover().trim().toLowerCase());
 
         if (requestFilter.getCurrentKeeper() != null)
             requestFilter.setCurrentKeeper(requestFilter.getCurrentKeeper().trim().toLowerCase());
@@ -387,7 +404,7 @@ public class RequestService implements IRequestService {
         List<Request> relatedRequests = _requestRepository.findDeviceRelatedApprovedRequest(request.getId(), request.getCurrentKeeper_Id(), request.getDevice().getId(), PENDING);
         if (isRequestListInvalid(relatedRequests)) {
             for (Request relatedRequest : relatedRequests) {
-                relatedRequest.setRequestStatus(CANCELLED);
+                relatedRequest.setRequestStatus(REJECTED);
                 relatedRequest.setCancelledDate(new Date());
                 _requestRepository.save(relatedRequest);
             }
@@ -458,6 +475,7 @@ public class RequestService implements IRequestService {
     }
 
     private void setUpRequestFail(RequestFails requestFail, SubmitBookingRequestDTO.RequestInput request, Device device) {
+        requestFail.setDeviceId(request.getDeviceId());
         requestFail.setRequester(request.getRequester().trim());
         requestFail.setNextKeeper(request.getNextKeeper().trim());
         requestFail.setBookingDate(request.getBookingDate());
@@ -473,9 +491,21 @@ public class RequestService implements IRequestService {
         return oldRequest.getDevice_Id() == newRequest.getDevice_Id() && oldRequest.getRequester_Id() == newRequest.getRequester_Id() && oldRequest.getNextKeeper_Id() == newRequest.getNextKeeper_Id();
     }
 
+    private boolean areDeviceIdenticalWhenSubmitting(Request oldRequest, Request newRequest) {
+        return oldRequest.getDevice_Id() == newRequest.getDevice_Id();
+    }
+
     private boolean checkRequestWhenSubmitting(List<Request> requestSuccessful, Request newRequest) {
         for (Request oldRequest : requestSuccessful) {
             if (areSubmittedRequestIdentical(oldRequest, newRequest))
+                return true;
+        }
+        return false;
+    }
+
+    private boolean checkWhenDevicesAreSimilar(List<Request> requestSuccessful, Request newRequest) {
+        for (Request oldRequest : requestSuccessful) {
+            if (areDeviceIdenticalWhenSubmitting(oldRequest, newRequest))
                 return true;
         }
         return false;
