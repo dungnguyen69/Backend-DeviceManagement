@@ -11,6 +11,8 @@ import java.util.stream.Collectors;
 @Data
 @NoArgsConstructor
 public class UserDTO {
+    private int Id;
+
     private String badgeId;
 
     private String userName;
@@ -30,6 +32,7 @@ public class UserDTO {
     private String isEnable;
 
     public UserDTO(User user) {
+        this.Id = user.getId();
         this.badgeId = user.getBadgeId();
         this.userName = user.getUserName();
         this.firstName = user.getFirstName();

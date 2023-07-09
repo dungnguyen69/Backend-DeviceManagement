@@ -60,17 +60,7 @@ public class User extends BaseEntity {
 
     private boolean enabled;
 
-    /*@OneToMany(mappedBy = "owner", fetch = FetchType.EAGER)
-    private Set<Device> devices;
-
-    @OneToMany(mappedBy = "currentKeeper", fetch = FetchType.EAGER)
-    private Collection<Request> currentKeepers;
-
-    @OneToMany(mappedBy = "nextKeeper", fetch = FetchType.EAGER)
-    private Collection<Request> nextKeepers;*/
-
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinColumn(name = "systemRoles_Id", nullable = false, foreignKey = @ForeignKey(name = "systemRoles_Id_FK"))
     private Set<SystemRole> systemRoles = new HashSet<>();
-
 }

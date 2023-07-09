@@ -256,7 +256,7 @@ public class UserService implements IUserService {
     @Async
     @Override
     public CompletableFuture<User> findByEmail(String email) {
-        return CompletableFuture.completedFuture(_userRepository.findByEmail(email).orElseThrow(null));
+        return CompletableFuture.completedFuture(_userRepository.findByEmail(email));
     }
 
     @Async
@@ -301,7 +301,7 @@ public class UserService implements IUserService {
         if (user.get() == null)
             return CompletableFuture.completedFuture(ResponseEntity
                     .badRequest()
-                    .body(new MessageResponse("User is not existent!")));
+                    .body(new MessageResponse("Email is not valid!")));
 
         PasswordResetToken existingToken = findUserFromResetPasswordToken(user.get()).get();
         if (existingToken != null) {
@@ -374,6 +374,19 @@ public class UserService implements IUserService {
         KeywordSuggestionResponse response = new KeywordSuggestionResponse();
         response.setKeywordList(keywordList);
         return CompletableFuture.completedFuture(new ResponseEntity<>(response, OK));
+    }
+
+    @Async
+    @Override
+    public CompletableFuture<ResponseEntity<Object>> providePermission(int userId, String permission) throws ExecutionException, InterruptedException {
+        User user = findById(userId).get();
+        SystemRole userRole = _systemRoleRepository.findByName(permission).orElseThrow(() -> new RuntimeException("Error: Role is not found."));
+        Set<SystemRole> roles = new HashSet<>();
+        roles.add(userRole);
+        user.setSystemRoles(roles);
+        _userRepository.save(user);
+        return CompletableFuture.completedFuture(ResponseEntity.ok(new
+                MessageResponse("UPDATED SUCCESSFULLY!")));
     }
 
     @Async

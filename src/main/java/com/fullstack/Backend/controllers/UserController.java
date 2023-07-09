@@ -1,4 +1,5 @@
 package com.fullstack.Backend.controllers;
+
 import com.fullstack.Backend.dto.users.*;
 import com.fullstack.Backend.responses.users.MessageResponse;
 import com.fullstack.Backend.services.IUserService;
@@ -21,7 +22,7 @@ import java.util.concurrent.ExecutionException;
 import static com.fullstack.Backend.constant.constant.*;
 import static com.fullstack.Backend.constant.constant.DEFAULT_SORT_DIRECTION;
 
-@CrossOrigin(origins = "http://localhost:4200", maxAge = 3600, allowCredentials="true")
+@CrossOrigin(origins = "http://localhost:4200", maxAge = 3600, allowCredentials = "true")
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
@@ -107,6 +108,15 @@ public class UserController {
     public CompletableFuture<ResponseEntity<Object>> saveForgotPassword(
             @Valid @RequestBody ForgotPasswordDTO dto) throws ExecutionException, InterruptedException, MessagingException {
         return _userService.saveForgotPassword(dto);
+    }
+
+    @PostMapping("/authorization")
+    @ResponseBody
+    public CompletableFuture<ResponseEntity<Object>> providePermission(
+            @RequestParam(name = "userId") int userId,
+            @RequestParam(name = "permission") String permission)
+            throws InterruptedException, ExecutionException {
+        return _userService.providePermission(userId, permission);
     }
 
     @GetMapping("/suggestion")
