@@ -128,7 +128,12 @@ public class UserService implements IUserService {
                 userDetails.getUser().getId(),
                 userDetails.getUsername(),
                 userDetails.getEmail(),
-                roles)));
+                roles,
+                userDetails.getUser().getBadgeId(),
+                userDetails.getUser().getFirstName(),
+                userDetails.getUser().getLastName(),
+                userDetails.getUser().getPhoneNumber(),
+                userDetails.getUser().getProject())));
     }
 
     @Async
