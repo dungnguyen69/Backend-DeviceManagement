@@ -171,7 +171,7 @@ public class DeviceController {
     @ResponseBody
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public CompletableFuture<ResponseEntity<Object>> updateReturnOwnedDevice(
-            @DateTimeFormat(pattern = "yyyy-MM-dd") ReturnKeepDeviceDTO request)
+            @RequestBody ReturnKeepDeviceDTO request)
             throws InterruptedException, ExecutionException, ParseException {
         return _deviceService.updateReturnOwnedDevice(request);
     }

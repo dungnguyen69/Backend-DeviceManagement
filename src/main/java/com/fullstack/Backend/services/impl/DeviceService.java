@@ -375,12 +375,12 @@ public class DeviceService implements IDeviceService {
 
     @Async()
     @Override
-    public CompletableFuture<ResponseEntity<Object>> updateReturnKeepDevice(ReturnKeepDeviceDTO request) throws ExecutionException, InterruptedException, ParseException {
+    public CompletableFuture<ResponseEntity<Object>> updateReturnKeepDevice(ReturnKeepDeviceDTO input) throws ExecutionException, InterruptedException, ParseException {
         /*  No 1: B borrowed A's from 1/6 - 1/10
          *  No 2: C borrowed B's from 1/7 - 1/9
          *  No 3: D borrowed C's from 1/8 - 15/8
-         *  2 (as an input) is able to confirm 3's device returned
-         *  1 (as an input) is able to confirm that 2 or 3 RETURNED THE DEVICE.
+         *  No 2 is able to confirm 3's device returned
+         *  No 1 is able to confirm that 2 or 3 RETURNED THE DEVICE.
          *  Find orders (keeperOrderReturnList) whose keeper number > that of the input
          *  Find old requests based upon keeper and device of keeperOrderReturnList's keeper order
          *  Set current keeper to input's
@@ -390,16 +390,16 @@ public class DeviceService implements IDeviceService {
          *  Display a list of old keepers
          */
         List<KeeperOrder> keeperOrderReturnList = _keeperOrderService
-                .getKeeperOrderListByDeviceId(request.getDeviceId()).get().stream()
-                .filter(ko -> ko.getKeeperNo() > request.getKeeperNo())
+                .getKeeperOrderListByDeviceId(input.getDeviceId()).get().stream()
+                .filter(ko -> ko.getKeeperNo() > input.getKeeperNo())
                 .toList();
         ReturnDeviceResponse response = new ReturnDeviceResponse();
         if (keeperOrderReturnList.size() == 0)
             return CompletableFuture.completedFuture(new ResponseEntity<>(response, NOT_FOUND));
         List<String> oldKeepers = new ArrayList<>();
-        for (KeeperOrder keeperOrder : keeperOrderReturnList) {
-            Request occupiedRequest = _requestService.findAnOccupiedRequest(keeperOrder.getKeeper().getId(), request.getDeviceId()).get();
-            occupiedRequest.setCurrentKeeper_Id(request.getCurrentKeeperId());
+        for (KeeperOrder keeperOrder : keeperOrderReturnList)   {
+            Request occupiedRequest = _requestService.findAnOccupiedRequest(keeperOrder.getKeeper().getId(), input.getDeviceId()).get();
+            occupiedRequest.setCurrentKeeper_Id(input.getCurrentKeeperId());
             occupiedRequest.setRequestStatus(RETURNED);
             keeperOrder.setIsReturned(true);
             keeperOrder.setUpdatedDate(new Date());
@@ -414,7 +414,7 @@ public class DeviceService implements IDeviceService {
 
     @Async()
     @Override
-    public CompletableFuture<ResponseEntity<Object>> updateReturnOwnedDevice(ReturnKeepDeviceDTO request) throws ExecutionException, InterruptedException, ParseException {
+    public CompletableFuture<ResponseEntity<Object>> updateReturnOwnedDevice(ReturnKeepDeviceDTO input) throws ExecutionException, InterruptedException, ParseException {
         /*  No 1: B borrowed A's from 1/6 - 1/10
          *  No 2: C borrowed B's from 1/7 - 1/9
          *  No 3: D borrowed C's from 1/8 - 15/8
@@ -428,14 +428,14 @@ public class DeviceService implements IDeviceService {
          *  Set device status to VACANT
          *  Display a list of old keepers
          */
-        List<KeeperOrder> keeperOrderReturnList = _keeperOrderService.getKeeperOrderListByDeviceId(request.getDeviceId()).get();
+        List<KeeperOrder> keeperOrderReturnList = _keeperOrderService.getKeeperOrderListByDeviceId(input.getDeviceId()).get();
         ReturnDeviceResponse response = new ReturnDeviceResponse();
         if (keeperOrderReturnList.size() == 0)
             return CompletableFuture.completedFuture(new ResponseEntity<>(response, NOT_FOUND));
         List<String> oldKeepers = new ArrayList<>();
         for (KeeperOrder keeperOrder : keeperOrderReturnList) {
-            Request occupiedRequest = _requestService.findAnOccupiedRequest(keeperOrder.getKeeper().getId(), request.getDeviceId()).get();
-            occupiedRequest.setCurrentKeeper_Id(request.getCurrentKeeperId());
+            Request occupiedRequest = _requestService.findAnOccupiedRequest(keeperOrder.getKeeper().getId(), input.getDeviceId()).get();
+            occupiedRequest.setCurrentKeeper_Id(input.getCurrentKeeperId());
             occupiedRequest.setRequestStatus(RETURNED);
             keeperOrder.setIsReturned(true);
             keeperOrder.setUpdatedDate(new Date());
@@ -444,7 +444,7 @@ public class DeviceService implements IDeviceService {
             _requestService.updateRequest(occupiedRequest);
             _keeperOrderService.updateKeeperOrder(keeperOrder);
         }
-        Device device = _deviceRepository.findById(request.getDeviceId());
+        Device device = _deviceRepository.findById(input.getDeviceId());
         device.setStatus(Status.VACANT);
         _deviceRepository.save(device);
         response.setKeepDeviceReturned(true);
