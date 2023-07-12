@@ -114,13 +114,14 @@ public class DeviceController {
         _deviceService.downloadTemplate(response);
     }
 
-    @PostMapping(value = "/warehouse/import", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
+    @PostMapping(value = "/warehouse/import/{id}", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
     @ResponseBody
     @PreAuthorize("hasRole('MODERATOR') or hasRole('ADMIN')")
     public CompletableFuture<ResponseEntity<Object>> importFile(
+            @PathVariable(value = "id") int ownerId,
             @RequestParam("file") MultipartFile file)
             throws Exception {
-        return _deviceService.importToDb(file);
+        return _deviceService.importToDb(ownerId, file);
     }
 
     @GetMapping("/warehouse/drop-down-values")

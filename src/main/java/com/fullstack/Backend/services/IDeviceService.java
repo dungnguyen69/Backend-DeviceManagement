@@ -36,7 +36,7 @@ public interface IDeviceService {
     public void downloadTemplate(HttpServletResponse response)
             throws IOException, InterruptedException, ExecutionException;
 
-    public CompletableFuture<ResponseEntity<Object>> importToDb(MultipartFile file) throws Exception;
+    CompletableFuture<ResponseEntity<Object>> importToDb(int ownerId, MultipartFile file) throws Exception;
 
     public CompletableFuture<ResponseEntity<Object>> getSuggestKeywordDevices(int fieldColumn, String keyword,
                                                                               FilterDeviceDTO dto) throws InterruptedException, ExecutionException;

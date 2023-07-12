@@ -296,7 +296,7 @@ public class DeviceService implements IDeviceService {
     /* Check if rows are empty*/
     @Async
     @Override
-    public CompletableFuture<ResponseEntity<Object>> importToDb(MultipartFile file) throws Exception {
+    public CompletableFuture<ResponseEntity<Object>> importToDb(int ownerId, MultipartFile file) throws Exception {
         List<Device> deviceList = new ArrayList<>();
         List<String> errors = new ArrayList<>();
         String serverTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date());
@@ -314,7 +314,7 @@ public class DeviceService implements IDeviceService {
                     ErrorMessage errorMessage = new ErrorMessage(NOT_FOUND, "Sheet must be not empty", serverTime);
                     return CompletableFuture.completedFuture(new ResponseEntity<>(errorMessage, BAD_REQUEST));
                 }
-                checkImportAndAddToList(deviceList, errors, numberOfRows, sheet);
+                checkImportAndAddToList(ownerId, deviceList, errors, numberOfRows, sheet);
                 if (!errors.isEmpty()) {
                     ImportError importError = new ImportError(errors);
                     return CompletableFuture.completedFuture(new ResponseEntity<>(importError, BAD_REQUEST));
@@ -1006,7 +1006,7 @@ public class DeviceService implements IDeviceService {
         }
     }
 
-    private void checkImportAndAddToList(List<Device> deviceList, List<String> errors, int numberOfRows, XSSFSheet sheet)
+    private void checkImportAndAddToList(int ownerId, List<Device> deviceList, List<String> errors, int numberOfRows, XSSFSheet sheet)
             throws ExecutionException, InterruptedException {
         for (int rowIndex = 1; rowIndex <= numberOfRows; rowIndex++) {
             Row currentRow = sheet.getRow(rowIndex);
@@ -1019,7 +1019,7 @@ public class DeviceService implements IDeviceService {
             CompletableFuture<Ram> ram = _ramService.findBySize(currentRow.getCell(DEVICE_RAM).toString().strip());
             CompletableFuture<Screen> screen = _screenService.findBySize(currentRow.getCell(DEVICE_SCREEN).toString().strip());
             CompletableFuture<Storage> storage = _storageService.findBySize(currentRow.getCell(DEVICE_STORAGE).toString().strip());
-            CompletableFuture<User> owner = _employeeService.findByUsername(currentRow.getCell(DEVICE_OWNER).toString().strip());
+            CompletableFuture<User> owner = _employeeService.findById(ownerId);
             String statusString = currentRow.getCell(DEVICE_STATUS).toString().strip(),
                     originString = currentRow.getCell(DEVICE_ORIGIN).toString().strip(),
                     projectString = currentRow.getCell(DEVICE_PROJECT).toString().strip();

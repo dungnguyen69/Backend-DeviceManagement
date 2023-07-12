@@ -103,8 +103,7 @@ public class DeviceExcelTemplate {
 		createCell(row, 8, "Serial Number", cellStyle);
 		createCell(row, 9, "Project", cellStyle);
 		createCell(row, 10, "Origin", cellStyle);
-		createCell(row, 11, "Owner", cellStyle);
-		createCell(row, 12, "Comments", cellStyle);
+		createCell(row, 11, "Comments", cellStyle);
 	}
 
 	private void createCell(Row row, int columnCount, Object value, CellStyle cellStyle) {
@@ -137,7 +136,7 @@ public class DeviceExcelTemplate {
 
 		Row row = sheet.createRow(1);
 		int columnCount = 0;
-		for (int i = 0; i < 13; i++) {
+		for (int i = 0; i < 12; i++) {
 			createCell(row, columnCount++, null, cellStyle);
 		}
 	}
