@@ -1,7 +1,6 @@
 package com.fullstack.Backend.controllers;
 
 import com.fullstack.Backend.dto.request.ReturnKeepDeviceDTO;
-import com.fullstack.Backend.services.IRequestService;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.IOException;
@@ -26,7 +25,7 @@ import com.fullstack.Backend.services.IDeviceService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 
-@CrossOrigin(origins = "http://localhost:4200", maxAge = 3600, allowCredentials = "true")
+@CrossOrigin(origins = URL, maxAge = 3600, allowCredentials = "true")
 @RestController
 @RequestMapping("/api/devices")
 public class DeviceController {

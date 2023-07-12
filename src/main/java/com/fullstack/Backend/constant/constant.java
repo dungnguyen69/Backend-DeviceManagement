@@ -5,8 +5,6 @@ public class constant {
     public static final String DEFAULT_PAGE_SIZE = "10";
     public static final String DEFAULT_SORT_BY = "id";
     public static final String DEFAULT_SORT_DIRECTION = "desc";
-    public static final int EMPTY_LIST = 0;
-    public static final Boolean SUCCESSFUL = true;
 
     // For keyword suggestion
     public static final int DEVICE_NAME_COLUMN = 0;
@@ -34,7 +32,6 @@ public class constant {
     public static final int USER_EMAIL_COLUMN = 4;
     public static final int USER_PHONE_NUMBER_COLUMN = 5;
 
-
     // For import
     public static final int DEVICE_NAME = 0;
     public static final int DEVICE_STATUS = 1;
@@ -58,9 +55,7 @@ public class constant {
     public static final int RETURNED = 5;
     public static final int EXTENDING = 6;
 
-    public static final String SERVER_LOCATION = "src/main/resources/templates";
-    public static final String TEMPLATE_IMPORT = "Template_Import_Device";
-    public static final String EXTENSION = ".xlsx";
+    public static final String URL = "http://localhost:4200";
 
     public static final String FROM_ADDRESS = "dungtestemail33@gmail.com";
 }

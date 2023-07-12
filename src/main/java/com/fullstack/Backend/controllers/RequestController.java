@@ -18,7 +18,7 @@ import java.util.concurrent.ExecutionException;
 import static com.fullstack.Backend.constant.constant.*;
 import static org.springframework.http.HttpStatus.*;
 
-@CrossOrigin(origins = "http://localhost:4200", maxAge = 3600, allowCredentials = "true")
+@CrossOrigin(origins = URL, maxAge = 3600, allowCredentials = "true")
 @RestController
 @RequestMapping("/api/requests")
 public class RequestController {
