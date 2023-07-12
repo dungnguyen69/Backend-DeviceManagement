@@ -407,6 +407,23 @@ public class UserService implements IUserService {
                 MessageResponse("UPDATED SUCCESSFULLY!")));
     }
 
+    @Override
+    public CompletableFuture<ResponseEntity<Object>> updateProfile(ProfileDTO request) throws ExecutionException, InterruptedException {
+        User user = findById(request.getId()).get();
+        if (user == null)
+            return CompletableFuture.completedFuture(ResponseEntity
+                    .badRequest()
+                    .body(new MessageResponse("Error: User does not exist!")));
+        user.setUserName(request.getUserName());
+        user.setFirstName(request.getFirstName());
+        user.setLastName(request.getLastName());
+        user.setEmail(request.getEmail());
+        user.setPhoneNumber(request.getPhoneNumber());
+        _userRepository.save(user);
+        return CompletableFuture.completedFuture(ResponseEntity.ok(new
+                MessageResponse("UPDATED SUCCESSFULLY!")));
+    }
+
     @Async
     private CompletableFuture<List<UserDTO>> getAllUser(List<User> users, FilterUserDTO filter) throws ExecutionException, InterruptedException {
         formatFilter(filter); /* Remove spaces and make input text become lowercase*/
