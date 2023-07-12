@@ -35,6 +35,10 @@ public interface IRequestRepository extends JpaRepository<Request, Long>, JpaSpe
             + "AND r.device_Id = :deviceId "
             + "AND r.requestStatus = " + TRANSFERRED;
 
+    public static final String FIND_REQUESTS_BASED_ON_REQUEST_STATUS_AND_DEVICE_ID = "SELECT r FROM Request r WHERE "
+            + "r.device_Id = :deviceId "
+            + "AND r.requestStatus = :requestStatus";
+
     @Query(FIND_ALL_REQUESTS_BY_EMPLOYEE_ID)
     public List<Request> findAllRequest(int employeeId, Sort sort);
 
@@ -46,4 +50,7 @@ public interface IRequestRepository extends JpaRepository<Request, Long>, JpaSpe
 
     @Query(FIND_AN_OCCUPIED_REQUEST)
     public Request findAnOccupiedRequest(int nextKeeperId, int deviceId);
+
+    @Query(FIND_REQUESTS_BASED_ON_REQUEST_STATUS_AND_DEVICE_ID)
+    public List<Request> findRequestBasedOnStatusAndDevice(int deviceId, int requestStatus);
 }

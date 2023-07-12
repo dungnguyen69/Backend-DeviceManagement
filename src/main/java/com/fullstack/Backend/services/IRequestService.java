@@ -32,4 +32,8 @@ public interface IRequestService {
 
     public void updateRequest(Request request) throws InterruptedException, ExecutionException;
 
+    public boolean findRequestBasedOnStatusAndDevice(int deviceId, int requestStatus);
+
+    public void deleteRequestBasedOnStatusAndDevice(int deviceId, int requestStatus);
+
 }

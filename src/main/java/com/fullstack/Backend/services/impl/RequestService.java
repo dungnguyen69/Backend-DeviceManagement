@@ -290,6 +290,22 @@ public class RequestService implements IRequestService {
         _requestRepository.save(request);
     }
 
+    @Override
+    public boolean findRequestBasedOnStatusAndDevice(int deviceId, int requestStatus){
+        List<Request> requests = _requestRepository.findRequestBasedOnStatusAndDevice(deviceId, requestStatus);
+        return requests.size() != 0;
+    }
+
+    @Override
+    public void deleteRequestBasedOnStatusAndDevice(int deviceId, int requestStatus){
+        if (findRequestBasedOnStatusAndDevice(deviceId, requestStatus)) {
+            List<Request> requests = _requestRepository.findRequestBasedOnStatusAndDevice(deviceId, requestStatus);
+            for (Request request : requests) {
+                _requestRepository.delete(request);
+            }
+        }
+    }
+
     @Async
     private CompletableFuture<List<Request>> getPage(List<Request> sourceList, int pageIndex, int pageSize) {
         if (pageSize <= 0 || pageIndex <= 0)
@@ -367,7 +383,6 @@ public class RequestService implements IRequestService {
         requests = fetchFilteredRequest(requestFilter, requests).get();
         return CompletableFuture.completedFuture(requests);
     }
-
 
     private boolean isRequestListInvalid(List<Request> requestList) {
         return requestList != null;

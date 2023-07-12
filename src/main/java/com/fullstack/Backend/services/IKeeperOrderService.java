@@ -21,4 +21,5 @@ public interface IKeeperOrderService {
 
     public CompletableFuture<List<KeeperOrder>> findByKeeperId(int keeperId);
 
+    public void findByReturnedDevice(int deviceId);
 }

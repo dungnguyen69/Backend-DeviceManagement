@@ -213,12 +213,30 @@ public class DeviceService implements IDeviceService {
 
         if (_deviceRepository.findById(deviceId) == null) {
             response.setErrorMessage("Device is not existent");
-            return CompletableFuture.completedFuture(new ResponseEntity<Object>(response, NOT_FOUND));
+            return CompletableFuture.completedFuture(new ResponseEntity<>(response, NOT_FOUND));
         }
-
+        if (_requestService.findRequestBasedOnStatusAndDevice(deviceId, PENDING)) {
+            _requestService.deleteRequestBasedOnStatusAndDevice(deviceId, PENDING);
+        }
+        if (_requestService.findRequestBasedOnStatusAndDevice(deviceId, RETURNED)) {
+            _requestService.deleteRequestBasedOnStatusAndDevice(deviceId, RETURNED);
+            _keeperOrderService.findByReturnedDevice(deviceId);
+        }
+        if (_requestService.findRequestBasedOnStatusAndDevice(deviceId, APPROVED)) {
+            response.setErrorMessage("Cannot delete by virtue of approved requests for this device");
+            return CompletableFuture.completedFuture(new ResponseEntity<>(response, NOT_FOUND));
+        }
+        if (_requestService.findRequestBasedOnStatusAndDevice(deviceId, TRANSFERRED)) {
+            response.setErrorMessage("Cannot delete by virtue of transferred requests for this device");
+            return CompletableFuture.completedFuture(new ResponseEntity<>(response, NOT_FOUND));
+        }
+        if (_requestService.findRequestBasedOnStatusAndDevice(deviceId, EXTENDING)) {
+            response.setErrorMessage("Cannot delete because someone uses this device");
+            return CompletableFuture.completedFuture(new ResponseEntity<>(response, NOT_FOUND));
+        }
         _deviceRepository.deleteById((long) deviceId);
         response.setIsDeletionSuccessful(true);
-        return CompletableFuture.completedFuture(new ResponseEntity<Object>(response, OK));
+        return CompletableFuture.completedFuture(new ResponseEntity<>(response, OK));
     }
 
     @Override
