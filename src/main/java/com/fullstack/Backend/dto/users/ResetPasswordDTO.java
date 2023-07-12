@@ -7,8 +7,11 @@ import lombok.Data;
 public class ResetPasswordDTO {
     private String oldPassword;
 
-    private  String token;
+    private  int id;
 
-    @ValidPassword
+//    @ValidPassword
     private String newPassword;
+
+//    @ValidPassword
+    private String confirmPassword;
 }

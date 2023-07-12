@@ -22,6 +22,7 @@ import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.transaction.Transactional;
 import net.bytebuddy.utility.RandomString;
+import org.apache.http.client.methods.HttpPost;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpHeaders;
@@ -71,7 +72,7 @@ public class UserService implements IUserService {
     @Async
     @Override
     public CompletableFuture<User> findById(int id) {
-        return CompletableFuture.completedFuture(_userRepository.findById(id).orElseThrow(null));
+        return CompletableFuture.completedFuture(_userRepository.findById(id));
     }
 
     @Override
@@ -312,7 +313,7 @@ public class UserService implements IUserService {
         if (existingToken != null) {
             PasswordResetToken newToken = generateResetPasswordToken(existingToken.getToken()).get(); /* Change old token to new token and return it */
             User updateDuser = newToken.getUser();
-            String verifyURL = siteURL + "/api/users/reset_password?token=" + newToken;
+            String verifyURL = siteURL + "/api/users/reset_password?token=" + newToken.getToken();
             sendResetPasswordEmail(updateDuser, verifyURL);
             return CompletableFuture.completedFuture(ResponseEntity.ok(new MessageResponse("Sent successfully!")));
         }
@@ -325,7 +326,7 @@ public class UserService implements IUserService {
     @Async
     @Override
     public CompletableFuture<ResponseEntity<Object>> saveResetPassword(ResetPasswordDTO dto) throws ExecutionException, InterruptedException, MessagingException {
-        CompletableFuture<User> user = findByToken(dto.getToken());
+        CompletableFuture<User> user = findById(dto.getId());
         if (user == null)
             return CompletableFuture.completedFuture(ResponseEntity
                     .badRequest()
@@ -335,8 +336,13 @@ public class UserService implements IUserService {
         if (!isOldPasswordSimilarToNewOne) /* Compare old password and new password */
             return CompletableFuture.completedFuture(ResponseEntity
                     .badRequest()
-                    .body(new MessageResponse("Old password is incorrect!")));
+                    .body(new MessageResponse("Current password is incorrect!")));
 
+        if(!Objects.equals(dto.getNewPassword(), dto.getConfirmPassword())){
+            return CompletableFuture.completedFuture(ResponseEntity
+                    .badRequest()
+                    .body(new MessageResponse("New password must be identical to confirm password")));
+        }
         changeUserPassword(user.get(), dto.getNewPassword());
         return CompletableFuture.completedFuture(ResponseEntity.ok(new MessageResponse("Changed successfully!")));
     }
@@ -372,13 +378,11 @@ public class UserService implements IUserService {
     @Override
     public CompletableFuture<String> validatePasswordResetToken(String token) {
         final Calendar cal = Calendar.getInstance();
+        /* Validate token */
         final Optional<PasswordResetToken> passToken = _passwordResetTokenRepository.findByToken(token);
         if (passToken.isEmpty()) return CompletableFuture.completedFuture("not existent");
         boolean isTokenExpired = passToken.get().getExpiryDate().before(cal.getTime());
-        boolean isTokenFound = passToken != null;
-        return !isTokenFound ? CompletableFuture.completedFuture("invalid")
-                : isTokenExpired ? CompletableFuture.completedFuture("expired")
-                : null;
+        return isTokenExpired ? CompletableFuture.completedFuture("expired") : null;
     }
 
     @Async()

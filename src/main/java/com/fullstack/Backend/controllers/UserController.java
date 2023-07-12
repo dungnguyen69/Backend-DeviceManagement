@@ -94,13 +94,20 @@ public class UserController {
     /* For reset password and forgot password   */
     @GetMapping("/reset_password")
     public CompletableFuture<ResponseEntity<Object>> showChangePasswordPage(
-            @RequestParam String token) throws ExecutionException, InterruptedException, MessagingException {
-        if (_userService.validatePasswordResetToken(token).get() != null)
+            @RequestParam String token, HttpServletResponse response) throws ExecutionException, InterruptedException, IOException {
+        if (_userService.validatePasswordResetToken(token).get() != null){
+            response.sendRedirect(URL + "/error-page");
             return CompletableFuture.completedFuture(ResponseEntity
                     .badRequest()
                     .body(new MessageResponse("User is not existent because token is " + _userService.validatePasswordResetToken(token).get())));
+        }
 
-        return CompletableFuture.completedFuture(ResponseEntity.ok(new MessageResponse("Token is valid!")));
+        Cookie cookie= new Cookie("token", token);
+        cookie.setPath("/");
+        response.addCookie(cookie);
+        response.sendRedirect(URL + "/receive-forgot-password");
+        return CompletableFuture.completedFuture(ResponseEntity.status(HttpStatus.FOUND)
+                .body(token));
     }
 
     @PutMapping("/save_reset_password")
@@ -115,7 +122,8 @@ public class UserController {
         return _userService.saveForgotPassword(dto);
     }
 
-    @PostMapping("/authorization")
+    @PutMapping("/authorization")
+    @PreAuthorize("hasRole('ADMIN')")
     @ResponseBody
     public CompletableFuture<ResponseEntity<Object>> providePermission(
             @RequestParam(name = "userId") int userId,
