@@ -89,7 +89,6 @@ public class DeviceService implements IDeviceService {
         _deviceRepository.save(device);
     }
 
-
     @Async
     @Override
     public CompletableFuture<ResponseEntity<Object>> showDevicesWithPaging(int pageIndex, int pageSize, String sortBy, String sortDir, FilterDeviceDTO deviceFilter) throws InterruptedException, ExecutionException {
@@ -324,88 +323,6 @@ public class DeviceService implements IDeviceService {
         return CompletableFuture.completedFuture(new ResponseEntity<>(importDevice, NOT_FOUND));
     }
 
-    private void checkImportAndAddToList(List<Device> deviceList, List<String> errors, int numberOfRows, XSSFSheet sheet)
-            throws ExecutionException, InterruptedException {
-        for (int rowIndex = 1; rowIndex <= numberOfRows; rowIndex++) {
-            Row currentRow = sheet.getRow(rowIndex);
-            String[] platformString = currentRow.getCell(DEVICE_PLATFORM).toString().split(",");
-            String name = currentRow.getCell(DEVICE_NAME).toString().strip(),
-                    inventoryNumber = currentRow.getCell(DEVICE_INVENTORY_NUMBER).toString().strip(),
-                    serialNumber = currentRow.getCell(DEVICE_SERIAL_NUMBER).toString().strip(),
-                    comments = currentRow.getCell(DEVICE_COMMENTS).toString();
-            CompletableFuture<ItemType> itemType = _itemTypeService.findByName(currentRow.getCell(DEVICE_ITEM_TYPE).toString().strip());
-            CompletableFuture<Ram> ram = _ramService.findBySize(currentRow.getCell(DEVICE_RAM).toString().strip());
-            CompletableFuture<Screen> screen = _screenService.findBySize(currentRow.getCell(DEVICE_SCREEN).toString().strip());
-            CompletableFuture<Storage> storage = _storageService.findBySize(currentRow.getCell(DEVICE_STORAGE).toString().strip());
-            CompletableFuture<User> owner = _employeeService.findByUsername(currentRow.getCell(DEVICE_OWNER).toString().strip());
-            String statusString = currentRow.getCell(DEVICE_STATUS).toString().strip(),
-                    originString = currentRow.getCell(DEVICE_ORIGIN).toString().strip(),
-                    projectString = currentRow.getCell(DEVICE_PROJECT).toString().strip();
-            Device existDevice = _deviceRepository.findBySerialNumber(serialNumber);
-            int rowInExcel = rowIndex + 1; /* Ignore the headers */
-            if (platformString.length != 2) {
-                errors.add("Platform at row " + rowInExcel + " is not valid");
-                continue;
-            }
-            String platformName = platformString[0].strip(), platformVersion = platformString[1].strip();
-            CompletableFuture<Platform> platform = _platformService.findByNameAndVersion(platformName, platformVersion);
-            if (platform.get() == null)
-                errors.add("Platform at row " + rowInExcel + " is not valid");
-            if (name.isBlank())
-                errors.add("Name at row " + rowInExcel + " is not valid");
-            if (inventoryNumber.isBlank())
-                errors.add("Inventory number at row " + rowInExcel + " is not valid");
-            if (serialNumber.isBlank())
-                errors.add("Serial number at row " + rowInExcel + " is not valid");
-            if (ram.get() == null)
-                errors.add("Ram at row " + rowInExcel + " is not valid");
-            if (itemType.get() == null)
-                errors.add("Item type at row " + rowInExcel + " is not valid");
-            if (screen.get() == null)
-                errors.add("Screen at row " + rowInExcel + " is not valid");
-            if (storage.get() == null)
-                errors.add("Storage at row " + rowInExcel + " is not valid");
-            if (owner.get() == null)
-                errors.add("Owner at row " + rowInExcel + " is not valid");
-            if (projectString.isBlank())
-                errors.add("Project at row " + rowInExcel + " is not valid");
-            if (originString.isBlank())
-                errors.add("Origin at row " + rowInExcel + " is not valid");
-            if (statusString.isBlank())
-                errors.add("Status at row " + rowInExcel + " is not valid");
-            /* Display list of error fields */
-            if (!errors.isEmpty())
-                return;
-            /* Create a new device */
-            if (existDevice == null) {
-                Device device = Device.builder().name(name).status(Status.valueOf(statusString))
-                        .ramId(ram.get().getId()).platformId(platform.get().getId()).screenId(screen.get().getId())
-                        .storageId(storage.get().getId()).ownerId(owner.get().getId())
-                        .origin(Origin.valueOf(originString)).project(Project.valueOf(projectString)).comments(comments)
-                        .itemTypeId(itemType.get().getId()).inventoryNumber(inventoryNumber).serialNumber(serialNumber)
-                        .build();
-                device.setCreatedDate(new Date());
-                deviceList.add(device);
-                continue;
-            }
-            /* Update an existent device */
-            existDevice.setName(name);
-            existDevice.setStatus(Status.valueOf(statusString));
-            existDevice.setInventoryNumber(inventoryNumber);
-            existDevice.setProject(Project.valueOf(projectString));
-            existDevice.setOrigin(Origin.valueOf(originString));
-            existDevice.setPlatformId(platform.get().getId());
-            existDevice.setRamId(ram.get().getId());
-            existDevice.setItemTypeId(itemType.get().getId());
-            existDevice.setStorageId(storage.get().getId());
-            existDevice.setScreenId(screen.get().getId());
-            existDevice.setComments(comments);
-            existDevice.setOwnerId(owner.get().getId());
-            existDevice.setUpdatedDate(new Date());
-            deviceList.add(existDevice);
-        }
-    }
-
     @Async()
     @Override
     public CompletableFuture<ResponseEntity<Object>> getSuggestKeywordDevices(int fieldColumn, String keyword, FilterDeviceDTO deviceFilter) throws InterruptedException, ExecutionException {
@@ -533,7 +450,8 @@ public class DeviceService implements IDeviceService {
         List<String> originList = deviceList.stream().map(DeviceDTO::getOrigin).distinct().collect(Collectors.toList());
         List<String> projectList = deviceList.stream().map(DeviceDTO::getProject).distinct().collect(Collectors.toList());
         List<String> itemTypeList = deviceList.stream().map(DeviceDTO::getItemType).distinct().collect(Collectors.toList());
-        List<Integer> keeperNumberList = deviceList.stream().map(DeviceDTO::getKeeperNumber).distinct().collect(Collectors.toList());
+        List<String> keeperNumberOptions = List.of(new String[]{"LESS THAN 3", "EQUAL TO 3"});
+
         /* */
         int totalElements = deviceList.size();
         deviceList = getPage(deviceList, pageIndex, pageSize).get(); /*Pagination*/
@@ -548,7 +466,7 @@ public class DeviceService implements IDeviceService {
         response.setOriginList(originList);
         response.setProjectList(projectList);
         response.setItemTypeList(itemTypeList);
-        response.setKeeperNumberList(keeperNumberList);
+        response.setKeeperNumberOptions(keeperNumberOptions);
         return CompletableFuture.completedFuture(new ResponseEntity<>(response, OK));
     }
 
@@ -564,7 +482,7 @@ public class DeviceService implements IDeviceService {
         List<String> originList = keepingDeviceList.stream().map(KeepingDeviceDTO::getOrigin).distinct().toList();
         List<String> projectList = keepingDeviceList.stream().map(KeepingDeviceDTO::getProject).distinct().toList();
         List<String> itemTypeList = keepingDeviceList.stream().map(KeepingDeviceDTO::getItemType).distinct().toList();
-        List<String> keeperNumberList = keepingDeviceList.stream().map(KeepingDeviceDTO::getKeeperNo).distinct().collect(Collectors.toList());
+        List<String> keeperNumberOptions = List.of(new String[]{"LESS THAN 3", "EQUAL TO 3"});
         int totalElements = keepingDeviceList.size();
         keepingDeviceList = getPageForKeepingDevices(keepingDeviceList, pageIndex, pageSize).get(); /*Pagination*/
         /* Return the desired response*/
@@ -577,7 +495,7 @@ public class DeviceService implements IDeviceService {
         response.setOriginList(originList);
         response.setProjectList(projectList);
         response.setItemTypeList(itemTypeList);
-        response.setKeeperNumberList(keeperNumberList);
+        response.setKeeperNumberOptions(keeperNumberOptions);
         return CompletableFuture.completedFuture(new ResponseEntity<>(response, OK));
     }
 
@@ -758,8 +676,8 @@ public class DeviceService implements IDeviceService {
         if (deviceFilter.getKeeper() != null)
             devices = devices.stream().filter(device -> device.getKeeper().equalsIgnoreCase(deviceFilter.getKeeper())).collect(Collectors.toList());
 
-        if (deviceFilter.getKeeperNo() != null){ //"LESS THAN 3", "EQUAL TO 3"
-            if(deviceFilter.getKeeperNo().equalsIgnoreCase("less than 3"))
+        if (deviceFilter.getKeeperNo() != null) { //"LESS THAN 3", "EQUAL TO 3"
+            if (deviceFilter.getKeeperNo().equalsIgnoreCase("less than 3"))
                 devices = devices.stream().filter(device -> device.getKeeperNumber() < 3 && (device.getStatus().equalsIgnoreCase("OCCUPIED") || device.getStatus().equalsIgnoreCase("VACANT"))).collect(Collectors.toList());
             else
                 devices = devices.stream().filter(device -> device.getKeeperNumber() == 3 && device.getStatus().equalsIgnoreCase("OCCUPIED")).collect(Collectors.toList());
@@ -1074,4 +992,85 @@ public class DeviceService implements IDeviceService {
         }
     }
 
+    private void checkImportAndAddToList(List<Device> deviceList, List<String> errors, int numberOfRows, XSSFSheet sheet)
+            throws ExecutionException, InterruptedException {
+        for (int rowIndex = 1; rowIndex <= numberOfRows; rowIndex++) {
+            Row currentRow = sheet.getRow(rowIndex);
+            String[] platformString = currentRow.getCell(DEVICE_PLATFORM).toString().split(",");
+            String name = currentRow.getCell(DEVICE_NAME).toString().strip(),
+                    inventoryNumber = currentRow.getCell(DEVICE_INVENTORY_NUMBER).toString().strip(),
+                    serialNumber = currentRow.getCell(DEVICE_SERIAL_NUMBER).toString().strip(),
+                    comments = currentRow.getCell(DEVICE_COMMENTS).toString();
+            CompletableFuture<ItemType> itemType = _itemTypeService.findByName(currentRow.getCell(DEVICE_ITEM_TYPE).toString().strip());
+            CompletableFuture<Ram> ram = _ramService.findBySize(currentRow.getCell(DEVICE_RAM).toString().strip());
+            CompletableFuture<Screen> screen = _screenService.findBySize(currentRow.getCell(DEVICE_SCREEN).toString().strip());
+            CompletableFuture<Storage> storage = _storageService.findBySize(currentRow.getCell(DEVICE_STORAGE).toString().strip());
+            CompletableFuture<User> owner = _employeeService.findByUsername(currentRow.getCell(DEVICE_OWNER).toString().strip());
+            String statusString = currentRow.getCell(DEVICE_STATUS).toString().strip(),
+                    originString = currentRow.getCell(DEVICE_ORIGIN).toString().strip(),
+                    projectString = currentRow.getCell(DEVICE_PROJECT).toString().strip();
+            Device existDevice = _deviceRepository.findBySerialNumber(serialNumber);
+            int rowInExcel = rowIndex + 1; /* Ignore the headers */
+            if (platformString.length != 2) {
+                errors.add("Platform at row " + rowInExcel + " is not valid");
+                continue;
+            }
+            String platformName = platformString[0].strip(), platformVersion = platformString[1].strip();
+            CompletableFuture<Platform> platform = _platformService.findByNameAndVersion(platformName, platformVersion);
+            if (platform.get() == null)
+                errors.add("Platform at row " + rowInExcel + " is not valid");
+            if (name.isBlank())
+                errors.add("Name at row " + rowInExcel + " is not valid");
+            if (inventoryNumber.isBlank())
+                errors.add("Inventory number at row " + rowInExcel + " is not valid");
+            if (serialNumber.isBlank())
+                errors.add("Serial number at row " + rowInExcel + " is not valid");
+            if (ram.get() == null)
+                errors.add("Ram at row " + rowInExcel + " is not valid");
+            if (itemType.get() == null)
+                errors.add("Item type at row " + rowInExcel + " is not valid");
+            if (screen.get() == null)
+                errors.add("Screen at row " + rowInExcel + " is not valid");
+            if (storage.get() == null)
+                errors.add("Storage at row " + rowInExcel + " is not valid");
+            if (owner.get() == null)
+                errors.add("Owner at row " + rowInExcel + " is not valid");
+            if (projectString.isBlank())
+                errors.add("Project at row " + rowInExcel + " is not valid");
+            if (originString.isBlank())
+                errors.add("Origin at row " + rowInExcel + " is not valid");
+            if (statusString.isBlank())
+                errors.add("Status at row " + rowInExcel + " is not valid");
+            /* Display list of error fields */
+            if (!errors.isEmpty())
+                return;
+            /* Create a new device */
+            if (existDevice == null) {
+                Device device = Device.builder().name(name).status(Status.valueOf(statusString))
+                        .ramId(ram.get().getId()).platformId(platform.get().getId()).screenId(screen.get().getId())
+                        .storageId(storage.get().getId()).ownerId(owner.get().getId())
+                        .origin(Origin.valueOf(originString)).project(Project.valueOf(projectString)).comments(comments)
+                        .itemTypeId(itemType.get().getId()).inventoryNumber(inventoryNumber).serialNumber(serialNumber)
+                        .build();
+                device.setCreatedDate(new Date());
+                deviceList.add(device);
+                continue;
+            }
+            /* Update an existent device */
+            existDevice.setName(name);
+            existDevice.setStatus(Status.valueOf(statusString));
+            existDevice.setInventoryNumber(inventoryNumber);
+            existDevice.setProject(Project.valueOf(projectString));
+            existDevice.setOrigin(Origin.valueOf(originString));
+            existDevice.setPlatformId(platform.get().getId());
+            existDevice.setRamId(ram.get().getId());
+            existDevice.setItemTypeId(itemType.get().getId());
+            existDevice.setStorageId(storage.get().getId());
+            existDevice.setScreenId(screen.get().getId());
+            existDevice.setComments(comments);
+            existDevice.setOwnerId(owner.get().getId());
+            existDevice.setUpdatedDate(new Date());
+            deviceList.add(existDevice);
+        }
+    }
 }
