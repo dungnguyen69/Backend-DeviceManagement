@@ -7,6 +7,7 @@ import lombok.Data;
 public class ForgotPasswordDTO {
     private  String token;
 
-    @ValidPassword
     private String newPassword;
+
+    private String confirmPassword;
 }

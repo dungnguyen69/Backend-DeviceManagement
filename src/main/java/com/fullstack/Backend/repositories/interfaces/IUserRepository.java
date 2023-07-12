@@ -13,7 +13,7 @@ public interface IUserRepository extends JpaRepository<User, Long> {
     //    public final static String FIND_BY_VERIFICATION_CODE = "SELECT u FROM User u WHERE u.verificationCode = :code";
     public final static String FETCH_USER = "SELECT u FROM User u";
 
-    public Optional<User> findById(int id);
+    public User findById(int id);
 
     @Query(FETCH_USER)
     public List<UserList> fetchUser();

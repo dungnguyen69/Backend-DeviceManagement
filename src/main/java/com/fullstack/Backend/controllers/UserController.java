@@ -79,6 +79,7 @@ public class UserController {
         return _userService.resendRegistrationToken(getSiteURL(request), existingToken);
     }
 
+    /*Send email*/
     @PostMapping("/reset_password")
     public CompletableFuture<ResponseEntity<Object>> sendResetPasswordEmail(
             HttpServletRequest request,
@@ -98,13 +99,13 @@ public class UserController {
         return CompletableFuture.completedFuture(ResponseEntity.ok(new MessageResponse("Token is valid!")));
     }
 
-    @PostMapping("/save_reset_password")
+    @PutMapping("/save_reset_password")
     public CompletableFuture<ResponseEntity<Object>> saveResetPassword(
             @Valid @RequestBody ResetPasswordDTO dto) throws ExecutionException, InterruptedException, MessagingException {
         return _userService.saveResetPassword(dto);
     }
 
-    @PostMapping("/save_forgot_password")
+    @PutMapping("/save_forgot_password")
     public CompletableFuture<ResponseEntity<Object>> saveForgotPassword(
             @Valid @RequestBody ForgotPasswordDTO dto) throws ExecutionException, InterruptedException, MessagingException {
         return _userService.saveForgotPassword(dto);

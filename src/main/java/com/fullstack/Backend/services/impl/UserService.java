@@ -350,7 +350,20 @@ public class UserService implements IUserService {
                     .badRequest()
                     .body(new MessageResponse("User is not existent")));
 
+        Optional<PasswordResetToken> token = _passwordResetTokenRepository.findByToken(dto.getToken());
+        if(token.isEmpty()){
+            return CompletableFuture.completedFuture(ResponseEntity
+                    .badRequest()
+                    .body(new MessageResponse("Token is not existent")));
+        }
+
+        if(!Objects.equals(dto.getNewPassword(), dto.getConfirmPassword())){
+            return CompletableFuture.completedFuture(ResponseEntity
+                    .badRequest()
+                    .body(new MessageResponse("Password must be identical to confirm password")));
+        }
         changeUserPassword(user.get(), dto.getNewPassword());
+        _passwordResetTokenRepository.delete(token.get());
         return CompletableFuture.completedFuture(ResponseEntity
                 .ok(new MessageResponse("Changed successfully!")));
     }
