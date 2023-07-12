@@ -31,6 +31,8 @@ public interface IDeviceService {
 
     public void exportToExcel(HttpServletResponse response) throws IOException, ExecutionException, InterruptedException;
 
+    void exportToExcelForOwner(int ownerId, HttpServletResponse response) throws IOException, ExecutionException, InterruptedException;
+
     public void downloadTemplate(HttpServletResponse response)
             throws IOException, InterruptedException, ExecutionException;
 

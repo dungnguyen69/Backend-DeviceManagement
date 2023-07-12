@@ -98,6 +98,14 @@ public class DeviceController {
         _deviceService.exportToExcel(response);
     }
 
+    @GetMapping("/warehouse/export/{id}")
+    @ResponseBody
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
+    public void exportToExcelForOwner(@PathVariable(value = "id") int ownerId,
+                                      HttpServletResponse response) throws IOException, ExecutionException, InterruptedException {
+        _deviceService.exportToExcelForOwner(ownerId, response);
+    }
+
     @GetMapping("/warehouse/download-template")
     @ResponseBody
     @PreAuthorize("hasRole('MODERATOR') or hasRole('ADMIN')")

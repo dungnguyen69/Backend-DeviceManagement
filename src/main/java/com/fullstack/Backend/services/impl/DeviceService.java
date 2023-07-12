@@ -16,7 +16,6 @@ import java.util.stream.Stream;
 import com.fullstack.Backend.dto.device.*;
 import com.fullstack.Backend.dto.request.ReturnKeepDeviceDTO;
 import com.fullstack.Backend.entities.*;
-import com.fullstack.Backend.enums.RequestStatus;
 import com.fullstack.Backend.responses.device.*;
 import com.fullstack.Backend.services.*;
 import com.fullstack.Backend.utils.*;
@@ -247,6 +246,21 @@ public class DeviceService implements IDeviceService {
         String headerValue = "attachment; filename=ExportDevices_" + currentDateTime + ".xlsx";
         response.setHeader(headerKey, headerValue);
         List<Device> devices = _deviceRepository.findAll();
+        List<DeviceDTO> deviceList = convertEntityToDTO(devices).get();
+        DeviceExcelExporter excelExporter = new DeviceExcelExporter(deviceList);
+        excelExporter.export(response);
+    }
+
+    @Override
+    public void exportToExcelForOwner(int ownerId, HttpServletResponse response) throws IOException, ExecutionException, InterruptedException {
+        response.setContentType("application/octet-stream");
+        DateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd_HH:mm:ss");
+        String currentDateTime = dateFormatter.format(new Date());
+        String headerKey = "Content-Disposition"; // ?
+        String headerValue = "attachment; filename=ExportDevices_" + currentDateTime + ".xlsx";
+        response.setHeader(headerKey, headerValue);
+        Sort sort = Sort.by("id").ascending();
+        List<Device> devices = _deviceRepository.findByOwnerId(ownerId, sort);
         List<DeviceDTO> deviceList = convertEntityToDTO(devices).get();
         DeviceExcelExporter excelExporter = new DeviceExcelExporter(deviceList);
         excelExporter.export(response);
