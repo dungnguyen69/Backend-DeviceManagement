@@ -16,7 +16,7 @@ public class KeepingDeviceResponse {
     private List<String> originList;
     private List<String> projectList;
     private List<String> itemTypeList;
-    private List<String> keeperNumberList;
+    private List<String> keeperNumberOptions;
     private int pageNo;
     private int pageSize;
     private long totalElements;
