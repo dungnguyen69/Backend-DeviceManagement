@@ -153,6 +153,7 @@ public class RequestService implements IRequestService {
         switch (fieldColumn) {
             case REQUEST_REQUEST_ID_COLUMN -> mappedDeviceList = requests.stream().map(Request::getRequestId);
             case REQUEST_DEVICE_NAME_COLUMN -> mappedDeviceList = requests.stream().map(r -> r.getDevice().getName());
+            case REQUEST_DEVICE_SERIAL_NUMBER_COLUMN -> mappedDeviceList = requests.stream().map(r -> r.getDevice().getSerialNumber());
             case REQUEST_REQUESTER_COLUMN ->
                     mappedDeviceList = requests.stream().map(r -> r.getRequester().getUserName());
             case REQUEST_CURRENT_KEEPER_COLUMN ->
@@ -325,6 +326,9 @@ public class RequestService implements IRequestService {
 
         if (requestFilter.getDevice() != null)
             requests = requests.stream().filter(request -> request.getDevice().getName().toLowerCase().equals(requestFilter.getDevice())).collect(Collectors.toList());
+
+        if (requestFilter.getSerialNumber() != null)
+            requests = requests.stream().filter(request -> request.getDevice().getSerialNumber().toLowerCase().equals(requestFilter.getSerialNumber())).collect(Collectors.toList());
 
         if (requestFilter.getApprover() != null)
             requests = requests.stream().filter(request -> request.getAccepter().getUserName().toLowerCase().equals(requestFilter.getApprover())).collect(Collectors.toList());

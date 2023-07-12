@@ -18,6 +18,7 @@ public class RequestFilterDTO {
     private String currentKeeper;
     private String nextKeeper;
     private String device;
+    private String serialNumber;
     private String requester;
     private String requestStatus;
     private Date bookingDate;

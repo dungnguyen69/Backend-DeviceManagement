@@ -20,10 +20,11 @@ public class constant {
 
     public static final int REQUEST_REQUEST_ID_COLUMN = 0;
     public static final int REQUEST_DEVICE_NAME_COLUMN = 1;
-    public static final int REQUEST_REQUESTER_COLUMN = 2;
-    public static final int REQUEST_CURRENT_KEEPER_COLUMN = 3;
-    public static final int REQUEST_NEXT_KEEPER_COLUMN = 4;
-    public static final int REQUEST_APPROVER_COLUMN = 5;
+    public static final int REQUEST_DEVICE_SERIAL_NUMBER_COLUMN = 2;
+    public static final int REQUEST_REQUESTER_COLUMN = 3;
+    public static final int REQUEST_CURRENT_KEEPER_COLUMN = 4;
+    public static final int REQUEST_NEXT_KEEPER_COLUMN = 5;
+    public static final int REQUEST_APPROVER_COLUMN = 6;
 
     public static final int USER_BADGE_ID_COLUMN = 0;
     public static final int USER_NAME_COLUMN = 1;
