@@ -867,7 +867,7 @@ public class DeviceService implements IDeviceService {
             Device device = _deviceRepository.findById(keeperOrder.getDevice().getId());
             KeepingDeviceDTO keepingDevice = new KeepingDeviceDTO(device);
             keepingDevice.setKeeper(keeperOrder.getKeeper().getUserName());
-            keepingDevice.setKeeperNo(String.valueOf(keeperOrder.getKeeperNo()));
+            keepingDevice.setKeeperNo(keeperOrder.getKeeperNo());
             keepingDevice.setBookingDate(keeperOrder.getBookingDate());
             keepingDevice.setReturnDate(keeperOrder.getDueDate());
             keepingDeviceList.add(keepingDevice);
@@ -898,8 +898,6 @@ public class DeviceService implements IDeviceService {
             devices = devices.stream().filter(device -> device.getOwner().toLowerCase().equals(deviceFilter.getOwner())).collect(Collectors.toList());
         if (deviceFilter.getKeeper() != null)
             devices = devices.stream().filter(device -> device.getKeeper().toLowerCase().equals(deviceFilter.getKeeper())).collect(Collectors.toList());
-        if (deviceFilter.getKeeperNo() != null)
-            devices = devices.stream().filter(device -> device.getKeeperNo().toLowerCase().equals(deviceFilter.getKeeper())).collect(Collectors.toList());
         if (deviceFilter.getOrigin() != null)
             devices = devices.stream().filter(device -> device.getOrigin().equalsIgnoreCase(deviceFilter.getOrigin())).collect(Collectors.toList());
         if (deviceFilter.getInventoryNumber() != null)
@@ -912,6 +910,12 @@ public class DeviceService implements IDeviceService {
             devices = devices.stream().filter(device -> device.getBookingDate() != null).filter(device -> device.getBookingDate().after(deviceFilter.getBookingDate())).collect(Collectors.toList());
         if (deviceFilter.getReturnDate() != null)
             devices = devices.stream().filter(device -> device.getReturnDate() != null).filter(device -> device.getReturnDate().before(deviceFilter.getReturnDate())).collect(Collectors.toList());
+        if (deviceFilter.getKeeperNo() != null) { //"LESS THAN 3", "EQUAL TO 3"
+            if (deviceFilter.getKeeperNo().equalsIgnoreCase("less than 3"))
+                devices = devices.stream().filter(device -> device.getKeeperNo() < 3 && (device.getStatus().equalsIgnoreCase("OCCUPIED") || device.getStatus().equalsIgnoreCase("VACANT"))).collect(Collectors.toList());
+            else
+                devices = devices.stream().filter(device -> device.getKeeperNo() == 3 && device.getStatus().equalsIgnoreCase("OCCUPIED")).collect(Collectors.toList());
+        }
         return CompletableFuture.completedFuture(devices);
     }
 

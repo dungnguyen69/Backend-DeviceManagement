@@ -150,7 +150,7 @@ public class DeviceController {
     @ResponseBody
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public CompletableFuture<ResponseEntity<Object>> updateReturnKeepDevice(
-            @DateTimeFormat(pattern = "yyyy-MM-dd") ReturnKeepDeviceDTO request)
+            @RequestBody ReturnKeepDeviceDTO request)
             throws InterruptedException, ExecutionException, ParseException {
         return _deviceService.updateReturnKeepDevice(request);
     }
@@ -176,7 +176,7 @@ public class DeviceController {
         return _deviceService.updateReturnOwnedDevice(request);
     }
 
-    @GetMapping("/owners/{id}/suggestion")
+    @GetMapping("/owners/suggestion/{id}")
     @ResponseBody
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public CompletableFuture<ResponseEntity<Object>> getSuggestKeywordOwnedDevices(
@@ -188,7 +188,7 @@ public class DeviceController {
                 keyword, device);
     }
 
-    @GetMapping("/keepers/{id}/suggestion")
+    @GetMapping("/keepers/suggestion/{id}")
     @ResponseBody
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public CompletableFuture<ResponseEntity<Object>> getSuggestKeywordKeepingDevices(

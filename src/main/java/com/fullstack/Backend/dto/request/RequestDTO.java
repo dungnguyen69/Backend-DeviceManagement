@@ -31,7 +31,7 @@ public class RequestDTO {
     public String accepter;
     @JsonProperty("BookingDate")
     public Date BookingDate;
-    @JsonProperty("ReturnDate")
+        @JsonProperty("ReturnDate")
     public Date ReturnDate;
     @JsonProperty("created_date")
     public Date created_date;
