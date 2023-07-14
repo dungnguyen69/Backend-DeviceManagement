@@ -69,11 +69,11 @@ public class RequestController {
         return _requestService.updateRequestStatus(request);
     }
 
-    @PostMapping("/extend-duration")
+    @PostMapping("/keepers/extend-duration")
     @ResponseBody
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public CompletableFuture<ResponseEntity<Object>> extendDurationRequest(
-            @DateTimeFormat(pattern = "yyyy-MM-dd") ExtendDurationRequestDTO request)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) @RequestBody ExtendDurationRequestDTO request)
             throws InterruptedException, ExecutionException, ParseException {
         return _requestService.extendDurationRequest(request);
     }

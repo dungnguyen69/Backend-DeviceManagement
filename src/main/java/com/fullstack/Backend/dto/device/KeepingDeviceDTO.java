@@ -52,6 +52,10 @@ public class KeepingDeviceDTO {
     public Date BookingDate;
     @JsonProperty("ReturnDate")
     public Date ReturnDate;
+    @JsonProperty("MaxExtendingReturnDate")
+    public Date MaxExtendingReturnDate;
+    @JsonProperty("isReturnable")
+    public Boolean isReturnable = true;
     @JsonProperty("CreatedDate")
     public Date CreatedDate;
     @JsonProperty("UpdatedDate")

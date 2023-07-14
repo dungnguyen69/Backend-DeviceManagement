@@ -397,7 +397,7 @@ public class DeviceService implements IDeviceService {
         if (keeperOrderReturnList.size() == 0)
             return CompletableFuture.completedFuture(new ResponseEntity<>(response, NOT_FOUND));
         List<String> oldKeepers = new ArrayList<>();
-        for (KeeperOrder keeperOrder : keeperOrderReturnList)   {
+        for (KeeperOrder keeperOrder : keeperOrderReturnList) {
             Request occupiedRequest = _requestService.findAnOccupiedRequest(keeperOrder.getKeeper().getId(), input.getDeviceId()).get();
             occupiedRequest.setCurrentKeeper_Id(input.getCurrentKeeperId());
             occupiedRequest.setRequestStatus(RETURNED);
@@ -865,11 +865,27 @@ public class DeviceService implements IDeviceService {
         List<KeepingDeviceDTO> keepingDeviceList = new ArrayList<>();
         for (KeeperOrder keeperOrder : keeperOrderList) {
             Device device = _deviceRepository.findById(keeperOrder.getDevice().getId());
+            List<KeeperOrder> allKeeperOrderList = _keeperOrderService.getKeeperOrderListByDeviceId(keeperOrder.getDevice().getId()).get();
+            KeeperOrder latestOrder = allKeeperOrderList.stream().max(Comparator.comparing(KeeperOrder::getKeeperNo)).orElse(null); /* Get the latest keeper order of a device*/
+            KeeperOrder previousOrder = allKeeperOrderList.stream().filter(k -> k.getKeeperNo() == keeperOrder.getKeeperNo() - 1).findFirst().orElse(null);
             KeepingDeviceDTO keepingDevice = new KeepingDeviceDTO(device);
             keepingDevice.setKeeper(keeperOrder.getKeeper().getUserName());
             keepingDevice.setKeeperNo(keeperOrder.getKeeperNo());
             keepingDevice.setBookingDate(keeperOrder.getBookingDate());
             keepingDevice.setReturnDate(keeperOrder.getDueDate());
+            if (previousOrder != null) {
+                Calendar c = Calendar.getInstance();
+                c.setTime(previousOrder.getDueDate());
+                c.add(Calendar.DATE, -1);
+                previousOrder.setDueDate(c.getTime());
+                keepingDevice.setMaxExtendingReturnDate(previousOrder.getDueDate());
+            }
+            if(latestOrder != null){
+                if(latestOrder.getKeeperNo() == keeperOrder.getKeeperNo()){
+                    keepingDevice.setIsReturnable(false);
+                }
+            }
+
             keepingDeviceList.add(keepingDevice);
         }
         keepingDeviceList = fetchFilteredKeepingDevice(deviceFilter, keepingDeviceList).get();

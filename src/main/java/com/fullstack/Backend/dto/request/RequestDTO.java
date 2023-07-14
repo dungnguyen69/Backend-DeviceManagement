@@ -6,6 +6,8 @@ import com.fullstack.Backend.enums.RequestStatus;
 
 import java.util.Date;
 
+import static com.fullstack.Backend.constant.constant.EXTENDING;
+
 public class RequestDTO {
     @JsonProperty("Id")
     public int Id;
@@ -44,13 +46,16 @@ public class RequestDTO {
     @JsonProperty("cancelled_date")
     public Date cancelled_date;
 
-    public RequestDTO(Request request) {
+    public RequestDTO(Request request, int employeeId) {
         this.Id = request.getId();
         this.request_id = request.getRequestId();
         this.requester = request.getRequester().getUserName();
         this.current_keeper = request.getCurrentKeeper().getUserName();
         this.next_keeper = request.getNextKeeper().getUserName();
         this.accepter = request.getAccepter().getUserName();
+        if(request.getRequestStatus() == EXTENDING && employeeId == request.getRequester().getId() && employeeId != request.getAccepter().getId()){
+            this.request_status = RequestStatus.fromNumber(request.getRequestStatus()).get().toString();
+        }
         this.request_status = RequestStatus.fromNumber(request.getRequestStatus()).get().toString();
         this.device_name = request.getDevice().getName();
         this.device_id = request.getDevice().getId();
