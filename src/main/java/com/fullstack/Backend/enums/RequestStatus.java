@@ -4,7 +4,7 @@ import java.util.Arrays;
 import java.util.Optional;
 
 public enum RequestStatus {
-	APPROVED(0), REJECTED(1), CANCELLED(2), TRANSFERRED(3), PENDING(4), RETURNED(5), EXTENDING(6);
+	APPROVED(0), CANCELLED(2), TRANSFERRED(3), PENDING(4), RETURNED(5), EXTENDING(6);
 
 	private final int id;
 	RequestStatus(int id) {

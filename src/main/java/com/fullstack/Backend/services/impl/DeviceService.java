@@ -153,7 +153,7 @@ public class DeviceService implements IDeviceService {
         if (owner == null) dto.setOwner(null);
         else dto.setOwner(owner.get().getUserName());
 
-        CompletableFuture<List<KeeperOrder>> keeperOrderList = _keeperOrderService.getKeeperOrderListByDeviceId(deviceDetail.getId()); /* Get a list of keeper orders of a device*/
+        CompletableFuture<List<KeeperOrder>> keeperOrderList = _keeperOrderService.getListByDeviceId(deviceDetail.getId()); /* Get a list of keeper orders of a device*/
         List<KeeperOrderListDTO> showKeeperList = keeperOrderList.get().stream().map(KeeperOrderListDTO::new).toList();
         dto.loadFromEntity(deviceDetail, showKeeperList);
         if (!keeperOrderList.get().isEmpty()) {/* Should a list be empty, we set a keeper value is a device's owner */
@@ -401,7 +401,7 @@ public class DeviceService implements IDeviceService {
         ReturnDeviceResponse response = new ReturnDeviceResponse();
         List<String> oldKeepers = new ArrayList<>();
         List<KeeperOrder> keeperOrderReturnList = _keeperOrderService
-                .getKeeperOrderListByDeviceId(input.getDeviceId()).get().stream()
+                .getListByDeviceId(input.getDeviceId()).get().stream()
                 .filter(ko -> ko.getKeeperNo() > input.getKeeperNo())
                 .toList();
 
@@ -416,7 +416,7 @@ public class DeviceService implements IDeviceService {
             keeperOrder.setUpdatedDate(new Date());
             oldKeepers.add(keeperOrder.getKeeper().getUserName());
             _requestService.updateRequest(occupiedRequest);
-            _keeperOrderService.updateKeeperOrder(keeperOrder);
+            _keeperOrderService.update(keeperOrder);
         }
 
         response.setKeepDeviceReturned(true);
@@ -440,7 +440,7 @@ public class DeviceService implements IDeviceService {
          *  Set device status to VACANT
          *  Display a list of old keepers
          */
-        List<KeeperOrder> keeperOrderReturnList = _keeperOrderService.getKeeperOrderListByDeviceId(input.getDeviceId()).get();
+        List<KeeperOrder> keeperOrderReturnList = _keeperOrderService.getListByDeviceId(input.getDeviceId()).get();
         ReturnDeviceResponse response = new ReturnDeviceResponse();
 
         if (keeperOrderReturnList.size() == 0)
@@ -456,7 +456,7 @@ public class DeviceService implements IDeviceService {
             oldKeepers.add(keeperOrder.getKeeper().getUserName());
             occupiedRequest.setUpdatedDate(new Date());
             _requestService.updateRequest(occupiedRequest);
-            _keeperOrderService.updateKeeperOrder(keeperOrder);
+            _keeperOrderService.update(keeperOrder);
         }
 
         Device device = _deviceRepository.findById(input.getDeviceId());
@@ -865,7 +865,7 @@ public class DeviceService implements IDeviceService {
         List<DeviceDTO> deviceList = new ArrayList<>();
         for (Device device : devices) {
             DeviceDTO deviceDTO = new DeviceDTO(device);  /* Convert fields that have an id value to a readable value */
-            CompletableFuture<List<KeeperOrder>> keeperOrderList = _keeperOrderService.getKeeperOrderListByDeviceId(device.getId()); /* Get a list of keeper orders of a device*/
+            CompletableFuture<List<KeeperOrder>> keeperOrderList = _keeperOrderService.getListByDeviceId(device.getId()); /* Get a list of keeper orders of a device*/
 
             if (keeperOrderList.get().isEmpty()) { /* Were a list empty, we would set a keeper value is a device's owner */
                 deviceDTO.setKeeper(device.getOwner().getUserName());
@@ -906,7 +906,7 @@ public class DeviceService implements IDeviceService {
 
         for (KeeperOrder keeperOrder : keeperOrderList) {
             Device device = _deviceRepository.findById(keeperOrder.getDevice().getId());
-            List<KeeperOrder> allKeeperOrderList = _keeperOrderService.getKeeperOrderListByDeviceId(keeperOrder.getDevice().getId()).get();
+            List<KeeperOrder> allKeeperOrderList = _keeperOrderService.getListByDeviceId(keeperOrder.getDevice().getId()).get();
             KeeperOrder latestOrder = allKeeperOrderList.stream().max(Comparator.comparing(KeeperOrder::getKeeperNo)).orElse(null); /* Get the latest keeper order of a device*/
             KeeperOrder previousOrder = allKeeperOrderList.stream().filter(k -> k.getKeeperNo() == keeperOrder.getKeeperNo() - 1).findFirst().orElse(null);
             KeepingDeviceDTO keepingDevice = new KeepingDeviceDTO(device, keeperOrder);

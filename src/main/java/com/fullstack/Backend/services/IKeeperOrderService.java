@@ -6,15 +6,16 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 public interface IKeeperOrderService {
-    public CompletableFuture<List<KeeperOrder>> getKeeperOrderListByDeviceId(int deviceId)
-            throws InterruptedException, ExecutionException;
-    public CompletableFuture<KeeperOrder> findKeeperOrderByDeviceIdAndKeeperId(int deviceId,int keeperId)
+    public CompletableFuture<List<KeeperOrder>> getListByDeviceId(int deviceId)
             throws InterruptedException, ExecutionException;
 
-    public void createKeeperOrder(KeeperOrder keeperOrder)
+    public CompletableFuture<KeeperOrder> findByDeviceIdAndKeeperId(int deviceId,int keeperId)
             throws InterruptedException, ExecutionException;
 
-    public void updateKeeperOrder(KeeperOrder keeperOrder)
+    public void create(KeeperOrder keeperOrder)
+            throws InterruptedException, ExecutionException;
+
+    public void update(KeeperOrder keeperOrder)
             throws InterruptedException, ExecutionException;
 
     public CompletableFuture<List<KeeperOrder>> getAllKeeperOrders();

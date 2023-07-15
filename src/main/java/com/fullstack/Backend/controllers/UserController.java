@@ -66,7 +66,7 @@ public class UserController {
     }
 
     @GetMapping()
-    @PreAuthorize("hasRole('MODERATOR') or hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public CompletableFuture<ResponseEntity<Object>> getUsers(
             @RequestParam(defaultValue = DEFAULT_PAGE_NUMBER, required = false) int pageNo,
             @RequestParam(defaultValue = DEFAULT_PAGE_SIZE, required = false) int pageSize,
@@ -111,6 +111,7 @@ public class UserController {
     }
 
     @PutMapping("/save_reset_password")
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public CompletableFuture<ResponseEntity<Object>> saveResetPassword(
             @Valid @RequestBody ResetPasswordDTO dto) throws ExecutionException, InterruptedException, MessagingException {
         return _userService.saveResetPassword(dto);
@@ -134,6 +135,7 @@ public class UserController {
 
     @GetMapping("/suggestion")
     @ResponseBody
+    @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
     public CompletableFuture<ResponseEntity<Object>> getSuggestKeywordDevices(
             @RequestParam(name = "column") int fieldColumn,
             @RequestParam(name = "keyword") String keyword,

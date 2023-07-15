@@ -15,22 +15,22 @@ public class KeeperOrderService implements IKeeperOrderService {
     IKeeperOrderRepository _keeperOrderRepository;
 
     @Override
-    public CompletableFuture<List<KeeperOrder>> getKeeperOrderListByDeviceId(int deviceId) throws InterruptedException, ExecutionException {
+    public CompletableFuture<List<KeeperOrder>> getListByDeviceId(int deviceId) throws InterruptedException, ExecutionException {
         return CompletableFuture.completedFuture(_keeperOrderRepository.findKeeperOrderByDeviceId(deviceId));
     }
 
     @Override
-    public CompletableFuture<KeeperOrder> findKeeperOrderByDeviceIdAndKeeperId(int deviceId, int keeperId) throws InterruptedException, ExecutionException {
+    public CompletableFuture<KeeperOrder> findByDeviceIdAndKeeperId(int deviceId, int keeperId) throws InterruptedException, ExecutionException {
         return CompletableFuture.completedFuture(_keeperOrderRepository.findByDeviceIdAndKeeperId(deviceId, keeperId));
     }
 
     @Override
-    public void createKeeperOrder(KeeperOrder keeperOrder) throws InterruptedException, ExecutionException {
+    public void create(KeeperOrder keeperOrder) throws InterruptedException, ExecutionException {
         _keeperOrderRepository.save(keeperOrder);
     }
 
     @Override
-    public void updateKeeperOrder(KeeperOrder keeperOrder) throws InterruptedException, ExecutionException {
+    public void update(KeeperOrder keeperOrder) {
         _keeperOrderRepository.save(keeperOrder);
     }
 
