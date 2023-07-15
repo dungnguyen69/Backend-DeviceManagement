@@ -61,7 +61,7 @@ public class KeepingDeviceDTO {
     @JsonProperty("UpdatedDate")
     public Date UpdatedDate;
 
-    public KeepingDeviceDTO(Device device) {
+    public KeepingDeviceDTO(Device device, KeeperOrder keeperOrder) {
         if (device.getOwner() == null)
             this.Owner = "";
         else
@@ -83,5 +83,9 @@ public class KeepingDeviceDTO {
         this.Origin = device.getOrigin().name();
         this.CreatedDate = device.getCreatedDate();
         this.UpdatedDate = device.getUpdatedDate();
+        this.Keeper = keeperOrder.getKeeper().getUserName();
+        this.KeeperNo = keeperOrder.getKeeperNo();
+        this.BookingDate = keeperOrder.getBookingDate();
+        this.ReturnDate = keeperOrder.getDueDate();
     }
 }

@@ -85,11 +85,6 @@ public class DeviceService implements IDeviceService {
         return CompletableFuture.completedFuture(_deviceRepository.findById(deviceId));
     }
 
-    @Override
-    public void save(Device device) {
-        _deviceRepository.save(device);
-    }
-
     @Async
     @Override
     public CompletableFuture<ResponseEntity<Object>> showDevicesWithPaging(int pageIndex, int pageSize, String sortBy, String sortDir, FilterDeviceDTO deviceFilter) throws InterruptedException, ExecutionException {
@@ -304,26 +299,34 @@ public class DeviceService implements IDeviceService {
         List<String> errors = new ArrayList<>();
         String serverTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date());
         String message;
+
         if (DeviceExcelImporter.hasExcelFormat(file)) {
             if (!file.isEmpty()) {
                 XSSFWorkbook workBook = new XSSFWorkbook(file.getInputStream());
                 XSSFSheet sheet = workBook.getSheet("Devices");
+
                 if (sheet == null) {
                     ErrorMessage errorMessage = new ErrorMessage(NOT_FOUND, "Sheet \"Devices\" is nonexistent", serverTime);
                     return CompletableFuture.completedFuture(new ResponseEntity<>(errorMessage, NOT_FOUND));
                 }
-                int numberOfRows = DeviceExcelImporter.getNumberOfNonEmptyCells(sheet, 0);
-                if (numberOfRows == 0) {
+
+                int numberOfNonEmptyRows = DeviceExcelImporter.getNumberOfNonEmptyCells(sheet, 0);
+
+                if (numberOfNonEmptyRows == 0) {
                     ErrorMessage errorMessage = new ErrorMessage(NOT_FOUND, "Sheet must be not empty", serverTime);
                     return CompletableFuture.completedFuture(new ResponseEntity<>(errorMessage, BAD_REQUEST));
                 }
-                checkImportAndAddToList(ownerId, deviceList, errors, numberOfRows, sheet);
+
+                checkImportAndAddToList(ownerId, deviceList, errors, numberOfNonEmptyRows, sheet);
+
                 if (!errors.isEmpty()) {
                     ImportError importError = new ImportError(errors);
                     return CompletableFuture.completedFuture(new ResponseEntity<>(importError, BAD_REQUEST));
                 }
+
                 workBook.close();
             }
+
             try {
                 _deviceRepository.saveAll(deviceList);
                 message = "Uploaded the file successfully: " + file.getOriginalFilename();
@@ -334,6 +337,7 @@ public class DeviceService implements IDeviceService {
                 ImportDeviceResponse importDevice = new ImportDeviceResponse(message);
                 return CompletableFuture.completedFuture(new ResponseEntity<>(importDevice, EXPECTATION_FAILED));
             }
+
         }
         message = "Please upload an excel file!"; /*If an imported file is non-excel*/
         ImportDeviceResponse importDevice = new ImportDeviceResponse(message);
@@ -343,8 +347,10 @@ public class DeviceService implements IDeviceService {
     @Async()
     @Override
     public CompletableFuture<ResponseEntity<Object>> getSuggestKeywordDevices(int fieldColumn, String keyword, FilterDeviceDTO deviceFilter) throws InterruptedException, ExecutionException {
+
         if (keyword.trim().isBlank())
             return CompletableFuture.completedFuture(ResponseEntity.status(NOT_FOUND).body("Keyword must be non-null"));
+
         List<Device> devices = _deviceRepository.findAll();
         List<DeviceDTO> deviceList = getAllDevices(devices, deviceFilter).get();
         Set<String> keywordList = selectColumnForKeywordSuggestion(deviceList, keyword, fieldColumn).get();
@@ -392,14 +398,16 @@ public class DeviceService implements IDeviceService {
          *  Set UpdatedDate to new date
          *  Display a list of old keepers
          */
+        ReturnDeviceResponse response = new ReturnDeviceResponse();
+        List<String> oldKeepers = new ArrayList<>();
         List<KeeperOrder> keeperOrderReturnList = _keeperOrderService
                 .getKeeperOrderListByDeviceId(input.getDeviceId()).get().stream()
                 .filter(ko -> ko.getKeeperNo() > input.getKeeperNo())
                 .toList();
-        ReturnDeviceResponse response = new ReturnDeviceResponse();
+
         if (keeperOrderReturnList.size() == 0)
             return CompletableFuture.completedFuture(new ResponseEntity<>(response, NOT_FOUND));
-        List<String> oldKeepers = new ArrayList<>();
+
         for (KeeperOrder keeperOrder : keeperOrderReturnList) {
             Request occupiedRequest = _requestService.findAnOccupiedRequest(keeperOrder.getKeeper().getId(), input.getDeviceId()).get();
             occupiedRequest.setCurrentKeeper_Id(input.getCurrentKeeperId());
@@ -410,6 +418,7 @@ public class DeviceService implements IDeviceService {
             _requestService.updateRequest(occupiedRequest);
             _keeperOrderService.updateKeeperOrder(keeperOrder);
         }
+
         response.setKeepDeviceReturned(true);
         response.setOldKeepers(oldKeepers);
         return CompletableFuture.completedFuture(new ResponseEntity<>(response, OK));
@@ -433,8 +442,10 @@ public class DeviceService implements IDeviceService {
          */
         List<KeeperOrder> keeperOrderReturnList = _keeperOrderService.getKeeperOrderListByDeviceId(input.getDeviceId()).get();
         ReturnDeviceResponse response = new ReturnDeviceResponse();
+
         if (keeperOrderReturnList.size() == 0)
             return CompletableFuture.completedFuture(new ResponseEntity<>(response, NOT_FOUND));
+
         List<String> oldKeepers = new ArrayList<>();
         for (KeeperOrder keeperOrder : keeperOrderReturnList) {
             Request occupiedRequest = _requestService.findAnOccupiedRequest(keeperOrder.getKeeper().getId(), input.getDeviceId()).get();
@@ -447,6 +458,7 @@ public class DeviceService implements IDeviceService {
             _requestService.updateRequest(occupiedRequest);
             _keeperOrderService.updateKeeperOrder(keeperOrder);
         }
+
         Device device = _deviceRepository.findById(input.getDeviceId());
         device.setStatus(Status.VACANT);
         _deviceRepository.save(device);
@@ -459,8 +471,10 @@ public class DeviceService implements IDeviceService {
     @Override
     public CompletableFuture<ResponseEntity<Object>> showOwnedDevicesWithPaging(int ownerId, int pageIndex, int pageSize, String sortBy, String sortDir, FilterDeviceDTO deviceFilter) throws ExecutionException, InterruptedException {
         CompletableFuture<Boolean> doesUserExist = _employeeService.doesUserExist(ownerId);
+
         if (!doesUserExist.get())
             return CompletableFuture.completedFuture(new ResponseEntity<>("User does not exist", NOT_FOUND));
+
         List<DeviceDTO> deviceList = getDevicesOfOwner(ownerId, deviceFilter, sortBy, sortDir).get();
         /* Return lists for filtering purposes*/
         List<String> statusList = deviceList.stream().map(DeviceDTO::getStatus).distinct().collect(Collectors.toList());
@@ -491,8 +505,10 @@ public class DeviceService implements IDeviceService {
     @Override
     public CompletableFuture<ResponseEntity<Object>> showKeepingDevicesWithPaging(int keeperId, int pageIndex, int pageSize, FilterDeviceDTO deviceFilter) throws ExecutionException, InterruptedException {
         CompletableFuture<Boolean> doesUserExist = _employeeService.doesUserExist(keeperId);
+
         if (!doesUserExist.get())
             return CompletableFuture.completedFuture(new ResponseEntity<>("User does not exist", NOT_FOUND));
+
         KeepingDeviceResponse response = new KeepingDeviceResponse();
         List<KeepingDeviceDTO> keepingDeviceList = getDevicesOfKeeper(keeperId, deviceFilter).get();
         List<String> statusList = keepingDeviceList.stream().map(KeepingDeviceDTO::getStatus).distinct().toList();
@@ -519,10 +535,13 @@ public class DeviceService implements IDeviceService {
     @Async()
     @Override
     public CompletableFuture<ResponseEntity<Object>> getSuggestKeywordOwnedDevices(int ownerId, int fieldColumn, String keyword, FilterDeviceDTO deviceFilter) throws InterruptedException, ExecutionException {
+
         if (keyword.trim().isBlank())
             return CompletableFuture.completedFuture(ResponseEntity.status(NOT_FOUND).body("Keyword must be non-null"));
+
         List<DeviceDTO> deviceList = getDevicesOfOwner(ownerId, deviceFilter, "id", "asc").get();
         Set<String> keywordList = selectColumnForKeywordSuggestion(deviceList, keyword, fieldColumn).get();
+
         KeywordSuggestionResponse response = new KeywordSuggestionResponse();
         response.setKeywordList(keywordList);
         return CompletableFuture.completedFuture(new ResponseEntity<>(response, OK));
@@ -531,10 +550,13 @@ public class DeviceService implements IDeviceService {
     @Async()
     @Override
     public CompletableFuture<ResponseEntity<Object>> getSuggestKeywordKeepingDevices(int keeperId, int fieldColumn, String keyword, FilterDeviceDTO deviceFilter) throws InterruptedException, ExecutionException {
+
         if (keyword.trim().isBlank())
             return CompletableFuture.completedFuture(ResponseEntity.status(NOT_FOUND).body("Keyword must be non-null"));
+
         List<KeepingDeviceDTO> deviceList = getDevicesOfKeeper(keeperId, deviceFilter).get();
         Set<String> keywordList = selectColumnForKeepingDevicesKeywordSuggestion(deviceList, keyword, fieldColumn).get();
+
         KeywordSuggestionResponse response = new KeywordSuggestionResponse();
         response.setKeywordList(keywordList);
         return CompletableFuture.completedFuture(new ResponseEntity<>(response, OK));
@@ -637,33 +659,39 @@ public class DeviceService implements IDeviceService {
     @Async()
     private CompletableFuture<List<StatusList>> getStatusList() {
         Status[] statusCode = Status.values();
-        List<StatusList> statusList = new ArrayList<StatusList>();
+        List<StatusList> statusList = new ArrayList<>();
+
         for (int i = 0; i < statusCode.length; i++) {
             StatusList item = new StatusList(i, statusCode[i].toString());
             statusList.add(item);
         }
+
         return CompletableFuture.completedFuture(statusList);
     }
 
     @Async()
     private CompletableFuture<List<ProjectList>> getProjectList() {
         Project[] projectCode = Project.values();
-        List<ProjectList> projectList = new ArrayList<ProjectList>();
+        List<ProjectList> projectList = new ArrayList<>();
+
         for (int i = 0; i < projectCode.length; i++) {
             ProjectList item = new ProjectList(i, projectCode[i].toString());
             projectList.add(item);
         }
+
         return CompletableFuture.completedFuture(projectList);
     }
 
     @Async()
     private CompletableFuture<List<OriginList>> getOriginList() {
         Origin[] originCode = Origin.values();
-        List<OriginList> originList = new ArrayList<OriginList>();
+
+        List<OriginList> originList = new ArrayList<>();
         for (int i = 0; i < originCode.length; i++) {
             OriginList item = new OriginList(i, originCode[i].toString());
             originList.add(item);
         }
+
         return CompletableFuture.completedFuture(originList);
     }
 
@@ -691,13 +719,19 @@ public class DeviceService implements IDeviceService {
                     .filter(device -> device.getReturnDate().before(deviceFilter.getReturnDate()))
                     .collect(Collectors.toList());
         if (deviceFilter.getKeeper() != null)
-            devices = devices.stream().filter(device -> device.getKeeper().equalsIgnoreCase(deviceFilter.getKeeper())).collect(Collectors.toList());
+            devices = devices.stream()
+                    .filter(device -> device.getKeeper().equalsIgnoreCase(deviceFilter.getKeeper()))
+                    .collect(Collectors.toList());
 
         if (deviceFilter.getKeeperNo() != null) { //"LESS THAN 3", "EQUAL TO 3"
             if (deviceFilter.getKeeperNo().equalsIgnoreCase("less than 3"))
-                devices = devices.stream().filter(device -> device.getKeeperNumber() < 3 && (device.getStatus().equalsIgnoreCase("OCCUPIED") || device.getStatus().equalsIgnoreCase("VACANT"))).collect(Collectors.toList());
+                devices = devices.stream()
+                        .filter(device -> device.getKeeperNumber() < 3 && (device.getStatus().equalsIgnoreCase("OCCUPIED") || device.getStatus().equalsIgnoreCase("VACANT")))
+                        .collect(Collectors.toList());
             else
-                devices = devices.stream().filter(device -> device.getKeeperNumber() == 3 && device.getStatus().equalsIgnoreCase("OCCUPIED")).collect(Collectors.toList());
+                devices = devices.stream()
+                        .filter(device -> device.getKeeperNumber() == 3 && device.getStatus().equalsIgnoreCase("OCCUPIED"))
+                        .collect(Collectors.toList());
         }
         return CompletableFuture.completedFuture(devices);
     }
@@ -832,11 +866,13 @@ public class DeviceService implements IDeviceService {
         for (Device device : devices) {
             DeviceDTO deviceDTO = new DeviceDTO(device);  /* Convert fields that have an id value to a readable value */
             CompletableFuture<List<KeeperOrder>> keeperOrderList = _keeperOrderService.getKeeperOrderListByDeviceId(device.getId()); /* Get a list of keeper orders of a device*/
+
             if (keeperOrderList.get().isEmpty()) { /* Were a list empty, we would set a keeper value is a device's owner */
                 deviceDTO.setKeeper(device.getOwner().getUserName());
                 deviceList.add(deviceDTO);
                 continue;
             }
+
             Optional<KeeperOrder> keeperOrder = keeperOrderList.get().stream().max(Comparator.comparing(KeeperOrder::getKeeperNo)); /* Get the latest keeper order of a device*/
             deviceDTO.setKeeper(keeperOrder.get().getKeeper().getUserName()); /* Add keeper order information to devices*/
             deviceDTO.setKeeperNumber(keeperOrder.get().getKeeperNo());
@@ -863,19 +899,19 @@ public class DeviceService implements IDeviceService {
     private CompletableFuture<List<KeepingDeviceDTO>> getDevicesOfKeeper(int keeperId, FilterDeviceDTO deviceFilter) throws ExecutionException, InterruptedException {
         formatFilter(deviceFilter); /* Remove spaces and make input text become lowercase*/
         List<KeeperOrder> keeperOrderList = _keeperOrderService.findByKeeperId(keeperId).get();
+        List<KeepingDeviceDTO> keepingDeviceList = new ArrayList<>();
+
         if (keeperOrderList == null)
             return CompletableFuture.completedFuture(null);
-        List<KeepingDeviceDTO> keepingDeviceList = new ArrayList<>();
+
         for (KeeperOrder keeperOrder : keeperOrderList) {
             Device device = _deviceRepository.findById(keeperOrder.getDevice().getId());
             List<KeeperOrder> allKeeperOrderList = _keeperOrderService.getKeeperOrderListByDeviceId(keeperOrder.getDevice().getId()).get();
             KeeperOrder latestOrder = allKeeperOrderList.stream().max(Comparator.comparing(KeeperOrder::getKeeperNo)).orElse(null); /* Get the latest keeper order of a device*/
             KeeperOrder previousOrder = allKeeperOrderList.stream().filter(k -> k.getKeeperNo() == keeperOrder.getKeeperNo() - 1).findFirst().orElse(null);
-            KeepingDeviceDTO keepingDevice = new KeepingDeviceDTO(device);
-            keepingDevice.setKeeper(keeperOrder.getKeeper().getUserName());
-            keepingDevice.setKeeperNo(keeperOrder.getKeeperNo());
-            keepingDevice.setBookingDate(keeperOrder.getBookingDate());
-            keepingDevice.setReturnDate(keeperOrder.getDueDate());
+            KeepingDeviceDTO keepingDevice = new KeepingDeviceDTO(device, keeperOrder);
+
+            /* Set max extending date for keepers */
             if (previousOrder != null) {
                 Calendar c = Calendar.getInstance();
                 c.setTime(previousOrder.getDueDate());
@@ -883,8 +919,10 @@ public class DeviceService implements IDeviceService {
                 previousOrder.setDueDate(c.getTime());
                 keepingDevice.setMaxExtendingReturnDate(previousOrder.getDueDate());
             }
-            if(latestOrder != null){
-                if(latestOrder.getKeeperNo() == keeperOrder.getKeeperNo()){
+
+            /* To make sure the latest keeper can not return, only previous keeper is able to confirm*/
+            if (latestOrder != null) {
+                if (latestOrder.getKeeperNo() == keeperOrder.getKeeperNo()) {
                     keepingDevice.setIsReturnable(false);
                 }
             }
@@ -1048,6 +1086,7 @@ public class DeviceService implements IDeviceService {
                     projectString = currentRow.getCell(DEVICE_PROJECT).toString().strip();
             Device existDevice = _deviceRepository.findBySerialNumber(serialNumber);
             int rowInExcel = rowIndex + 1; /* Ignore the headers */
+
             if (platformString.length != 2) {
                 errors.add("Platform at row " + rowInExcel + " is not valid");
                 continue;

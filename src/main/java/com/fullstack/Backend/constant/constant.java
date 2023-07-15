@@ -48,7 +48,6 @@ public class constant {
     public static final int DEVICE_COMMENTS = 11;
 
     public static final int APPROVED = 0;
-    public static final int REJECTED = 1;
     public static final int CANCELLED = 2;
     public static final int TRANSFERRED = 3;
     public static final int PENDING = 4;
