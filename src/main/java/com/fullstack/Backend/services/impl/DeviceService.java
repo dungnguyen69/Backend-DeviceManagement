@@ -14,6 +14,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.fullstack.Backend.dto.device.*;
+import com.fullstack.Backend.dto.keeper_order.KeeperOrderListDTO;
+import com.fullstack.Backend.dto.request.RequestDTO;
 import com.fullstack.Backend.dto.request.ReturnKeepDeviceDTO;
 import com.fullstack.Backend.entities.*;
 import com.fullstack.Backend.responses.device.*;
@@ -156,8 +158,9 @@ public class DeviceService implements IDeviceService {
         if (owner == null) dto.setOwner(null);
         else dto.setOwner(owner.get().getUserName());
 
-        dto.loadFromEntity(deviceDetail);
         CompletableFuture<List<KeeperOrder>> keeperOrderList = _keeperOrderService.getKeeperOrderListByDeviceId(deviceDetail.getId()); /* Get a list of keeper orders of a device*/
+        List<KeeperOrderListDTO> showKeeperList = keeperOrderList.get().stream().map(KeeperOrderListDTO::new).toList();
+        dto.loadFromEntity(deviceDetail, showKeeperList);
         if (!keeperOrderList.get().isEmpty()) {/* Should a list be empty, we set a keeper value is a device's owner */
             Optional<KeeperOrder> keeperOrder = keeperOrderList.get().stream().max(Comparator.comparing(KeeperOrder::getKeeperNo)); /* Get the latest keeper order of a device*/
             dto.setKeeper(keeperOrder.get().getKeeper().getUserName()); /* Add keeper order information to devices*/

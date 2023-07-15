@@ -1,8 +1,11 @@
 package com.fullstack.Backend.dto.device;
 
 import java.util.Date;
+import java.util.List;
 
+import com.fullstack.Backend.dto.keeper_order.KeeperOrderListDTO;
 import com.fullstack.Backend.entities.Device;
+import com.fullstack.Backend.entities.KeeperOrder;
 import com.fullstack.Backend.enums.Origin;
 import com.fullstack.Backend.enums.Project;
 import com.fullstack.Backend.enums.Status;
@@ -32,8 +35,8 @@ public class UpdateDeviceDTO {
     private String comments;
     private Date bookingDate;
     private Date returnDate;
-
-    public void loadFromEntity(Device device) {
+    private List<KeeperOrderListDTO> keeperOrder;
+    public void loadFromEntity(Device device, List<KeeperOrderListDTO> keeperOrderList) {
         this.id = device.getId();
         this.name = device.getName();
         this.itemTypeId = device.getItemTypeId();
@@ -49,5 +52,6 @@ public class UpdateDeviceDTO {
         this.originId = Origin.valueOf(device.getOrigin().toString()).ordinal();
         this.bookingDate = device.getBookingDate();
         this.returnDate = device.getReturnDate();
+        this.keeperOrder = keeperOrderList;
     }
 }
