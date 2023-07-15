@@ -152,7 +152,7 @@ public class UserService implements IUserService {
                     .body(new MessageResponse("Error: " + registerRequest.getEmail() + " is already in use!")));
         }
 
-        // Create new user's account
+        /* Create new user's account */
         User user = new User();
         user.setUserName(registerRequest.getUserName());
         user.setEmail(registerRequest.getEmail());
@@ -304,6 +304,7 @@ public class UserService implements IUserService {
     public CompletableFuture<ResponseEntity<Object>> sendResetPasswordEmail(String siteURL, String userEmail) throws ExecutionException, InterruptedException, MessagingException {
         String token = RandomString.make(64);
         CompletableFuture<User> user = findByEmail(userEmail);
+
         if (user.get() == null)
             return CompletableFuture.completedFuture(ResponseEntity
                     .badRequest()
@@ -317,6 +318,7 @@ public class UserService implements IUserService {
             sendResetPasswordEmail(updateDuser, verifyURL);
             return CompletableFuture.completedFuture(ResponseEntity.ok(new MessageResponse("Sent successfully!")));
         }
+
         createPasswordResetTokenForUser(user.get(), token);
         String verifyURL = siteURL + "/api/users/reset_password?token=" + token;
         sendResetPasswordEmail(user.get(), verifyURL);
@@ -327,6 +329,7 @@ public class UserService implements IUserService {
     @Override
     public CompletableFuture<ResponseEntity<Object>> saveResetPassword(ResetPasswordDTO dto) throws ExecutionException, InterruptedException, MessagingException {
         CompletableFuture<User> user = findById(dto.getId());
+
         if (user == null)
             return CompletableFuture.completedFuture(ResponseEntity
                     .badRequest()
@@ -343,6 +346,7 @@ public class UserService implements IUserService {
                     .badRequest()
                     .body(new MessageResponse("New password must be identical to confirm password")));
         }
+
         changeUserPassword(user.get(), dto.getNewPassword());
         return CompletableFuture.completedFuture(ResponseEntity.ok(new MessageResponse("Changed successfully!")));
     }
@@ -357,17 +361,16 @@ public class UserService implements IUserService {
                     .body(new MessageResponse("User is not existent")));
 
         Optional<PasswordResetToken> token = _passwordResetTokenRepository.findByToken(dto.getToken());
-        if(token.isEmpty()){
+        if(token.isEmpty())
             return CompletableFuture.completedFuture(ResponseEntity
                     .badRequest()
                     .body(new MessageResponse("Token is not existent")));
-        }
 
-        if(!Objects.equals(dto.getNewPassword(), dto.getConfirmPassword())){
+        if(!Objects.equals(dto.getNewPassword(), dto.getConfirmPassword()))
             return CompletableFuture.completedFuture(ResponseEntity
                     .badRequest()
                     .body(new MessageResponse("Password must be identical to confirm password")));
-        }
+
         changeUserPassword(user.get(), dto.getNewPassword());
         _passwordResetTokenRepository.delete(token.get());
         return CompletableFuture.completedFuture(ResponseEntity
@@ -390,6 +393,7 @@ public class UserService implements IUserService {
     public CompletableFuture<ResponseEntity<Object>> getSuggestKeywordUsers(int fieldColumn, String keyword, FilterUserDTO filter) throws InterruptedException, ExecutionException {
         if (keyword.trim().isBlank())
             return CompletableFuture.completedFuture(ResponseEntity.status(NOT_FOUND).body("Keyword must be non-null"));
+
         List<User> users = _userRepository.findAll();
         List<UserDTO> deviceList = getAllUser(users, filter).get();
         Set<String> keywordList = selectColumnForKeywordSuggestion(deviceList, keyword, fieldColumn).get();
@@ -407,8 +411,7 @@ public class UserService implements IUserService {
         roles.add(userRole);
         user.setSystemRoles(roles);
         _userRepository.save(user);
-        return CompletableFuture.completedFuture(ResponseEntity.ok(new
-                MessageResponse("UPDATED SUCCESSFULLY!")));
+        return CompletableFuture.completedFuture(ResponseEntity.ok(new MessageResponse("UPDATED SUCCESSFULLY!")));
     }
 
     @Override
@@ -418,14 +421,14 @@ public class UserService implements IUserService {
             return CompletableFuture.completedFuture(ResponseEntity
                     .badRequest()
                     .body(new MessageResponse("Error: User does not exist!")));
+
         user.setUserName(request.getUserName());
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
         user.setEmail(request.getEmail());
         user.setPhoneNumber(request.getPhoneNumber());
         _userRepository.save(user);
-        return CompletableFuture.completedFuture(ResponseEntity.ok(new
-                MessageResponse("UPDATED SUCCESSFULLY!")));
+        return CompletableFuture.completedFuture(ResponseEntity.ok(new MessageResponse("UPDATED SUCCESSFULLY!")));
     }
 
     @Async
