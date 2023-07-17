@@ -8,7 +8,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import com.fullstack.Backend.entities.Platform;
-import com.fullstack.Backend.repositories.interfaces.IPlatformRepository;
+import com.fullstack.Backend.repositories.interfaces.PlatformRepository;
 import com.fullstack.Backend.services.IPlatformService;
 import com.fullstack.Backend.utils.dropdowns.PlatformList;
 
@@ -16,7 +16,7 @@ import com.fullstack.Backend.utils.dropdowns.PlatformList;
 public class PlatformService implements IPlatformService {
 
 	@Autowired
-	IPlatformRepository _platformRepository;
+    PlatformRepository _platformRepository;
 
 	@Async
 	@Override

@@ -8,7 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import com.fullstack.Backend.entities.Platform;
 import com.fullstack.Backend.utils.dropdowns.PlatformList;
 
-public interface IPlatformRepository extends JpaRepository<Platform, Long> {
+public interface PlatformRepository extends JpaRepository<Platform, Long> {
 	public static final String FIND_PLATFORM_NAME = "SELECT name FROM Platform";
 	public static final String FIND_PLATFORM_VERSION = "SELECT version FROM Platform";
 	public static final String FIND_PLATFORM_NAME_VERSION = "SELECT name,version FROM Platform";

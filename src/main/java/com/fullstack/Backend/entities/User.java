@@ -55,7 +55,7 @@ public class User extends BaseEntity {
     @Column(nullable = false)
     private String phoneNumber;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String project;
 
     private boolean enabled;

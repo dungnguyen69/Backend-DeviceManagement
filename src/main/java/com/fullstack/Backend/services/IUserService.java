@@ -1,5 +1,6 @@
 package com.fullstack.Backend.services;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -11,6 +12,7 @@ import com.fullstack.Backend.entities.PasswordResetToken;
 import com.fullstack.Backend.entities.User;
 import com.fullstack.Backend.entities.VerificationToken;
 import jakarta.mail.MessagingException;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.core.Authentication;
@@ -37,6 +39,8 @@ public interface IUserService {
 
     public CompletableFuture<ResponseEntity<Object>> showUsersWithPaging(int pageIndex, int pageSize, String
             sortBy, String sortDir, FilterUserDTO dto) throws ExecutionException, InterruptedException;
+
+    void save(User user);
 
     public void createVerificationToken(User user, String token);
 

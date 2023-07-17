@@ -8,7 +8,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import com.fullstack.Backend.entities.Screen;
-import com.fullstack.Backend.repositories.interfaces.IScreenRepository;
+import com.fullstack.Backend.repositories.interfaces.ScreenRepository;
 import com.fullstack.Backend.services.IScreenService;
 import com.fullstack.Backend.utils.dropdowns.ScreenList;
 
@@ -16,7 +16,7 @@ import com.fullstack.Backend.utils.dropdowns.ScreenList;
 public class ScreenService implements IScreenService {
 
 	@Autowired
-	IScreenRepository _screenRepository;
+    ScreenRepository _screenRepository;
 
 	@Async
 	@Override

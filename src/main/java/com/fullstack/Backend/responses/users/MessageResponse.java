@@ -10,7 +10,7 @@ import java.util.Date;
 public class MessageResponse {
     private String message;
     private Date timeStamp;
-
+    private String status;
     public MessageResponse(String message){
         this.message = message;
         this.timeStamp = new Date();

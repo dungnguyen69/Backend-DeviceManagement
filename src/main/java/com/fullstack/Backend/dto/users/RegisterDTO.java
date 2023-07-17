@@ -29,11 +29,6 @@ public class RegisterDTO {
 
     @NotNull
     @NotEmpty
-    @Size(min = 6, max = 40)
-    private String badgeId;
-
-    @NotNull
-    @NotEmpty
     @Size(max = 40)
     private String firstName;
 
@@ -46,8 +41,4 @@ public class RegisterDTO {
     @NotEmpty
     @Size(min = 10, max = 12)
     private String phoneNumber;
-
-    @NotNull
-    @NotEmpty
-    private String project;
 }

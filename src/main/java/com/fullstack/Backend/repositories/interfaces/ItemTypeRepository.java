@@ -8,7 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import com.fullstack.Backend.entities.ItemType;
 import com.fullstack.Backend.utils.dropdowns.ItemTypeList;
 
-public interface IItemTypeRepository extends JpaRepository<ItemType, Long> {
+public interface ItemTypeRepository extends JpaRepository<ItemType, Long> {
 
 	public static final String FIND_ITEM_TYPE_NAMES = "SELECT name FROM ItemType";
 	public static final String FETCH_ITEM_TYPES = "SELECT it FROM ItemType it";

@@ -8,7 +8,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import com.fullstack.Backend.entities.Storage;
-import com.fullstack.Backend.repositories.interfaces.IStorageRepository;
+import com.fullstack.Backend.repositories.interfaces.StorageRepository;
 import com.fullstack.Backend.services.IStorageService;
 import com.fullstack.Backend.utils.dropdowns.StorageList;
 
@@ -16,7 +16,7 @@ import com.fullstack.Backend.utils.dropdowns.StorageList;
 public class StorageService implements IStorageService {
 
 	@Autowired
-	IStorageRepository _storageRepository;
+    StorageRepository _storageRepository;
 	@Async
 	@Override
 	public CompletableFuture<Storage> findBySize(String size) {

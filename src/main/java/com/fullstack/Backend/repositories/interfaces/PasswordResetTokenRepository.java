@@ -8,7 +8,7 @@ import java.util.Date;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-public interface IPasswordResetTokenRepository extends JpaRepository<PasswordResetToken, Long>{
+public interface PasswordResetTokenRepository extends JpaRepository<PasswordResetToken, Long>{
 
     Optional<PasswordResetToken> findByToken(String token);
 

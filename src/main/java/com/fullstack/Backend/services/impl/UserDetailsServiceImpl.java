@@ -1,7 +1,7 @@
 package com.fullstack.Backend.services.impl;
 
 import com.fullstack.Backend.entities.User;
-import com.fullstack.Backend.repositories.interfaces.IUserRepository;
+import com.fullstack.Backend.repositories.interfaces.UserRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -16,7 +16,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class UserDetailsServiceImpl implements UserDetailsService {
     @Autowired
-    IUserRepository _userRepository;
+    UserRepository _userRepository;
 
     @Override
     @Transactional

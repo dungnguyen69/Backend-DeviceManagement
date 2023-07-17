@@ -15,7 +15,6 @@ import java.util.stream.Stream;
 
 import com.fullstack.Backend.dto.device.*;
 import com.fullstack.Backend.dto.keeper_order.KeeperOrderListDTO;
-import com.fullstack.Backend.dto.request.RequestDTO;
 import com.fullstack.Backend.dto.request.ReturnKeepDeviceDTO;
 import com.fullstack.Backend.entities.*;
 import com.fullstack.Backend.responses.device.*;
@@ -37,7 +36,7 @@ import static org.springframework.http.HttpStatus.*;
 import com.fullstack.Backend.enums.Origin;
 import com.fullstack.Backend.enums.Project;
 import com.fullstack.Backend.enums.Status;
-import com.fullstack.Backend.repositories.interfaces.IDeviceRepository;
+import com.fullstack.Backend.repositories.interfaces.DeviceRepository;
 import com.fullstack.Backend.utils.dropdowns.ItemTypeList;
 import com.fullstack.Backend.utils.dropdowns.OriginList;
 import com.fullstack.Backend.utils.dropdowns.PlatformList;
@@ -53,7 +52,7 @@ import jakarta.servlet.http.HttpServletResponse;
 public class DeviceService implements IDeviceService {
 
     @Autowired
-    IDeviceRepository _deviceRepository;
+    DeviceRepository _deviceRepository;
 
     @Autowired
     IItemTypeService _itemTypeService;

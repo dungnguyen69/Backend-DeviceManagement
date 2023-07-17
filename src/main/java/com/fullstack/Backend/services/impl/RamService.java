@@ -8,7 +8,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import com.fullstack.Backend.entities.Ram;
-import com.fullstack.Backend.repositories.interfaces.IRamRepository;
+import com.fullstack.Backend.repositories.interfaces.RamRepository;
 import com.fullstack.Backend.services.IRamService;
 import com.fullstack.Backend.utils.dropdowns.RamList;
 
@@ -16,7 +16,7 @@ import com.fullstack.Backend.utils.dropdowns.RamList;
 public class RamService implements IRamService {
 
     @Autowired
-    IRamRepository _ramRepository;
+    RamRepository _ramRepository;
 
     @Async
     @Override

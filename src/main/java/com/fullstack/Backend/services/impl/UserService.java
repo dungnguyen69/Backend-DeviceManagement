@@ -1,6 +1,6 @@
 package com.fullstack.Backend.services.impl;
 
-import java.io.UnsupportedEncodingException;
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -10,21 +10,20 @@ import java.util.stream.Stream;
 import com.fullstack.Backend.dto.users.*;
 import com.fullstack.Backend.entities.*;
 import com.fullstack.Backend.enums.Role;
-import com.fullstack.Backend.repositories.interfaces.IPasswordResetTokenRepository;
-import com.fullstack.Backend.repositories.interfaces.ISystemRoleRepository;
-import com.fullstack.Backend.repositories.interfaces.IVerificationTokenRepository;
+import com.fullstack.Backend.repositories.interfaces.PasswordResetTokenRepository;
+import com.fullstack.Backend.repositories.interfaces.SystemRoleRepository;
+import com.fullstack.Backend.repositories.interfaces.VerificationTokenRepository;
 import com.fullstack.Backend.responses.device.KeywordSuggestionResponse;
 import com.fullstack.Backend.responses.users.JwtResponse;
 import com.fullstack.Backend.responses.users.MessageResponse;
 import com.fullstack.Backend.responses.users.UsersResponse;
 import com.fullstack.Backend.security.JwtUtils;
+import com.fullstack.Backend.utils.AppProperties;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.transaction.Transactional;
 import net.bytebuddy.utility.RandomString;
-import org.apache.http.client.methods.HttpPost;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
@@ -37,7 +36,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import com.fullstack.Backend.repositories.interfaces.IUserRepository;
+import com.fullstack.Backend.repositories.interfaces.UserRepository;
 import com.fullstack.Backend.services.IUserService;
 
 import static com.fullstack.Backend.constant.constant.*;
@@ -52,13 +51,13 @@ public class UserService implements IUserService {
     private JwtUtils jwtUtils;
 
     @Autowired
-    private IUserRepository _userRepository;
+    private UserRepository _userRepository;
 
     @Autowired
-    private ISystemRoleRepository _systemRoleRepository;
+    private SystemRoleRepository _systemRoleRepository;
 
     @Autowired
-    private IVerificationTokenRepository _tokenRepository;
+    private VerificationTokenRepository _tokenRepository;
 
     @Autowired
     private PasswordEncoder encoder;
@@ -67,7 +66,10 @@ public class UserService implements IUserService {
     private JavaMailSender mailSender;
 
     @Autowired
-    private IPasswordResetTokenRepository _passwordResetTokenRepository;
+    private PasswordResetTokenRepository _passwordResetTokenRepository;
+
+    @Autowired
+    AppProperties appProperties;
 
     @Async
     @Override
@@ -139,7 +141,7 @@ public class UserService implements IUserService {
 
     @Async
     @Override
-    public CompletableFuture<ResponseEntity<Object>> registerUser(RegisterDTO registerRequest, String siteURL) throws MessagingException, UnsupportedEncodingException {
+    public CompletableFuture<ResponseEntity<Object>> registerUser(RegisterDTO registerRequest, String siteURL) throws MessagingException {
         if (nameExists(registerRequest.getUserName())) {
             return CompletableFuture.completedFuture(ResponseEntity
                     .badRequest()
@@ -152,17 +154,17 @@ public class UserService implements IUserService {
                     .body(new MessageResponse("Error: " + registerRequest.getEmail() + " is already in use!")));
         }
 
+        String token = RandomString.make(64);
         /* Create new user's account */
         User user = new User();
         user.setUserName(registerRequest.getUserName());
         user.setEmail(registerRequest.getEmail());
         user.setPassword(encoder.encode(registerRequest.getPassword()));
-        String token = RandomString.make(64);
         user.setFirstName(registerRequest.getFirstName());
         user.setLastName(registerRequest.getLastName());
         user.setPhoneNumber(registerRequest.getPhoneNumber());
-        user.setProject(registerRequest.getProject());
-        user.setBadgeId(registerRequest.getBadgeId());
+        user.setProject(null);
+        user.setBadgeId(generateBadgeId());
         user.setCreatedDate(new Date());
         user.setEnabled(false);
         Set<SystemRole> roles = new HashSet<>();
@@ -172,7 +174,7 @@ public class UserService implements IUserService {
         user.setSystemRoles(roles);
         _userRepository.save(user);
         createVerificationToken(user, token);
-        String verifyURL = siteURL + "/api/users/verify?code=" + token;
+        String verifyURL = appProperties.getClient().getBaseUrl() + "email-verification?token=" + token;
         sendVerificationEmail(user, verifyURL);
         return CompletableFuture.completedFuture(ResponseEntity.ok(new
                 MessageResponse("User registered successfully!")));
@@ -201,26 +203,32 @@ public class UserService implements IUserService {
     @Async
     @Override
     public CompletableFuture<ResponseEntity<Object>> verify(String verificationCode) throws ExecutionException, InterruptedException {
-        VerificationToken verificationToken = getVerificationToken(verificationCode).get();
-        if (verificationToken == null || verificationToken.getUser().isEnabled())
-            return CompletableFuture.completedFuture(ResponseEntity
-                    .badRequest()
-                    .body(new MessageResponse("Error: Sorry, we could not verify account. It maybe already verified," +
-                            "or verification code is incorrect.")));
+        final VerificationToken verificationToken = getVerificationToken(verificationCode).get();
+        MessageResponse messageResponse;
+        if (verificationToken == null || verificationToken.getUser().isEnabled()) {
+            messageResponse = new MessageResponse("Error: Sorry, we could not verify account. It maybe already verified," +
+                    "or verification code is incorrect.");
+            messageResponse.setStatus("INVALID");
+            return CompletableFuture.completedFuture(ResponseEntity.badRequest().body(messageResponse));
+        }
 
         User userByToken = verificationToken.getUser();
         Calendar cal = Calendar.getInstance();
 
-        if ((verificationToken.getExpiryDate().getTime() - cal.getTime().getTime()) <= 0)
-            return CompletableFuture.completedFuture(ResponseEntity
-                    .badRequest()
-                    .body(new MessageResponse("Error: Verification code was expired!")));
+        if ((verificationToken.getExpiryDate().getTime() - cal.getTime().getTime()) <= 0) {
+            messageResponse = new MessageResponse("Error: Verification code was expired!");
+            messageResponse.setStatus("EXPIRED");
+            return CompletableFuture.completedFuture(ResponseEntity.badRequest().body(messageResponse));
+        }
 
         userByToken.setEnabled(true);
         _userRepository.save(userByToken);
+        _tokenRepository.delete(verificationToken);
+        messageResponse = new MessageResponse("Verify successfully");
+        messageResponse.setStatus("VALID");
         return CompletableFuture.completedFuture(ResponseEntity
                 .ok()
-                .body(new MessageResponse("Verify successfully")));
+                .body(messageResponse));
 
     }
 
@@ -239,6 +247,11 @@ public class UserService implements IUserService {
         response.setTotalPages(getTotalPages(pageSize, totalElements));
         response.setProjectList(projectList);
         return CompletableFuture.completedFuture(new ResponseEntity<Object>(response, OK));
+    }
+
+    @Override
+    public void save(User user) {
+        _userRepository.save(user);
     }
 
     @Override
@@ -341,7 +354,7 @@ public class UserService implements IUserService {
                     .badRequest()
                     .body(new MessageResponse("Current password is incorrect!")));
 
-        if(!Objects.equals(dto.getNewPassword(), dto.getConfirmPassword())){
+        if (!Objects.equals(dto.getNewPassword(), dto.getConfirmPassword())) {
             return CompletableFuture.completedFuture(ResponseEntity
                     .badRequest()
                     .body(new MessageResponse("New password must be identical to confirm password")));
@@ -361,12 +374,12 @@ public class UserService implements IUserService {
                     .body(new MessageResponse("User is not existent")));
 
         Optional<PasswordResetToken> token = _passwordResetTokenRepository.findByToken(dto.getToken());
-        if(token.isEmpty())
+        if (token.isEmpty())
             return CompletableFuture.completedFuture(ResponseEntity
                     .badRequest()
                     .body(new MessageResponse("Token is not existent")));
 
-        if(!Objects.equals(dto.getNewPassword(), dto.getConfirmPassword()))
+        if (!Objects.equals(dto.getNewPassword(), dto.getConfirmPassword()))
             return CompletableFuture.completedFuture(ResponseEntity
                     .badRequest()
                     .body(new MessageResponse("Password must be identical to confirm password")));
@@ -577,5 +590,14 @@ public class UserService implements IUserService {
         content = content.replace("[[URL]]", verifyURL);
         helper.setText(content, true);
         mailSender.send(message);
+    }
+
+    private String generateBadgeId() {
+        char[] chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".toCharArray();
+        Random random = new Random();
+        StringBuilder sb = new StringBuilder((100000 + random.nextInt(900000)) + "-");
+        for (int i = 0; i < 5; i++)
+            sb.append(chars[random.nextInt(chars.length)]);
+        return sb.toString();
     }
 }

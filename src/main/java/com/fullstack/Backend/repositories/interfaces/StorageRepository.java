@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import com.fullstack.Backend.entities.Storage;
 import com.fullstack.Backend.utils.dropdowns.StorageList;
 
-public interface IStorageRepository extends JpaRepository<Storage, Long> {
+public interface StorageRepository extends JpaRepository<Storage, Long> {
 	public static final String FIND_STORAGE_SIZES = "SELECT size FROM Storage";
 	public static final String FIND_STORAGE = "SELECT s FROM Storage s WHERE size = :size";
 	public static final String FETCH_STORAGE = "SELECT s FROM Storage s";

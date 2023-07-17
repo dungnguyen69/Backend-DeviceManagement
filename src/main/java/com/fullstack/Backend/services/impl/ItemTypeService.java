@@ -8,14 +8,14 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import com.fullstack.Backend.entities.ItemType;
-import com.fullstack.Backend.repositories.interfaces.IItemTypeRepository;
+import com.fullstack.Backend.repositories.interfaces.ItemTypeRepository;
 import com.fullstack.Backend.services.IItemTypeService;
 import com.fullstack.Backend.utils.dropdowns.ItemTypeList;
 
 @Service
 public class ItemTypeService implements IItemTypeService {
 	@Autowired
-	IItemTypeRepository _itemTypeRepository;
+    ItemTypeRepository _itemTypeRepository;
 
 	@Async
 	@Override

@@ -7,8 +7,8 @@ import com.fullstack.Backend.entities.Request;
 import com.fullstack.Backend.entities.User;
 import com.fullstack.Backend.enums.RequestStatus;
 import com.fullstack.Backend.enums.Status;
-import com.fullstack.Backend.repositories.interfaces.IDeviceRepository;
-import com.fullstack.Backend.repositories.interfaces.IRequestRepository;
+import com.fullstack.Backend.repositories.interfaces.DeviceRepository;
+import com.fullstack.Backend.repositories.interfaces.RequestRepository;
 import com.fullstack.Backend.responses.device.KeywordSuggestionResponse;
 import com.fullstack.Backend.responses.request.ShowRequestsResponse;
 import com.fullstack.Backend.responses.request.SubmitBookingResponse;
@@ -34,13 +34,13 @@ import static org.springframework.http.HttpStatus.*;
 @Service
 public class RequestService implements IRequestService {
     @Autowired
-    IRequestRepository _requestRepository;
+    RequestRepository _requestRepository;
     @Autowired
     IUserService _employeeService;
     @Autowired
     IKeeperOrderService _keeperOrderService;
     @Autowired
-    IDeviceRepository _deviceRepository;
+    DeviceRepository _deviceRepository;
 
     @Async
     @Override
