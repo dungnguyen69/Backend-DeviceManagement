@@ -47,8 +47,7 @@ public class PasswordResetToken {
         return new Date(cal.getTime().getTime());
     }
 
-    public void updateToken(final String token) {
-        this.token = token;
+    public void updateToken() {
         this.expiryDate = calculateExpiryDate(EXPIRATION);
     }
 }

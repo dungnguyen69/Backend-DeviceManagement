@@ -11,8 +11,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.repository.query.Param;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -23,7 +23,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.util.Calendar;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
@@ -80,36 +79,24 @@ public class UserController {
         return _userService.showUsersWithPaging(pageNo, pageSize, sortBy, sortDir, dto);
     }
 
-    @GetMapping("/resendRegistrationToken")
-    public CompletableFuture<ResponseEntity<Object>> resendRegistrationToken(HttpServletRequest request, @RequestParam("token") String existingToken)
+    @PostMapping("/resendRegistrationToken")
+    public CompletableFuture<ResponseEntity<Object>> resendRegistrationToken(HttpServletRequest request, @RequestBody String existingToken)
             throws ExecutionException, InterruptedException, MessagingException {
         return _userService.resendRegistrationToken(getSiteURL(request), existingToken);
     }
 
     /*Send email*/
     @PostMapping("/reset_password")
-    public CompletableFuture<ResponseEntity<Object>> sendResetPasswordEmail(HttpServletRequest request, @RequestParam("email") String userEmail)
+    public CompletableFuture<ResponseEntity<Object>> sendResetPasswordEmail(HttpServletRequest request, @NotNull @RequestParam("email") String userEmail)
             throws ExecutionException, InterruptedException, MessagingException {
         return _userService.sendResetPasswordEmail(getSiteURL(request), userEmail);
     }
 
     /* For reset password and forgot password   */
-    @GetMapping("/reset_password")
+    @PostMapping("/verify_reset_password_token")
     public CompletableFuture<ResponseEntity<Object>> showChangePasswordPage(
-            @RequestParam String token, HttpServletResponse response) throws ExecutionException, InterruptedException, IOException {
-        if (_userService.validatePasswordResetToken(token).get() != null) {
-            response.sendRedirect(URL + "/error-page");
-            return CompletableFuture.completedFuture(ResponseEntity
-                    .badRequest()
-                    .body(new MessageResponse("User is not existent because token is " + _userService.validatePasswordResetToken(token).get())));
-        }
-
-        Cookie cookie = new Cookie("token", token);
-        cookie.setPath("/");
-        response.addCookie(cookie);
-        response.sendRedirect(URL + "/receive-forgot-password");
-        return CompletableFuture.completedFuture(ResponseEntity.status(HttpStatus.FOUND)
-                .body(token));
+            @NotNull @RequestBody String token) throws ExecutionException, InterruptedException, IOException {
+        return _userService.verifyPasswordToken(token);
     }
 
     @PutMapping("/save_reset_password")

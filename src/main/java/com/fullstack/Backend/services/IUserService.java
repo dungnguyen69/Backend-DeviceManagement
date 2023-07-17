@@ -44,11 +44,9 @@ public interface IUserService {
 
     public void createVerificationToken(User user, String token);
 
-    public CompletableFuture<String> validatePasswordResetToken(String token);
-
     public CompletableFuture<VerificationToken> getVerificationToken(String VerificationToken);
 
-    public CompletableFuture<PasswordResetToken> getResetPasswordToken(String token);
+    public PasswordResetToken getResetPasswordToken(String token);
 
     public CompletableFuture<VerificationToken> generateNewVerificationToken(final String existingVerificationToken) throws ExecutionException, InterruptedException;
 
@@ -65,6 +63,9 @@ public interface IUserService {
     public CompletableFuture<User> findByToken(String token);
 
     public CompletableFuture<ResponseEntity<Object>> saveForgotPassword(ForgotPasswordDTO dto) throws ExecutionException, InterruptedException, MessagingException;
+
+    @Async
+    CompletableFuture<ResponseEntity<Object>> verifyPasswordToken(String token);
 
     public CompletableFuture<ResponseEntity<Object>> getSuggestKeywordUsers(int fieldColumn, String keyword, FilterUserDTO filter) throws InterruptedException, ExecutionException;
 
