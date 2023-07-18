@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service;
  *  UserDetails contains necessary information (such as: username, password, authorities) to build an Authentication object.
  *
  * */
-@Service
+@Service("userDetailsService")
 public class UserDetailsServiceImpl implements UserDetailsService {
     @Autowired
     UserRepository _userRepository;

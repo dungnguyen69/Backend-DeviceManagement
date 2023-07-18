@@ -5,6 +5,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import com.fullstack.Backend.entities.Screen;
 import com.fullstack.Backend.utils.dropdowns.ScreenList;
+import org.springframework.stereotype.Repository;
+
+@Repository
 
 public interface ScreenRepository extends JpaRepository<Screen, Long> {
 	public static final String FIND_SCREEN_SIZES = "SELECT size FROM Screen";

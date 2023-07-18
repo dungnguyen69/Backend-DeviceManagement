@@ -5,6 +5,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import com.fullstack.Backend.entities.Storage;
 import com.fullstack.Backend.utils.dropdowns.StorageList;
+import org.springframework.stereotype.Repository;
+
+@Repository
 
 public interface StorageRepository extends JpaRepository<Storage, Long> {
 	public static final String FIND_STORAGE_SIZES = "SELECT size FROM Storage";

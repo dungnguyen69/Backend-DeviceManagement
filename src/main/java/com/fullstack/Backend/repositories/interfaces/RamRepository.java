@@ -5,6 +5,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import com.fullstack.Backend.entities.Ram;
 import com.fullstack.Backend.utils.dropdowns.RamList;
+import org.springframework.stereotype.Repository;
+
+@Repository
 
 public interface RamRepository extends JpaRepository<Ram, Long> {
 	public static final String FIND_RAM_SIZES = "SELECT size FROM Ram";

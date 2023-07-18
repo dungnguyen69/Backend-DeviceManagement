@@ -7,6 +7,9 @@ import org.springframework.data.jpa.repository.Query;
 
 import com.fullstack.Backend.entities.ItemType;
 import com.fullstack.Backend.utils.dropdowns.ItemTypeList;
+import org.springframework.stereotype.Repository;
+
+@Repository
 
 public interface ItemTypeRepository extends JpaRepository<ItemType, Long> {
 

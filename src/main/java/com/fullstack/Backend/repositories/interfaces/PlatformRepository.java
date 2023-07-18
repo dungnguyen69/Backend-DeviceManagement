@@ -7,6 +7,9 @@ import org.springframework.data.jpa.repository.Query;
 
 import com.fullstack.Backend.entities.Platform;
 import com.fullstack.Backend.utils.dropdowns.PlatformList;
+import org.springframework.stereotype.Repository;
+
+@Repository
 
 public interface PlatformRepository extends JpaRepository<Platform, Long> {
 	public static final String FIND_PLATFORM_NAME = "SELECT name FROM Platform";

@@ -3,8 +3,11 @@ package com.fullstack.Backend.repositories.interfaces;
 import com.fullstack.Backend.entities.KeeperOrder;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
+
+@Repository
 
 public interface KeeperOrderRepository extends JpaRepository<KeeperOrder, Long> {
     public static final String FIND_KEEPER_ORDER_LIST_BY_DEVICE_ID = "SELECT ko FROM KeeperOrder ko WHERE device_Id = :deviceId AND isReturned = false";
