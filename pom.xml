@@ -94,12 +94,7 @@
 		</dependency>
 
 		<!-- https://mvnrepository.com/artifact/org.hibernate/hibernate-jpamodelgen -->
-		<dependency>
-		    <groupId>com.querydsl</groupId>
-		    <artifactId>querydsl-apt</artifactId>
-		    <scope>provided</scope>
-		</dependency>
-		
+
 		<dependency>
 		    <groupId>org.slf4j</groupId>
 		    <artifactId>slf4j-log4j12</artifactId>
