@@ -9,6 +9,12 @@ import org.springframework.scheduling.annotation.EnableAsync;
 public class BackendApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(BackendApplication.class, args);
+
+        try {
+            SpringApplication app = new SpringApplication(BackendApplication.class);
+            app.run(args);
+        } catch(Throwable ex) {
+            ex.printStackTrace();
+        }
     }
 }
