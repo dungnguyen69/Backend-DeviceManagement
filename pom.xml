@@ -18,9 +18,13 @@
 	<properties>
 		<java.version>17</java.version>
         <database.driver>com.mysql.jdbc.Driver</database.driver>
-        <database.url>jdbc:mysql://localhost:3306/devicemanagementdb</database.url>
-        <database.username>root</database.username>
-        <database.password>123456789</database.password>
+<!--        <database.url>jdbc:mysql://localhost:3306/devicemanagementdb</database.url>-->
+<!--        <database.username>root</database.username>-->
+<!--        <database.password>123456789</database.password>-->
+
+		<database.url>jdbc:mysql://us-cdbr-east-06.cleardb.net:3306/heroku_e49ae1bb83bbab3</database.url>
+		<database.username>b4a150ddcc0bd0</database.username>
+		<database.password>fe3510f1fe3510f1</database.password>
 	</properties>
 	
 	<dependencies>
@@ -72,12 +76,12 @@
 			<artifactId>spring-context</artifactId>
 		</dependency>
 
-<!--		<dependency>-->
-<!--			<groupId>org.hibernate</groupId>-->
-<!--			<artifactId>hibernate-core</artifactId>-->
-<!--			<version>6.2.0.Final</version>-->
-<!--			<type>pom</type>-->
-<!--		</dependency>-->
+		<dependency>
+			<groupId>org.hibernate</groupId>
+			<artifactId>hibernate-core</artifactId>
+			<version>6.2.0.Final</version>
+			<type>pom</type>
+		</dependency>
 
 		<dependency>
 		    <groupId>org.apache.poi</groupId>
