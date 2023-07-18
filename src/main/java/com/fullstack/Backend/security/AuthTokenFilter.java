@@ -17,7 +17,7 @@ import java.io.IOException;
 
 
 /* A filter that executes once per request */
-    public class AuthTokenFilter extends OncePerRequestFilter {
+public class AuthTokenFilter extends OncePerRequestFilter {
     @Autowired
     private JwtUtils jwtUtils;
 
