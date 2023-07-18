@@ -82,13 +82,6 @@ public class Device extends BaseEntity {
     @Column(name = "owner_Id", nullable = false)
     private int ownerId;
 
-    @ManyToOne()
-    @JoinColumn(name = "keeper_Id", referencedColumnName = "id", insertable = false, updatable = false, foreignKey = @ForeignKey(name = "keeper_device_Id_FK"))
-    @JsonIgnore()
-    private User keeper;
-    @Column(name = "keeper_Id")
-    private Integer keeperId;
-
     @Column(nullable = false)
     private String inventoryNumber;
 
@@ -105,14 +98,6 @@ public class Device extends BaseEntity {
 
     @Column()
     private String comments;
-
-    @Column()
-    @DateTimeFormat(pattern = "yyyy-MM-dd")
-    private Date bookingDate;
-
-    @Column()
-    @DateTimeFormat(pattern = "yyyy-MM-dd")
-    private Date returnDate;
 
     public void loadToEntity(AddDeviceDTO addDeviceDTO) {
         this.name = addDeviceDTO.getDeviceName();
