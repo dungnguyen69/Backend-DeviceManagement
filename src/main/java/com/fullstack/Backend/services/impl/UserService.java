@@ -47,7 +47,6 @@ import static org.springframework.http.HttpStatus.OK;
 
 
 @Service
-@Transactional
 public class UserService implements IUserService, UserDetailsService {
     @Autowired
     private JwtUtils jwtUtils;
