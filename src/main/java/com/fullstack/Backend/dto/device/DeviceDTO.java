@@ -75,7 +75,5 @@ public class DeviceDTO {
         this.Origin = device.getOrigin().name();
         this.CreatedDate = device.getCreatedDate();
         this.UpdatedDate = device.getUpdatedDate();
-        this.BookingDate = device.getBookingDate();
-        this.ReturnDate = device.getReturnDate();
     }
 }

@@ -50,8 +50,6 @@ public class UpdateDeviceDTO {
         this.comments = device.getComments();
         this.projectId = Project.valueOf(device.getProject().toString()).ordinal();
         this.originId = Origin.valueOf(device.getOrigin().toString()).ordinal();
-        this.bookingDate = device.getBookingDate();
-        this.returnDate = device.getReturnDate();
         this.keeperOrder = keeperOrderList;
     }
 }
