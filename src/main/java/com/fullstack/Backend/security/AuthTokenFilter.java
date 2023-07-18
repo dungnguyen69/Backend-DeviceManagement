@@ -1,6 +1,6 @@
 package com.fullstack.Backend.security;
 
-import com.fullstack.Backend.services.impl.UserDetailsServiceImpl;
+import com.fullstack.Backend.services.impl.UserService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,7 +22,7 @@ public class AuthTokenFilter extends OncePerRequestFilter {
     private JwtUtils jwtUtils;
 
     @Autowired
-    private UserDetailsServiceImpl _userDetailsService;
+    private UserService _userService;
 
     @Value("${app.client.baseUrl}")
     String baseUrl;
@@ -37,7 +37,7 @@ public class AuthTokenFilter extends OncePerRequestFilter {
             String jwt = parseJwt(request);
             if (jwt != null && jwtUtils.validateJwtToken(jwt)) {
                 String username = jwtUtils.getUserNameFromJwtToken(jwt);
-                UserDetails userDetails = _userDetailsService.loadUserByUsername(username);
+                UserDetails userDetails = _userService.loadUserByUsername(username);
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(
                                 userDetails,

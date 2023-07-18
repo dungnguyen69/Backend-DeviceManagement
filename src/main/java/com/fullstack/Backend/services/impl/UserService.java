@@ -17,7 +17,6 @@ import com.fullstack.Backend.responses.users.JwtResponse;
 import com.fullstack.Backend.responses.users.MessageResponse;
 import com.fullstack.Backend.responses.users.UsersResponse;
 import com.fullstack.Backend.security.JwtUtils;
-import com.fullstack.Backend.utils.AppProperties;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.transaction.Transactional;
@@ -33,6 +32,9 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -45,8 +47,7 @@ import static org.springframework.http.HttpStatus.OK;
 
 
 @Service
-@Transactional
-public class UserService implements IUserService {
+public class UserService implements IUserService, UserDetailsService {
     @Autowired
     private JwtUtils jwtUtils;
 
@@ -621,5 +622,13 @@ public class UserService implements IUserService {
         for (int i = 0; i < 5; i++)
             sb.append(chars[random.nextInt(chars.length)]);
         return sb.toString();
+    }
+
+    @Override
+    @Transactional
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        User user = _userRepository.findByUserName(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User Not Found with username: " + username));
+        return UserDetailsImpl.build(user);
     }
 }
