@@ -1,7 +1,6 @@
 package com.fullstack.Backend.security;
 
 import com.fullstack.Backend.services.impl.UserDetailsServiceImpl;
-import com.fullstack.Backend.services.impl.UserService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

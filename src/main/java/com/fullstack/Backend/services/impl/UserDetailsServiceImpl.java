@@ -16,7 +16,6 @@ import java.util.concurrent.ExecutionException;
  *  UserDetails contains necessary information (such as: username, password, authorities) to build an Authentication object.
  *
  * */
-@Service
 public class UserDetailsServiceImpl implements UserDetailsService {
     @Autowired
     UserService _userService;
