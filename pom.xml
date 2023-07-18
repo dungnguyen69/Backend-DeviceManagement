@@ -16,7 +16,7 @@
 	<name>Backend</name>
 	<description>Demo project for Spring Boot</description>
 	<properties>
-		<java.version>11</java.version>
+		<java.version>8</java.version>
         <database.driver>com.mysql.jdbc.Driver</database.driver>
         <database.url>jdbc:mysql://localhost:3306/devicemanagementdb</database.url>
         <database.username>root</database.username>
