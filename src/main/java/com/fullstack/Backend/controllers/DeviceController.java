@@ -25,7 +25,6 @@ import com.fullstack.Backend.services.IDeviceService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 
-@CrossOrigin(origins = URL, maxAge = 3600, allowCredentials = "true")
 @RestController
 @RequestMapping("/api/devices")
 public class DeviceController {

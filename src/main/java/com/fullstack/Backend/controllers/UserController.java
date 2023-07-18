@@ -1,19 +1,13 @@
 package com.fullstack.Backend.controllers;
 
 import com.fullstack.Backend.dto.users.*;
-import com.fullstack.Backend.entities.User;
-import com.fullstack.Backend.entities.VerificationToken;
-import com.fullstack.Backend.responses.users.MessageResponse;
-import com.fullstack.Backend.services.IUserService;
+    import com.fullstack.Backend.services.IUserService;
 import jakarta.mail.MessagingException;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -28,7 +22,6 @@ import java.util.concurrent.ExecutionException;
 
 import static com.fullstack.Backend.constant.constant.*;
 
-@CrossOrigin(origins = URL, maxAge = 3600, allowCredentials = "true")
 @RestController
 @RequestMapping("/api/users")
 public class UserController {

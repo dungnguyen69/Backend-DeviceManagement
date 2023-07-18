@@ -6,7 +6,7 @@ public class constant {
     public static final String DEFAULT_SORT_BY = "id";
     public static final String DEFAULT_SORT_DIRECTION = "desc";
 
-    // For keyword suggestion
+    // For device keyword suggestion
     public static final int DEVICE_NAME_COLUMN = 0;
     public static final int DEVICE_PLATFORM_NAME_COLUMN = 1;
     public static final int DEVICE_PLATFORM_VERSION_COLUMN = 2;
@@ -18,6 +18,7 @@ public class constant {
     public static final int DEVICE_SERIAL_NUMBER_COLUMN = 8;
     public static final int DEVICE_KEEPER_COLUMN = 9;
 
+    // For request keyword suggestion
     public static final int REQUEST_REQUEST_ID_COLUMN = 0;
     public static final int REQUEST_DEVICE_NAME_COLUMN = 1;
     public static final int REQUEST_DEVICE_SERIAL_NUMBER_COLUMN = 2;
@@ -26,6 +27,7 @@ public class constant {
     public static final int REQUEST_NEXT_KEEPER_COLUMN = 5;
     public static final int REQUEST_APPROVER_COLUMN = 6;
 
+    // For user keyword suggestion
     public static final int USER_BADGE_ID_COLUMN = 0;
     public static final int USER_NAME_COLUMN = 1;
     public static final int USER_FIRST_NAME_COLUMN = 2;
@@ -47,14 +49,11 @@ public class constant {
     public static final int DEVICE_ORIGIN = 10;
     public static final int DEVICE_COMMENTS = 11;
 
+    // Request status
     public static final int APPROVED = 0;
     public static final int CANCELLED = 2;
     public static final int TRANSFERRED = 3;
     public static final int PENDING = 4;
     public static final int RETURNED = 5;
     public static final int EXTENDING = 6;
-
-    public static final String URL = "http://localhost:4200";
-
-    public static final String FROM_ADDRESS = "dungtestemail33@gmail.com";
 }

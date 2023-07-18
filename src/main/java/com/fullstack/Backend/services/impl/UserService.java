@@ -23,6 +23,7 @@ import jakarta.mail.internet.MimeMessage;
 import jakarta.transaction.Transactional;
 import net.bytebuddy.utility.RandomString;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
@@ -67,8 +68,11 @@ public class UserService implements IUserService {
     @Autowired
     private PasswordResetTokenRepository _passwordResetTokenRepository;
 
-    @Autowired
-    AppProperties appProperties;
+    @Value("${app.client.baseUrl}")
+    String baseUrl;
+
+    @Value("${spring.mail.username}")
+    String fromAddress;
 
     @Async
     @Override
@@ -173,7 +177,7 @@ public class UserService implements IUserService {
         user.setSystemRoles(roles);
         _userRepository.save(user);
         createVerificationToken(user, token);
-        String verifyURL = appProperties.getClient().getBaseUrl() + "email-verification?token=" + token;
+        String verifyURL = baseUrl + "/email-verification?token=" + token;
         sendVerificationEmail(user, verifyURL);
         return CompletableFuture.completedFuture(ResponseEntity.ok(new
                 MessageResponse("User registered successfully!")));
@@ -190,7 +194,7 @@ public class UserService implements IUserService {
 
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message);
-        helper.setFrom(FROM_ADDRESS);
+        helper.setFrom(fromAddress);
         helper.setTo(toAddress);
         helper.setSubject(subject);
         content = content.replace("[[name]]", user.getFirstName().concat(" " + user.getLastName()));
@@ -304,7 +308,7 @@ public class UserService implements IUserService {
     public CompletableFuture<ResponseEntity<Object>> resendRegistrationToken(String siteURL, String existingToken) throws ExecutionException, InterruptedException, MessagingException {
         VerificationToken newToken = generateNewVerificationToken(existingToken).get();
         User user = newToken.getUser();
-        String verifyURL = appProperties.getClient().getBaseUrl() + "email-verification?token=" + newToken.getToken();
+        String verifyURL = baseUrl + "/email-verification?token=" + newToken.getToken();
         resendVerificationEmail(user, verifyURL);
         return CompletableFuture.completedFuture(ResponseEntity.ok(new MessageResponse("Resent successfully!")));
     }
@@ -323,13 +327,13 @@ public class UserService implements IUserService {
         PasswordResetToken existingToken = findUserFromResetPasswordToken(user.get()).get();
         if (existingToken != null) {
             String newToken = generateResetPasswordToken(existingToken.getToken()); /* Change old token to new token and return it */
-            String verifyURL = appProperties.getClient().getBaseUrl() + "receive-forgot-password?token=" + newToken;
+            String verifyURL = baseUrl + "/receive-forgot-password?token=" + newToken;
             sendResetPasswordEmail(user.get(), verifyURL);
             return CompletableFuture.completedFuture(ResponseEntity.ok(new MessageResponse("Sent successfully!")));
         }
         PasswordResetToken myToken = new PasswordResetToken(token, user.get());
         _passwordResetTokenRepository.save(myToken);
-        String verifyURL = appProperties.getClient().getBaseUrl() + "receive-forgot-password?token=" + myToken.getToken();
+        String verifyURL = baseUrl + "/receive-forgot-password?token=" + myToken.getToken();
         sendResetPasswordEmail(user.get(), verifyURL);
         return CompletableFuture.completedFuture(ResponseEntity.ok(new MessageResponse("Sent successfully!")));
     }
@@ -563,7 +567,7 @@ public class UserService implements IUserService {
 
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message);
-        helper.setFrom(FROM_ADDRESS);
+        helper.setFrom(fromAddress);
         helper.setTo(toAddress);
         helper.setSubject(subject);
         content = content.replace("[[name]]", user.getFirstName().concat(" " + user.getLastName()));
@@ -601,7 +605,7 @@ public class UserService implements IUserService {
                 + "<h3><a href=\"[[URL]]\" target=\"_self\">RESET PASSWORD</a></h3>";
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message);
-        helper.setFrom(FROM_ADDRESS);
+        helper.setFrom(fromAddress);
         helper.setTo(toAddress);
         helper.setSubject(subject);
         content = content.replace("[[name]]", user.getFirstName().concat(" " + user.getLastName()));
