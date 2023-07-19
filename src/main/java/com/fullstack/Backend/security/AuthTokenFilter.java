@@ -24,9 +24,6 @@ public class AuthTokenFilter extends OncePerRequestFilter {
     @Autowired
     private UserService _userService;
 
-    @Value("${app.client.baseUrl}")
-    String baseUrl;
-
     /* – get JWT from the Authorization header (by removing Bearer prefix)
         – if the request has JWT, validate it, parse username from it
         – from username, get UserDetails to create an Authentication object
@@ -49,7 +46,7 @@ public class AuthTokenFilter extends OncePerRequestFilter {
         } catch (Exception e) {
             logger.error("Cannot set user authentication: {}", e);
         }
-        response.setHeader("Access-Control-Allow-Origin", baseUrl);
+        response.setHeader("Access-Control-Allow-Origin", "https://dungnguyen69.github.io");
         response.setHeader("Access-Control-Allow-Methods", "POST, GET, PUT, OPTIONS, DELETE");
         response.setHeader("Access-Control-Max-Age", "3600");
         response.setHeader("Access-Control-Allow-Credentials", "true");
