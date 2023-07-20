@@ -1073,18 +1073,18 @@ public class DeviceService implements IDeviceService {
         for (int rowIndex = 1; rowIndex <= numberOfRows; rowIndex++) {
             Row currentRow = sheet.getRow(rowIndex);
             String[] platformString = currentRow.getCell(DEVICE_PLATFORM).toString().split(",");
-            String name = currentRow.getCell(DEVICE_NAME).toString().strip(),
-                    inventoryNumber = currentRow.getCell(DEVICE_INVENTORY_NUMBER).toString().strip(),
-                    serialNumber = currentRow.getCell(DEVICE_SERIAL_NUMBER).toString().strip(),
-                    comments = currentRow.getCell(DEVICE_COMMENTS).toString();
-            CompletableFuture<ItemType> itemType = _itemTypeService.findByName(currentRow.getCell(DEVICE_ITEM_TYPE).toString().strip());
-            CompletableFuture<Ram> ram = _ramService.findBySize(currentRow.getCell(DEVICE_RAM).toString().strip());
-            CompletableFuture<Screen> screen = _screenService.findBySize(currentRow.getCell(DEVICE_SCREEN).toString().strip());
-            CompletableFuture<Storage> storage = _storageService.findBySize(currentRow.getCell(DEVICE_STORAGE).toString().strip());
+            String name = String.valueOf(currentRow.getCell(DEVICE_NAME)),
+                    inventoryNumber = String.valueOf(currentRow.getCell(DEVICE_INVENTORY_NUMBER)),
+                    serialNumber = String.valueOf(currentRow.getCell(DEVICE_SERIAL_NUMBER)),
+                    comments = String.valueOf(currentRow.getCell(DEVICE_COMMENTS));
+            CompletableFuture<ItemType> itemType = _itemTypeService.findByName(String.valueOf(currentRow.getCell(DEVICE_ITEM_TYPE)));
+            CompletableFuture<Ram> ram = _ramService.findBySize(String.valueOf(currentRow.getCell(DEVICE_RAM)));
+            CompletableFuture<Screen> screen = _screenService.findBySize(String.valueOf(currentRow.getCell(DEVICE_SCREEN)));
+            CompletableFuture<Storage> storage = _storageService.findBySize(String.valueOf(currentRow.getCell(DEVICE_STORAGE)));
             CompletableFuture<User> owner = _employeeService.findById(ownerId);
-            String statusString = currentRow.getCell(DEVICE_STATUS).toString().strip(),
-                    originString = currentRow.getCell(DEVICE_ORIGIN).toString().strip(),
-                    projectString = currentRow.getCell(DEVICE_PROJECT).toString().strip();
+            String statusString = String.valueOf(currentRow.getCell(DEVICE_STATUS)),
+                    originString = String.valueOf(currentRow.getCell(DEVICE_ORIGIN)),
+                    projectString = String.valueOf(currentRow.getCell(DEVICE_PROJECT));
             Device existDevice = _deviceRepository.findBySerialNumber(serialNumber);
             int rowInExcel = rowIndex + 1; /* Ignore the headers */
 
