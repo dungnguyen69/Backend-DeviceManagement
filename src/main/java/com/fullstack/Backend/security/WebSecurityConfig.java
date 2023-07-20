@@ -28,7 +28,6 @@ public class WebSecurityConfig {
 
     private final UserDetailsService userService;
 
-//    private CircularDependencyB circB;
 
     @Autowired
     public WebSecurityConfig(@Lazy UserDetailsService userService) {

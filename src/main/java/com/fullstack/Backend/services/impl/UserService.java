@@ -73,7 +73,7 @@ public class UserService implements IUserService, UserDetailsService {
     String baseUrl;
 
     @Value("${spring.mail.username}")
-    String fromAddress;
+    private String fromAddress;
 
     @Async
     @Override

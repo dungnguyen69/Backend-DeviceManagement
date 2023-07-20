@@ -54,9 +54,7 @@ public class DeviceDTO {
     public Date UpdatedDate;
 
     public DeviceDTO(Device device) {
-        if (device.getOwner() == null)
-            this.Owner = "";
-        else
+        if (device.getOwner() != null)
             this.Owner = device.getOwner().getUserName();
 
         this.Id = device.getId();

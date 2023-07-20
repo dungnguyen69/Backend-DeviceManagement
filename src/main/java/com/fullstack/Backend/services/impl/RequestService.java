@@ -206,7 +206,7 @@ public class RequestService implements IRequestService {
                 request.get().setApprovalDate(new Date());
                 changeStatus(request.get(), APPROVED);
                 cancelRelatedPendingRequest(request.get());
-                changeDeviceStatus(request.get());
+                changeDeviceStatusToOccupied(request.get());
             }
             case CANCELLED -> {
                 request.get().setApprovalDate(new Date());
@@ -267,7 +267,7 @@ public class RequestService implements IRequestService {
         KeeperOrder currentKeeperOrder = returnCurrentKeeperOrder(keeperOrderByDeviceIdList, nextKeeper.get()).get();
 
         /* There is no UNRETURNED keeper order pertaining to the provided device ID */
-        if (invalidCurrentOrder(currentKeeperOrder))
+        if (isCurrentOrderInvalid(currentKeeperOrder))
             return CompletableFuture.completedFuture(new ResponseEntity<>(new MessageResponse("Request is not approved"), NOT_FOUND));
 
         /*  No 1: 1/9 - 1/11
@@ -436,7 +436,7 @@ public class RequestService implements IRequestService {
     }
 
     /* Change device status to OCCUPIED when a request is approved */
-    private void changeDeviceStatus(Request request) throws ExecutionException, InterruptedException {
+    private void changeDeviceStatusToOccupied(Request request) throws ExecutionException, InterruptedException {
         Device device = _deviceRepository.findById(request.getDevice().getId());
         if (device.getStatus() != Status.OCCUPIED) {
             device.setStatus(Status.OCCUPIED);
@@ -521,7 +521,7 @@ public class RequestService implements IRequestService {
         return request.getReturnDate().before(currentRequest.getReturnDate());
     }
 
-    private boolean invalidCurrentOrder(KeeperOrder currentKeeperOrder) {
+    private boolean isCurrentOrderInvalid(KeeperOrder currentKeeperOrder) {
         return currentKeeperOrder == null;
     }
 

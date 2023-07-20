@@ -347,7 +347,7 @@ public class DeviceService implements IDeviceService {
     @Override
     public CompletableFuture<ResponseEntity<Object>> getSuggestKeywordDevices(int fieldColumn, String keyword, FilterDeviceDTO deviceFilter) throws InterruptedException, ExecutionException {
 
-        if (keyword.trim().isBlank())
+        if (isKeywordInvalid(keyword))
             return CompletableFuture.completedFuture(ResponseEntity.status(NOT_FOUND).body("Keyword must be non-null"));
 
         List<Device> devices = _deviceRepository.findAll();
@@ -534,8 +534,7 @@ public class DeviceService implements IDeviceService {
     @Async()
     @Override
     public CompletableFuture<ResponseEntity<Object>> getSuggestKeywordOwnedDevices(int ownerId, int fieldColumn, String keyword, FilterDeviceDTO deviceFilter) throws InterruptedException, ExecutionException {
-
-        if (keyword.trim().isBlank())
+        if (isKeywordInvalid(keyword))
             return CompletableFuture.completedFuture(ResponseEntity.status(NOT_FOUND).body("Keyword must be non-null"));
 
         List<DeviceDTO> deviceList = getDevicesOfOwner(ownerId, deviceFilter, "id", "asc").get();
@@ -549,8 +548,7 @@ public class DeviceService implements IDeviceService {
     @Async()
     @Override
     public CompletableFuture<ResponseEntity<Object>> getSuggestKeywordKeepingDevices(int keeperId, int fieldColumn, String keyword, FilterDeviceDTO deviceFilter) throws InterruptedException, ExecutionException {
-
-        if (keyword.trim().isBlank())
+        if (isKeywordInvalid(keyword))
             return CompletableFuture.completedFuture(ResponseEntity.status(NOT_FOUND).body("Keyword must be non-null"));
 
         List<KeepingDeviceDTO> deviceList = getDevicesOfKeeper(keeperId, deviceFilter).get();
@@ -572,7 +570,8 @@ public class DeviceService implements IDeviceService {
 
     @Async
     private CompletableFuture<List<DeviceDTO>> getPage(List<DeviceDTO> sourceList, int pageIndex, int pageSize) {
-        if (pageSize <= 0 || pageIndex <= 0) throw new IllegalArgumentException("invalid page size: " + pageSize);
+        final boolean isPageInvalid = pageSize <= 0 || pageIndex <= 0;
+        if (isPageInvalid) throw new IllegalArgumentException("invalid page size: " + pageSize);
 
         int fromIndex = (pageIndex - 1) * pageSize;
 
@@ -705,6 +704,9 @@ public class DeviceService implements IDeviceService {
         return CompletableFuture.completedFuture(deviceList);
     }
 
+    private boolean isKeywordInvalid(String keyword) {
+        return keyword.trim().isBlank();
+    }
     @Async()
     private CompletableFuture<List<DeviceDTO>> applyFilterBookingAndReturnDateForDevices(FilterDeviceDTO deviceFilter, List<DeviceDTO> devices) {
         if (deviceFilter.getBookingDate() != null)
