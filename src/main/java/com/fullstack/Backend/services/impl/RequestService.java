@@ -54,17 +54,17 @@ public class RequestService implements IRequestService {
             List<String> error = new ArrayList<>();
             User requester = _employeeService.findByUsername(submittedRequest.getRequester().trim()).get(),
                     nextKeeper = _employeeService.findByUsername(submittedRequest.getNextKeeper().trim()).get();
+            Optional<Device> device = _deviceRepository.findById(submittedRequest.getDeviceId());
 
-            if (!_deviceRepository.existsById((long) submittedRequest.getDeviceId())) {
+            if (device.isEmpty()) {
                 error.add("The device you submitted is not existed");
                 addToRequestFails(requestFails, requestFail, error);
                 continue;
             }
 
-            Device device = _deviceRepository.findById(submittedRequest.getDeviceId());
-            setUpRequestFail(requestFail, submittedRequest, device);
-            User owner = _employeeService.findByUsername(device.getOwner().getUserName()).get();
-            validateRequestInput(error, device, requester, nextKeeper, submittedRequest);
+            setUpRequestFail(requestFail, submittedRequest, device.get());
+            User owner = _employeeService.findByUsername(device.get().getOwner().getUserName()).get();
+            validateRequestInput(error, device.get(), requester, nextKeeper, submittedRequest);
 
             if (error.size() >= 1) {
                 addToRequestFails(requestFails, requestFail, error);
@@ -84,7 +84,7 @@ public class RequestService implements IRequestService {
             newRequest.setNextKeeper_Id(nextKeeper.getId());
             newRequest.setBookingDate(submittedRequest.getBookingDate());
             newRequest.setReturnDate(submittedRequest.getReturnDate());
-            newRequest.setDevice_Id(device.getId());
+            newRequest.setDevice_Id(device.get().getId());
             newRequest.setCreatedDate(new Date());
 
             if (checkRequestWhenSubmitting(requestSuccessful, newRequest)) {
@@ -102,7 +102,7 @@ public class RequestService implements IRequestService {
             /* Order number = 1, the current keeper is the original owner */
             if (keeperOrderListByDeviceId.get().size() == 0) {
 
-                if (isSubmittedRequestExistentInDatabase(requester.getId(), owner.getId(), nextKeeper.getId(), device.getId())) {
+                if (isSubmittedRequestExistentInDatabase(requester.getId(), owner.getId(), nextKeeper.getId(), device.get().getId())) {
                     error.add("The submitted request is already existent in the database");
                 }
 
@@ -258,12 +258,15 @@ public class RequestService implements IRequestService {
          *  Create a new request for sending requests to the person accepting reviews it
          * */
         CompletableFuture<User> nextKeeper = _employeeService.findByUsername(request.getNextKeeper());
-        Device device = _deviceRepository.findById(request.getDeviceId());
+        Optional<Device> device = _deviceRepository.findById(request.getDeviceId());
 
-        if (checkExtendDurationRequest(request, nextKeeper.get(), device) != null)
-            return CompletableFuture.completedFuture(new ResponseEntity<>(checkExtendDurationRequest(request, nextKeeper.get(), device), NOT_FOUND));
+        if (device.isEmpty())
+            return CompletableFuture.completedFuture(new ResponseEntity<>(new MessageResponse("Device is not valid"), NOT_FOUND));
 
-        List<KeeperOrder> keeperOrderByDeviceIdList = _keeperOrderService.getListByDeviceId(device.getId()).get();
+        if (checkExtendDurationRequest(request, nextKeeper.get(), device.get()) != null)
+            return CompletableFuture.completedFuture(new ResponseEntity<>(checkExtendDurationRequest(request, nextKeeper.get(), device.get()), NOT_FOUND));
+
+        List<KeeperOrder> keeperOrderByDeviceIdList = _keeperOrderService.getListByDeviceId(device.get().getId()).get();
         KeeperOrder currentKeeperOrder = returnCurrentKeeperOrder(keeperOrderByDeviceIdList, nextKeeper.get()).get();
 
         /* There is no UNRETURNED keeper order pertaining to the provided device ID */
@@ -281,7 +284,7 @@ public class RequestService implements IRequestService {
                 return CompletableFuture.completedFuture(new ResponseEntity<>(new MessageResponse("Return date exceeds the allowed duration!"), NOT_FOUND));
         }
 
-        Request preExtendingDurationRequest = findAnOccupiedRequest(nextKeeper.get().getId(), device.getId()).get();
+        Request preExtendingDurationRequest = findAnOccupiedRequest(nextKeeper.get().getId(), device.get().getId()).get();
         Request postExtendingDurationRequest = new Request();
         postExtendingDurationRequest.setRequester_Id(preExtendingDurationRequest.getRequester_Id());
         postExtendingDurationRequest.setRequestId(preExtendingDurationRequest.getRequestId());
@@ -437,10 +440,13 @@ public class RequestService implements IRequestService {
 
     /* Change device status to OCCUPIED when a request is approved */
     private void changeDeviceStatusToOccupied(Request request) throws ExecutionException, InterruptedException {
-        Device device = _deviceRepository.findById(request.getDevice().getId());
-        if (device.getStatus() != Status.OCCUPIED) {
-            device.setStatus(Status.OCCUPIED);
-            _deviceRepository.save(device);
+        Optional<Device> device = _deviceRepository.findById(request.getDevice().getId());
+        if (device.isEmpty()) {
+            return;
+        }
+        if (device.get().getStatus() != Status.OCCUPIED) {
+            device.get().setStatus(Status.OCCUPIED);
+            _deviceRepository.save(device.get());
         }
     }
 

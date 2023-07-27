@@ -17,6 +17,7 @@ import com.fullstack.Backend.dto.device.*;
 import com.fullstack.Backend.dto.keeper_order.KeeperOrderListDTO;
 import com.fullstack.Backend.dto.request.ReturnKeepDeviceDTO;
 import com.fullstack.Backend.entities.*;
+import com.fullstack.Backend.mappers.DeviceMapper;
 import com.fullstack.Backend.responses.device.*;
 import com.fullstack.Backend.services.*;
 import com.fullstack.Backend.utils.*;
@@ -78,9 +79,11 @@ public class DeviceService implements IDeviceService {
     @Autowired
     IRequestService _requestService;
 
+    @Autowired
+    DeviceMapper deviceMapper;
     @Async
     @Override
-    public CompletableFuture<Device> getDeviceById(int deviceId) {
+    public CompletableFuture<Optional<Device>> getDeviceById(int deviceId) {
         return CompletableFuture.completedFuture(_deviceRepository.findById(deviceId));
     }
 
@@ -128,8 +131,7 @@ public class DeviceService implements IDeviceService {
         checkFieldsWhenAddingDevice(errors, dto);
         if (errors.size() > 0)
             return CompletableFuture.completedFuture(new ResponseEntity<>(errors, NOT_ACCEPTABLE));
-        Device device = new Device();
-        device.loadToEntity(dto);
+        Device device = deviceMapper.addDeviceDtoToDevice(dto);
         device.setOwnerId(_employeeService.findByUsername(dto.getOwner()).get().getId());
         _deviceRepository.save(device);
         addDeviceResponse.setNewDevice(device);
@@ -141,27 +143,27 @@ public class DeviceService implements IDeviceService {
     @Override
     public CompletableFuture<ResponseEntity<Object>> getDetailDevice(int deviceId) throws InterruptedException, ExecutionException {
         DetailDeviceResponse response = new DetailDeviceResponse();
+        Optional<Device> deviceDetail = _deviceRepository.findById(deviceId);
 
-        if (doesDeviceExist(deviceId).get())
+        if (deviceDetail.isEmpty())
             return CompletableFuture.completedFuture(new ResponseEntity<>(response, NOT_FOUND));
 
-        Device deviceDetail = _deviceRepository.findById(deviceId);
-        CompletableFuture<User> owner = _employeeService.findById(deviceDetail.getOwnerId());
+        CompletableFuture<User> owner = _employeeService.findById(deviceDetail.get().getOwnerId());
         UpdateDeviceDTO dto = new UpdateDeviceDTO();
 
         if (owner == null) dto.setOwner(null);
         else dto.setOwner(owner.get().getUserName());
 
-        CompletableFuture<List<KeeperOrder>> keeperOrderList = _keeperOrderService.getListByDeviceId(deviceDetail.getId()); /* Get a list of keeper orders of a device*/
+        CompletableFuture<List<KeeperOrder>> keeperOrderList = _keeperOrderService.getListByDeviceId(deviceDetail.get().getId()); /* Get a list of keeper orders of a device*/
         List<KeeperOrderListDTO> showKeeperList = keeperOrderList.get().stream().map(KeeperOrderListDTO::new).toList();
-        dto.loadFromEntity(deviceDetail, showKeeperList);
+        dto.loadFromEntity(deviceDetail.get(), showKeeperList);
         if (!keeperOrderList.get().isEmpty()) {/* Should a list be empty, we set a keeper value is a device's owner */
             Optional<KeeperOrder> keeperOrder = keeperOrderList.get().stream().max(Comparator.comparing(KeeperOrder::getKeeperNo)); /* Get the latest keeper order of a device*/
             dto.setKeeper(keeperOrder.get().getKeeper().getUserName()); /* Add keeper order information to devices*/
             dto.setBookingDate(keeperOrder.get().getBookingDate());
             dto.setReturnDate(keeperOrder.get().getDueDate());
         }
-        dto.setKeeper(deviceDetail.getOwner().getUserName());
+        dto.setKeeper(deviceDetail.get().getOwner().getUserName());
         response.setDetailDevice(dto);
         return CompletableFuture.completedFuture(new ResponseEntity<>(response, OK));
     }
@@ -171,7 +173,8 @@ public class DeviceService implements IDeviceService {
     public CompletableFuture<ResponseEntity<Object>> updateDevice(int deviceId, UpdateDeviceDTO dto) throws ExecutionException, InterruptedException {
         UpdateDeviceResponse detailDeviceResponse = new UpdateDeviceResponse();
         List<ErrorMessage> errors = new ArrayList<>();
-        if (doesDeviceExist(deviceId).get()) {
+        Optional<Device> deviceDetail = _deviceRepository.findById(deviceId);
+        if (deviceDetail.isEmpty()) {
             ErrorMessage error = new ErrorMessage(NOT_FOUND,
                     "Device does not exist",
                     new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
@@ -181,23 +184,22 @@ public class DeviceService implements IDeviceService {
         checkFieldsWhenUpdatingDevice(errors, dto, deviceId);
         if (errors.size() > 0)
             return CompletableFuture.completedFuture(new ResponseEntity<>(errors, NOT_ACCEPTABLE));
-        Device deviceDetail = _deviceRepository.findById(deviceId);
-        deviceDetail.setName(dto.getName().trim());
-        deviceDetail.setStatus(Status.values()[dto.getStatusId()]);
-        deviceDetail.setSerialNumber(dto.getSerialNumber().trim());
-        deviceDetail.setInventoryNumber(dto.getInventoryNumber().trim());
-        deviceDetail.setProject(Project.values()[dto.getProjectId()]);
-        deviceDetail.setOrigin(Origin.values()[dto.getOriginId()]);
-        deviceDetail.setPlatformId(dto.getPlatformId());
-        deviceDetail.setRamId(dto.getRamId());
-        deviceDetail.setItemTypeId(dto.getItemTypeId());
-        deviceDetail.setStorageId(dto.getStorageId());
-        deviceDetail.setScreenId(dto.getScreenId());
-        deviceDetail.setComments(dto.getComments());
-        deviceDetail.setOwnerId(_employeeService.findByUsername(dto.getOwner()).get().getId());
-        deviceDetail.setUpdatedDate(new Date());
-        _deviceRepository.save(deviceDetail);
-        detailDeviceResponse.setUpdatedDevice(deviceDetail);
+        deviceDetail.get().setName(dto.getName().trim());
+        deviceDetail.get().setStatus(Status.values()[dto.getStatusId()]);
+        deviceDetail.get().setSerialNumber(dto.getSerialNumber().trim());
+        deviceDetail.get().setInventoryNumber(dto.getInventoryNumber().trim());
+        deviceDetail.get().setProject(Project.values()[dto.getProjectId()]);
+        deviceDetail.get().setOrigin(Origin.values()[dto.getOriginId()]);
+        deviceDetail.get().setPlatformId(dto.getPlatformId());
+        deviceDetail.get().setRamId(dto.getRamId());
+        deviceDetail.get().setItemTypeId(dto.getItemTypeId());
+        deviceDetail.get().setStorageId(dto.getStorageId());
+        deviceDetail.get().setScreenId(dto.getScreenId());
+        deviceDetail.get().setComments(dto.getComments());
+        deviceDetail.get().setOwnerId(_employeeService.findByUsername(dto.getOwner()).get().getId());
+        deviceDetail.get().setUpdatedDate(new Date());
+        _deviceRepository.save(deviceDetail.get());
+        detailDeviceResponse.setUpdatedDevice(deviceDetail.get());
         return CompletableFuture.completedFuture(new ResponseEntity<>(detailDeviceResponse, OK));
     }
 
@@ -458,9 +460,12 @@ public class DeviceService implements IDeviceService {
             _keeperOrderService.update(keeperOrder);
         }
 
-        Device device = _deviceRepository.findById(input.getDeviceId());
-        device.setStatus(Status.VACANT);
-        _deviceRepository.save(device);
+        Optional<Device> device = _deviceRepository.findById(input.getDeviceId());
+        if (device.isEmpty())
+            return CompletableFuture.completedFuture(new ResponseEntity<>(response, NOT_FOUND));
+
+        device.get().setStatus(Status.VACANT);
+        _deviceRepository.save(device.get());
         response.setKeepDeviceReturned(true);
         response.setOldKeepers(oldKeepers);
         return CompletableFuture.completedFuture(new ResponseEntity<>(response, OK));
@@ -707,6 +712,7 @@ public class DeviceService implements IDeviceService {
     private boolean isKeywordInvalid(String keyword) {
         return keyword.trim().isBlank();
     }
+
     @Async()
     private CompletableFuture<List<DeviceDTO>> applyFilterBookingAndReturnDateForDevices(FilterDeviceDTO deviceFilter, List<DeviceDTO> devices) {
         if (deviceFilter.getBookingDate() != null)
@@ -865,7 +871,7 @@ public class DeviceService implements IDeviceService {
     private CompletableFuture<List<DeviceDTO>> convertEntityToDTO(List<Device> devices) throws ExecutionException, InterruptedException {
         List<DeviceDTO> deviceList = new ArrayList<>();
         for (Device device : devices) {
-            DeviceDTO deviceDTO = new DeviceDTO(device);  /* Convert fields that have an id value to a readable value */
+            DeviceDTO deviceDTO = deviceMapper.deviceToDeviceDto(device);  /* Convert fields that have an id value to a readable value */
             CompletableFuture<List<KeeperOrder>> keeperOrderList = _keeperOrderService.getListByDeviceId(device.getId()); /* Get a list of keeper orders of a device*/
 
             if (keeperOrderList.get().isEmpty()) { /* Were a list empty, we would set a keeper value is a device's owner */
@@ -906,11 +912,14 @@ public class DeviceService implements IDeviceService {
             return CompletableFuture.completedFuture(null);
 
         for (KeeperOrder keeperOrder : keeperOrderList) {
-            Device device = _deviceRepository.findById(keeperOrder.getDevice().getId());
+            Optional<Device> device = _deviceRepository.findById(keeperOrder.getDevice().getId());
+            if (device.isEmpty()){
+                break;
+            }
             List<KeeperOrder> allKeeperOrderList = _keeperOrderService.getListByDeviceId(keeperOrder.getDevice().getId()).get();
             KeeperOrder latestOrder = allKeeperOrderList.stream().max(Comparator.comparing(KeeperOrder::getKeeperNo)).orElse(null); /* Get the latest keeper order of a device*/
             KeeperOrder previousOrder = allKeeperOrderList.stream().filter(k -> k.getKeeperNo() == keeperOrder.getKeeperNo() - 1).findFirst().orElse(null);
-            KeepingDeviceDTO keepingDevice = new KeepingDeviceDTO(device, keeperOrder);
+            KeepingDeviceDTO keepingDevice = new KeepingDeviceDTO(device.get(), keeperOrder);
 
             /* Set max extending date for keepers */
             if (previousOrder != null) {

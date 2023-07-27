@@ -2,6 +2,7 @@ package com.fullstack.Backend.services;
 
 import java.io.IOException;
 import java.text.ParseException;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
@@ -15,7 +16,7 @@ import com.fullstack.Backend.responses.device.DropdownValuesResponse;
 import jakarta.servlet.http.HttpServletResponse;
 
 public interface IDeviceService {
-    public CompletableFuture<Device> getDeviceById(int deviceId);
+    public CompletableFuture<Optional<Device>> getDeviceById(int deviceId);
 
     public CompletableFuture<ResponseEntity<Object>> showDevicesWithPaging(int pageIndex, int pageSize, String sortBy, String sortDir, FilterDeviceDTO dto) throws InterruptedException, ExecutionException;
 

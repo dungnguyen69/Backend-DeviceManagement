@@ -98,20 +98,4 @@ public class Device extends BaseEntity {
 
     @Column()
     private String comments;
-
-    public void loadToEntity(AddDeviceDTO addDeviceDTO) {
-        this.name = addDeviceDTO.getDeviceName();
-        this.itemTypeId = addDeviceDTO.getItemTypeId();
-        this.status = Status.values()[addDeviceDTO.getStatusId()];
-        this.platformId = addDeviceDTO.getPlatformId();
-        this.ramId = addDeviceDTO.getRamId();
-        this.screenId = addDeviceDTO.getScreenId();
-        this.storageId = addDeviceDTO.getStorageId();
-        this.inventoryNumber = addDeviceDTO.getInventoryNumber();
-        this.serialNumber = addDeviceDTO.getSerialNumber();
-        this.comments = addDeviceDTO.getComments();
-        this.project = Project.values()[addDeviceDTO.getProjectId()];
-        this.origin = Origin.values()[addDeviceDTO.getOriginId()];
-        this.setCreatedDate(new Date());
-    }
 }

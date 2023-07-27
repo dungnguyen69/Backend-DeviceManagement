@@ -52,26 +52,4 @@ public class DeviceDTO {
     public Date CreatedDate;
     @JsonProperty("UpdatedDate")
     public Date UpdatedDate;
-
-    public DeviceDTO(Device device) {
-        if (device.getOwner() != null)
-            this.Owner = device.getOwner().getUserName();
-
-        this.Id = device.getId();
-        this.DeviceName = device.getName();
-        this.ItemType = device.getItemType().getName();
-        this.Status = device.getStatus().name();
-        this.PlatformName = device.getPlatform().getName();
-        this.PlatformVersion = device.getPlatform().getVersion();
-        this.RamSize = device.getRam().getSize();
-        this.ScreenSize = device.getScreen().getSize();
-        this.StorageSize = device.getStorage().getSize();
-        this.InventoryNumber = device.getInventoryNumber();
-        this.SerialNumber = device.getSerialNumber();
-        this.Comments = device.getComments();
-        this.Project = device.getProject().name();
-        this.Origin = device.getOrigin().name();
-        this.CreatedDate = device.getCreatedDate();
-        this.UpdatedDate = device.getUpdatedDate();
-    }
 }
