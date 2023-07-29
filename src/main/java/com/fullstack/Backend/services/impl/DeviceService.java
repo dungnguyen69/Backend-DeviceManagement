@@ -52,6 +52,7 @@ import jakarta.servlet.http.HttpServletResponse;
 
 
 @Service
+@CacheConfig(cacheNames = {"device"})
 public class DeviceService implements IDeviceService {
 
     @Autowired
@@ -122,16 +123,14 @@ public class DeviceService implements IDeviceService {
     @Override
     @Transactional
     public CompletableFuture<ResponseEntity<Object>> addDevice(AddDeviceDTO dto) throws ExecutionException, InterruptedException {
-        AddDeviceResponse addDeviceResponse = new AddDeviceResponse();
         List<ErrorMessage> errors = new ArrayList<>();
         checkFieldsWhenAddingDevice(errors, dto);
         if (errors.size() > 0)
             return CompletableFuture.completedFuture(new ResponseEntity<>(errors, NOT_ACCEPTABLE));
-        Device device = deviceMapper.addDeviceDtoToDevice(dto);
-        device.setOwnerId(_employeeService.findByUsername(dto.getOwner()).get().getId());
-        _deviceRepository.save(device);
-        addDeviceResponse.setNewDevice(device);
-        addDeviceResponse.setIsAddedSuccessful(true);
+        Device newDevice = deviceMapper.addDeviceDtoToDevice(dto);
+        newDevice.setOwnerId(_employeeService.findByUsername(dto.getOwner()).get().getId());
+        _deviceRepository.save(newDevice);
+        AddDeviceResponse addDeviceResponse = new AddDeviceResponse(newDevice, true);
         return CompletableFuture.completedFuture(new ResponseEntity<>(addDeviceResponse, OK));
     }
 
