@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheConfig;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -13,6 +15,7 @@ import com.fullstack.Backend.services.IRamService;
 import com.fullstack.Backend.utils.dropdowns.RamList;
 
 @Service
+@CacheConfig(cacheNames = {"ram"})
 public class RamService implements IRamService {
 
     @Autowired
@@ -20,10 +23,12 @@ public class RamService implements IRamService {
 
     @Async
     @Override
+    @Cacheable(key = "size")
     public CompletableFuture<Ram> findBySize(String size) {
         return CompletableFuture.completedFuture(_ramRepository.findBySize(size));
     }
 
+    @Async
     @Override
     public CompletableFuture<Boolean> doesRamExist(int id) {
         return CompletableFuture.completedFuture(_ramRepository.existsById((long) id));
@@ -35,6 +40,7 @@ public class RamService implements IRamService {
         return CompletableFuture.completedFuture(_ramRepository.findRamSize());
     }
 
+    @Async
     @Override
     public CompletableFuture<List<RamList>> fetchRams() {
         return CompletableFuture.completedFuture(_ramRepository.fetchRams());

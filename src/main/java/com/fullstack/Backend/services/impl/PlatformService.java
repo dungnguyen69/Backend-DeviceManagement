@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheConfig;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -13,6 +15,7 @@ import com.fullstack.Backend.services.IPlatformService;
 import com.fullstack.Backend.utils.dropdowns.PlatformList;
 
 @Service
+@CacheConfig(cacheNames = {"platform"})
 public class PlatformService implements IPlatformService {
 
 	@Autowired
@@ -34,6 +37,7 @@ public class PlatformService implements IPlatformService {
 		return CompletableFuture.completedFuture(_platformRepository.findPlatformNameVersion());
 	}
 
+	@Async
 	@Override
 	public CompletableFuture<Boolean> doesPlatformExist(int id) {
 		return CompletableFuture.completedFuture(_platformRepository.existsById((long) id));
@@ -41,9 +45,12 @@ public class PlatformService implements IPlatformService {
 
 	@Async
 	@Override
+	@Cacheable(key="{#name, #version}")
 	public CompletableFuture<Platform> findByNameAndVersion(String name, String version) {
 		return CompletableFuture.completedFuture(_platformRepository.findByNameAndVersion(name, version));
 	}
+
+	@Async
 	@Override
 	public CompletableFuture<List<PlatformList>> fetchPlatform() {
 		return CompletableFuture.completedFuture(_platformRepository.fetchPlatform());

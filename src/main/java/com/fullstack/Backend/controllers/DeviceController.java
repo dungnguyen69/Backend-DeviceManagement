@@ -1,6 +1,7 @@
 package com.fullstack.Backend.controllers;
 
 import com.fullstack.Backend.dto.request.ReturnKeepDeviceDTO;
+import com.fullstack.Backend.responses.device.DetailDeviceResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.IOException;
@@ -45,7 +46,7 @@ public class DeviceController {
 
     @GetMapping("/warehouse/{id}")
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
-    public CompletableFuture<ResponseEntity<Object>> getDetailDevice(
+    public DetailDeviceResponse getDetailDevice(
             @PathVariable(value = "id") int deviceId)
             throws InterruptedException, ExecutionException {
         return _deviceService.getDetailDevice(deviceId);

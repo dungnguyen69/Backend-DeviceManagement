@@ -23,6 +23,7 @@ import jakarta.transaction.Transactional;
 import net.bytebuddy.utility.RandomString;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
@@ -47,6 +48,7 @@ import static org.springframework.http.HttpStatus.OK;
 
 
 @Service
+@CacheConfig(cacheNames = {"user"})
 public class UserService implements IUserService, UserDetailsService {
     @Autowired
     private JwtUtils jwtUtils;
@@ -75,12 +77,21 @@ public class UserService implements IUserService, UserDetailsService {
     @Value("${spring.mail.username}")
     private String fromAddress;
 
+    @Override
+    @Transactional
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        User user = _userRepository.findByUserName(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User Not Found with username: " + username));
+        return UserDetailsImpl.build(user);
+    }
+
     @Async
     @Override
     public CompletableFuture<User> findById(int id) {
         return CompletableFuture.completedFuture(_userRepository.findById(id));
     }
 
+    @Async
     @Override
     public CompletableFuture<Boolean> doesUserExist(int id) {
         return CompletableFuture.completedFuture(_userRepository.existsById((long) id));
@@ -100,25 +111,6 @@ public class UserService implements IUserService, UserDetailsService {
         users = fetchFilteredUsers(dto, users).get();
         List<UserDTO> usersList = users.stream().map(UserDTO::new).collect(Collectors.toList());
         return CompletableFuture.completedFuture(usersList);
-    }
-
-    @Async()
-    public CompletableFuture<List<User>> fetchFilteredUsers(FilterUserDTO dto, List<User> users) {
-        if (dto.getBadgeId() != null)
-            users = users.stream().filter(user -> user.getBadgeId().equalsIgnoreCase(dto.getBadgeId())).collect(Collectors.toList());
-        if (dto.getUserName() != null)
-            users = users.stream().filter(user -> user.getUserName().equalsIgnoreCase(dto.getUserName())).collect(Collectors.toList());
-        if (dto.getFirstName() != null)
-            users = users.stream().filter(user -> user.getFirstName().equalsIgnoreCase(dto.getFirstName())).collect(Collectors.toList());
-        if (dto.getLastName() != null)
-            users = users.stream().filter(user -> user.getLastName().equalsIgnoreCase(dto.getLastName())).collect(Collectors.toList());
-        if (dto.getEmail() != null)
-            users = users.stream().filter(user -> user.getEmail().equalsIgnoreCase(dto.getEmail())).collect(Collectors.toList());
-        if (dto.getPhoneNumber() != null)
-            users = users.stream().filter(user -> user.getPhoneNumber().equalsIgnoreCase(dto.getPhoneNumber())).collect(Collectors.toList());
-        if (dto.getProject() != null)
-            users = users.stream().filter(user -> user.getProject().equalsIgnoreCase(dto.getProject())).collect(Collectors.toList());
-        return CompletableFuture.completedFuture(users);
     }
 
     @Async
@@ -145,6 +137,7 @@ public class UserService implements IUserService, UserDetailsService {
 
     @Async
     @Override
+    @Transactional
     public CompletableFuture<ResponseEntity<Object>> registerUser(RegisterDTO registerRequest, String siteURL) throws MessagingException {
         if (nameExists(registerRequest.getUserName())) {
             return CompletableFuture.completedFuture(ResponseEntity
@@ -176,7 +169,7 @@ public class UserService implements IUserService, UserDetailsService {
                 .orElseThrow(() -> new RuntimeException("Role is not found."));
         roles.add(userRole);
         user.setSystemRoles(roles);
-        _userRepository.save(user);
+        save(user);
         createVerificationToken(user, token);
         String verifyURL = baseUrl + "/email-verification?token=" + token;
         sendVerificationEmail(user, verifyURL);
@@ -184,6 +177,7 @@ public class UserService implements IUserService, UserDetailsService {
                 MessageResponse("User registered successfully!")));
     }
 
+    @Async
     @Override
     public void sendVerificationEmail(User user, String verifyURL) throws MessagingException {
         String toAddress = user.getEmail();
@@ -206,6 +200,7 @@ public class UserService implements IUserService, UserDetailsService {
 
     @Async
     @Override
+    @Transactional
     public CompletableFuture<ResponseEntity<Object>> verify(String verificationCode) throws ExecutionException, InterruptedException {
         final VerificationToken verificationToken = getVerificationToken(verificationCode).get();
         MessageResponse messageResponse;
@@ -226,7 +221,7 @@ public class UserService implements IUserService, UserDetailsService {
         }
 
         userByToken.setEnabled(true);
-        _userRepository.save(userByToken);
+        save(userByToken);
         _tokenRepository.delete(verificationToken);
         messageResponse = new MessageResponse("Verify successfully");
         messageResponse.setStatus("VALID");
@@ -251,11 +246,14 @@ public class UserService implements IUserService, UserDetailsService {
         return CompletableFuture.completedFuture(new ResponseEntity<Object>(response, OK));
     }
 
+    @Async
     @Override
+    @Transactional
     public void save(User user) {
         _userRepository.save(user);
     }
 
+    @Async
     @Override
     public void createVerificationToken(User user, String token) {
         VerificationToken myToken = new VerificationToken(token, user);
@@ -297,6 +295,7 @@ public class UserService implements IUserService, UserDetailsService {
 
     @Async
     @Override
+    @Transactional
     public CompletableFuture<VerificationToken> generateNewVerificationToken(String existingVerificationToken) throws ExecutionException, InterruptedException {
         VerificationToken vToken = getVerificationToken(existingVerificationToken).get();
         vToken.updateToken(RandomString.make(64));
@@ -316,6 +315,7 @@ public class UserService implements IUserService, UserDetailsService {
 
     @Async
     @Override
+    @Transactional
     public CompletableFuture<ResponseEntity<Object>> sendResetPasswordEmail(String siteURL, String userEmail) throws ExecutionException, InterruptedException, MessagingException {
         String token = RandomString.make(64);
         CompletableFuture<User> user = findByEmail(userEmail);
@@ -367,6 +367,7 @@ public class UserService implements IUserService, UserDetailsService {
 
     @Async
     @Override
+    @Transactional
     public CompletableFuture<ResponseEntity<Object>> saveForgotPassword(ForgotPasswordDTO dto) throws ExecutionException, InterruptedException, MessagingException {
         CompletableFuture<User> user = findByToken(dto.getToken());
         if (user == null)
@@ -393,12 +394,12 @@ public class UserService implements IUserService, UserDetailsService {
 
     @Async
     @Override
-    public CompletableFuture<ResponseEntity<Object>> verifyPasswordToken(String token){
+    public CompletableFuture<ResponseEntity<Object>> verifyPasswordToken(String token) {
         final Calendar cal = Calendar.getInstance();
         /* Validate token */
         final PasswordResetToken passToken = _passwordResetTokenRepository.findByToken(token);
         MessageResponse messageResponse;
-        if (passToken == null){
+        if (passToken == null) {
             messageResponse = new MessageResponse("User is not valid because token is not existent");
             messageResponse.setStatus("INVALID");
             return CompletableFuture.completedFuture(ResponseEntity
@@ -407,7 +408,7 @@ public class UserService implements IUserService, UserDetailsService {
         }
 
         boolean isTokenExpired = passToken.getExpiryDate().before(cal.getTime());
-        if(isTokenExpired){
+        if (isTokenExpired) {
             messageResponse = new MessageResponse("User is not valid because token is expired");
             messageResponse.setStatus("EXPIRED");
             return CompletableFuture.completedFuture(ResponseEntity
@@ -421,7 +422,8 @@ public class UserService implements IUserService, UserDetailsService {
                 .ok()
                 .body(messageResponse));
     }
-    @Async()
+
+    @Async
     @Override
     public CompletableFuture<ResponseEntity<Object>> getSuggestKeywordUsers(int fieldColumn, String keyword, FilterUserDTO filter) throws InterruptedException, ExecutionException {
         if (keyword.trim().isBlank())
@@ -437,17 +439,20 @@ public class UserService implements IUserService, UserDetailsService {
 
     @Async
     @Override
+    @Transactional
     public CompletableFuture<ResponseEntity<Object>> providePermission(int userId, String permission) throws ExecutionException, InterruptedException {
         User user = findById(userId).get();
         SystemRole userRole = _systemRoleRepository.findByName(permission).orElseThrow(() -> new RuntimeException("Role is not found."));
         Set<SystemRole> roles = new HashSet<>();
         roles.add(userRole);
         user.setSystemRoles(roles);
-        _userRepository.save(user);
+        save(user);
         return CompletableFuture.completedFuture(ResponseEntity.ok(new MessageResponse("UPDATED SUCCESSFULLY!")));
     }
 
+    @Async
     @Override
+    @Transactional
     public CompletableFuture<ResponseEntity<Object>> updateProfile(ProfileDTO request) throws ExecutionException, InterruptedException {
         User user = findById(request.getId()).get();
         if (user == null)
@@ -460,7 +465,7 @@ public class UserService implements IUserService, UserDetailsService {
         user.setLastName(request.getLastName());
         user.setEmail(request.getEmail());
         user.setPhoneNumber(request.getPhoneNumber());
-        _userRepository.save(user);
+        save(user);
         return CompletableFuture.completedFuture(ResponseEntity.ok(new MessageResponse("UPDATED SUCCESSFULLY!")));
     }
 
@@ -522,6 +527,7 @@ public class UserService implements IUserService, UserDetailsService {
         return _userRepository.existsByEmail(email);
     }
 
+    @Async
     private void formatFilter(FilterUserDTO dto) {
         if (dto.getBadgeId() != null) dto.setBadgeId(dto.getBadgeId().trim().toLowerCase());
 
@@ -558,6 +564,7 @@ public class UserService implements IUserService, UserDetailsService {
         return (listSize / pageSize) + 1;
     }
 
+    @Async
     private void resendVerificationEmail(User user, String verifyURL) throws MessagingException {
         String toAddress = user.getEmail();
         String subject = "Resend Verification Email";
@@ -580,7 +587,7 @@ public class UserService implements IUserService, UserDetailsService {
     @Async
     private String generateResetPasswordToken(String existingToken) throws ExecutionException, InterruptedException {
         PasswordResetToken rpToken = getResetPasswordToken(existingToken);
-        if(rpToken == null)
+        if (rpToken == null)
             return null;
         rpToken.updateToken();
         rpToken.setToken(RandomString.make(64));
@@ -588,16 +595,21 @@ public class UserService implements IUserService, UserDetailsService {
         return rpToken.getToken();
     }
 
+    @Async
+    @Transactional
     private void changeUserPassword(User user, String password) {
         user.setPassword(encoder.encode(password));
         _userRepository.save(user);
     }
 
+    @Async
+    @Transactional
     private void createPasswordResetTokenForUser(User user, String token) {
         PasswordResetToken myToken = new PasswordResetToken(token, user);
         _passwordResetTokenRepository.save(myToken);
     }
 
+    @Async
     private void sendResetPasswordEmail(User user, String verifyURL) throws MessagingException {
         String toAddress = user.getEmail();
         String subject = "Reset password";
@@ -615,6 +627,7 @@ public class UserService implements IUserService, UserDetailsService {
         mailSender.send(message);
     }
 
+    @Async
     private String generateBadgeId() {
         char[] chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".toCharArray();
         Random random = new Random();
@@ -624,11 +637,22 @@ public class UserService implements IUserService, UserDetailsService {
         return sb.toString();
     }
 
-    @Override
-//    @Transactional
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = _userRepository.findByUserName(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User Not Found with username: " + username));
-        return UserDetailsImpl.build(user);
+    @Async
+    private CompletableFuture<List<User>> fetchFilteredUsers(FilterUserDTO dto, List<User> users) {
+        if (dto.getBadgeId() != null)
+            users = users.stream().filter(user -> user.getBadgeId().equalsIgnoreCase(dto.getBadgeId())).collect(Collectors.toList());
+        if (dto.getUserName() != null)
+            users = users.stream().filter(user -> user.getUserName().equalsIgnoreCase(dto.getUserName())).collect(Collectors.toList());
+        if (dto.getFirstName() != null)
+            users = users.stream().filter(user -> user.getFirstName().equalsIgnoreCase(dto.getFirstName())).collect(Collectors.toList());
+        if (dto.getLastName() != null)
+            users = users.stream().filter(user -> user.getLastName().equalsIgnoreCase(dto.getLastName())).collect(Collectors.toList());
+        if (dto.getEmail() != null)
+            users = users.stream().filter(user -> user.getEmail().equalsIgnoreCase(dto.getEmail())).collect(Collectors.toList());
+        if (dto.getPhoneNumber() != null)
+            users = users.stream().filter(user -> user.getPhoneNumber().equalsIgnoreCase(dto.getPhoneNumber())).collect(Collectors.toList());
+        if (dto.getProject() != null)
+            users = users.stream().filter(user -> user.getProject().equalsIgnoreCase(dto.getProject())).collect(Collectors.toList());
+        return CompletableFuture.completedFuture(users);
     }
 }

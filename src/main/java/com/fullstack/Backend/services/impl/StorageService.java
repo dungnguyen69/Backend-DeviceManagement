@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheConfig;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -13,16 +15,20 @@ import com.fullstack.Backend.services.IStorageService;
 import com.fullstack.Backend.utils.dropdowns.StorageList;
 
 @Service
+@CacheConfig(cacheNames = {"storage"})
 public class StorageService implements IStorageService {
 
 	@Autowired
     StorageRepository _storageRepository;
+
 	@Async
 	@Override
+	@Cacheable(key = "size")
 	public CompletableFuture<Storage> findBySize(String size) {
 		return CompletableFuture.completedFuture(_storageRepository.findBySize(size));
 	}
 
+	@Async
 	@Override
 	public CompletableFuture<Boolean> doesStorageExist(int id) {
 		return CompletableFuture.completedFuture(_storageRepository.existsById((long) id));
@@ -33,6 +39,8 @@ public class StorageService implements IStorageService {
 	public CompletableFuture<List<String>> getStorageList() {
 		return CompletableFuture.completedFuture(_storageRepository.findStorageSize());
 	}
+
+	@Async
 	@Override
 	public CompletableFuture<List<StorageList>> fetchStorage() {
 		return CompletableFuture.completedFuture(_storageRepository.fetchStorage());

@@ -9,6 +9,7 @@ import java.util.concurrent.ExecutionException;
 import com.fullstack.Backend.dto.device.*;
 import com.fullstack.Backend.dto.request.ReturnKeepDeviceDTO;
 import com.fullstack.Backend.entities.Device;
+import com.fullstack.Backend.responses.device.DetailDeviceResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
 import com.fullstack.Backend.responses.device.DropdownValuesResponse;
@@ -22,11 +23,11 @@ public interface IDeviceService {
 
     public CompletableFuture<ResponseEntity<Object>> addDevice(AddDeviceDTO dto) throws ExecutionException, InterruptedException;
 
-    public CompletableFuture<ResponseEntity<Object>> getDetailDevice(int deviceId) throws InterruptedException, ExecutionException;
+    public DetailDeviceResponse getDetailDevice(int deviceId) throws InterruptedException, ExecutionException;
 
     public CompletableFuture<ResponseEntity<Object>> updateDevice(int deviceId, UpdateDeviceDTO device) throws ExecutionException, InterruptedException;
 
-    public CompletableFuture<ResponseEntity<Object>> deleteDevice(int deviceId);
+    public CompletableFuture<ResponseEntity<Object>> deleteDevice(int deviceId) throws ExecutionException, InterruptedException;
 
     public void exportToExcel(HttpServletResponse response) throws IOException, ExecutionException, InterruptedException;
 

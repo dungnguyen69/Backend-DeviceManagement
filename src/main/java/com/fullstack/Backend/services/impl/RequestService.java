@@ -15,7 +15,12 @@ import com.fullstack.Backend.responses.request.SubmitBookingResponse;
 import com.fullstack.Backend.responses.users.MessageResponse;
 import com.fullstack.Backend.services.*;
 import com.fullstack.Backend.utils.RequestFails;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheConfig;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
@@ -32,6 +37,7 @@ import static com.fullstack.Backend.constant.constant.*;
 import static org.springframework.http.HttpStatus.*;
 
 @Service
+@CacheConfig(cacheNames = {"request"})
 public class RequestService implements IRequestService {
     @Autowired
     RequestRepository _requestRepository;
@@ -44,6 +50,7 @@ public class RequestService implements IRequestService {
 
     @Async
     @Override
+    @Transactional
     public CompletableFuture<SubmitBookingResponse> submitBookingRequest(SubmitBookingRequestDTO requests) throws InterruptedException, ExecutionException {
         List<RequestFails> requestFails = new ArrayList<>();
         List<Request> requestSuccessful = new ArrayList<>();
@@ -188,6 +195,8 @@ public class RequestService implements IRequestService {
 
     @Async
     @Override
+    @Transactional
+    @Caching(evict = @CacheEvict(value = {"device"}, allEntries = true))
     public CompletableFuture<ResponseEntity<Object>> updateRequestStatus(UpdateStatusRequestDTO requestDTO) throws InterruptedException, ExecutionException {
         Optional<Request> request = _requestRepository.findById((long) requestDTO.getRequestId());
 
@@ -249,6 +258,8 @@ public class RequestService implements IRequestService {
 
     @Async
     @Override
+    @Transactional
+    @Caching(evict = @CacheEvict(value = {"device"}, allEntries = true))
     public CompletableFuture<ResponseEntity<Object>> extendDurationRequest(ExtendDurationRequestDTO request) throws InterruptedException, ExecutionException, ParseException {
         /*
             SHOW MAX EXTENDING RETURN DATE IN SHOWING ALL KEEPING DEVICE PAGE
@@ -308,18 +319,24 @@ public class RequestService implements IRequestService {
         return CompletableFuture.completedFuture(_requestRepository.findAnOccupiedRequest(nextKeeperId, deviceId));
     }
 
+    @Async
     @Override
+    @CachePut
+    @Transactional
     public void updateRequest(Request request) {
         _requestRepository.save(request);
     }
 
+    @Async
     @Override
     public boolean findRequestBasedOnStatusAndDevice(int deviceId, int requestStatus) {
         List<Request> requests = _requestRepository.findRequestBasedOnStatusAndDevice(deviceId, requestStatus);
         return requests.size() != 0;
     }
 
+    @Async
     @Override
+    @Transactional
     public void deleteRequestBasedOnStatusAndDevice(int deviceId, int requestStatus) {
         if (findRequestBasedOnStatusAndDevice(deviceId, requestStatus)) {
             List<Request> requests = _requestRepository.findRequestBasedOnStatusAndDevice(deviceId, requestStatus);
@@ -329,6 +346,7 @@ public class RequestService implements IRequestService {
         }
     }
 
+    @Async
     private void addToRequestFails(List<RequestFails> requestFails, RequestFails requestFail, List<String> error) {
         requestFail.setErrorMessage(error);
         requestFails.add(requestFail);
@@ -381,6 +399,7 @@ public class RequestService implements IRequestService {
         return CompletableFuture.completedFuture(requests);
     }
 
+    @Async
     private int getTotalPages(int pageSize, int listSize) {
         if (listSize == 0)
             return 1;
@@ -391,6 +410,7 @@ public class RequestService implements IRequestService {
         return (listSize / pageSize) + 1;
     }
 
+    @Async
     private void formatFilter(RequestFilterDTO requestFilter) {
         if (requestFilter.getRequester() != null)
             requestFilter.setRequester(requestFilter.getRequester().trim().toLowerCase());
@@ -418,15 +438,19 @@ public class RequestService implements IRequestService {
         return CompletableFuture.completedFuture(requests);
     }
 
+    @Async
     private boolean isExtendingRequestViewableForNonAcceptorRequester(Request request, int employeeId) {
         return !(request.getRequestStatus() == EXTENDING && employeeId == request.getRequester().getId() && employeeId != request.getAccepter().getId());
     }
 
+    @Async
     private boolean isRequestListInvalid(List<Request> requestList) {
         return requestList != null;
     }
 
     /* The old transferred request's status will be changed to CANCELLED for EXTENDING CASE */
+    @Async
+    @Transactional
     private void changeOldRequest(Request request) {
         List<Request> preExtendDurationRequest = _requestRepository.findDeviceRelatedApprovedRequest(request.getId(), request.getCurrentKeeper_Id(), request.getDevice().getId(), TRANSFERRED);
         if (isRequestListInvalid(preExtendDurationRequest)) {
@@ -439,6 +463,8 @@ public class RequestService implements IRequestService {
     }
 
     /* Change device status to OCCUPIED when a request is approved */
+    @Async
+    @Transactional
     private void changeDeviceStatusToOccupied(Request request) throws ExecutionException, InterruptedException {
         Optional<Device> device = _deviceRepository.findById(request.getDevice().getId());
         if (device.isEmpty()) {
@@ -451,11 +477,14 @@ public class RequestService implements IRequestService {
     }
 
     /* Get the latest keeper order's number */
+    @Async
     private int returnKeeperNo(List<KeeperOrder> keeperOrderList) {
         return keeperOrderList.size() > 0 ? keeperOrderList.stream().max(Comparator.comparing(KeeperOrder::getKeeperNo)).map(KeeperOrder::getKeeperNo).get() : 0;
     }
 
     /* Cancel all related pending requests except the SUBMITTED request */
+    @Async
+    @Transactional
     private void cancelRelatedPendingRequest(Request request) {
         List<Request> relatedRequests = _requestRepository.findDeviceRelatedApprovedRequest(request.getId(), request.getCurrentKeeper_Id(), request.getDevice().getId(), PENDING);
         if (isRequestListInvalid(relatedRequests)) {
@@ -468,6 +497,8 @@ public class RequestService implements IRequestService {
     }
 
     /* Cancel all related extending requests except the SUBMITTED request */
+    @Async
+    @Transactional
     private void cancelRelatedExtendingRequest(Request request) {
         List<Request> relatedRequests = _requestRepository.findDeviceRelatedApprovedRequest(request.getId(), request.getCurrentKeeper_Id(), request.getDevice().getId(), EXTENDING);
         if (isRequestListInvalid(relatedRequests)) {
@@ -489,6 +520,7 @@ public class RequestService implements IRequestService {
         return CompletableFuture.completedFuture(currentKeeperOrder);
     }
 
+    @Async
     private String checkExtendDurationRequest(ExtendDurationRequestDTO request, User nextKeeper, Device device) throws ExecutionException, InterruptedException {
         if (request.getReturnDate() == null)
             return "Return date must not be empty!";
@@ -511,40 +543,50 @@ public class RequestService implements IRequestService {
         return null;
     }
 
+    @Async
     private boolean isUserInvalid(User user) {
         return user == null;
     }
 
+    @Async
     private boolean isDeviceInvalid(Device device) {
         return device == null;
     }
 
+    @Async
     private boolean isRequestInvalid(Request request) {
         return request == null;
     }
 
+    @Async
     private boolean isReturnDateBeforeCurrentRequest(ExtendDurationRequestDTO request, Request currentRequest) {
         return request.getReturnDate().before(currentRequest.getReturnDate());
     }
 
+    @Async
     private boolean isCurrentOrderInvalid(KeeperOrder currentKeeperOrder) {
         return currentKeeperOrder == null;
     }
 
+    @Async
     private boolean isKeeperNoGreaterThan1(KeeperOrder currentKeeperOrder) {
         return currentKeeperOrder.getKeeperNo() > 1;
     }
 
+    @Async
     private boolean doesReturnDateExceedLimitation(ExtendDurationRequestDTO newRequest, List<KeeperOrder> keeperOrderList, int currentOrderNumber) {
         KeeperOrder previousKeeperOrder = keeperOrderList.stream().filter(k -> k.getKeeperNo() == currentOrderNumber - 1).findFirst().get();
         return newRequest.getReturnDate().after(previousKeeperOrder.getDueDate());
     }
 
+    @Async
+    @Transactional
     private void changeStatus(Request request, int requestStatus) {
         request.setRequestStatus(requestStatus);
         _requestRepository.save(request);
     }
 
+    @Async
     private void setUpRequestFail(RequestFails requestFail, SubmitBookingRequestDTO.RequestInput request, Device device) {
         requestFail.setDeviceId(request.getDeviceId());
         requestFail.setRequester(request.getRequester().trim());
@@ -554,18 +596,22 @@ public class RequestService implements IRequestService {
         requestFail.setDeviceName(device.getName().trim());
     }
 
+    @Async
     private boolean isSubmittedRequestExistentInDatabase(int requesterId, int ownerId, int nextKeeperId, int deviceId) {
         return _requestRepository.findRepetitiveRequest(requesterId, ownerId, nextKeeperId, deviceId) != null;
     }
 
+    @Async
     private boolean areSubmittedRequestIdentical(Request oldRequest, Request newRequest) {
         return oldRequest.getDevice_Id() == newRequest.getDevice_Id() && oldRequest.getRequester_Id() == newRequest.getRequester_Id() && oldRequest.getNextKeeper_Id() == newRequest.getNextKeeper_Id();
     }
 
+    @Async
     private boolean areDeviceIdenticalWhenSubmitting(Request oldRequest, Request newRequest) {
         return oldRequest.getDevice_Id() == newRequest.getDevice_Id();
     }
 
+    @Async
     private boolean checkRequestWhenSubmitting(List<Request> requestSuccessful, Request newRequest) {
         for (Request oldRequest : requestSuccessful) {
             if (areSubmittedRequestIdentical(oldRequest, newRequest))
@@ -574,6 +620,7 @@ public class RequestService implements IRequestService {
         return false;
     }
 
+    @Async
     private boolean checkWhenDevicesAreSimilar(List<Request> requestSuccessful, Request newRequest) {
         for (Request oldRequest : requestSuccessful) {
             if (areDeviceIdenticalWhenSubmitting(oldRequest, newRequest))
@@ -582,6 +629,7 @@ public class RequestService implements IRequestService {
         return false;
     }
 
+    @Async
     private void addRequestToList(Request requestData, List<Request> requestSuccessful, int userId) {
         requestData.setAccepter_Id(userId);
         requestData.setCurrentKeeper_Id(userId);
@@ -589,6 +637,7 @@ public class RequestService implements IRequestService {
         requestSuccessful.add(requestData);
     }
 
+    @Async
     private void checkAnEmptyList(SubmitBookingRequestDTO requests, List<RequestFails> requestFails) {
         if (requests.getRequestsList().size() == 0) {
             RequestFails requestFail = new RequestFails();
@@ -599,6 +648,7 @@ public class RequestService implements IRequestService {
         }
     }
 
+    @Async
     private void validateRequestInput(List<String> error, Device device, User requester, User nextKeeper, SubmitBookingRequestDTO.RequestInput request) {
         boolean isDeviceUsable = !device.getStatus().name().equalsIgnoreCase("broken") && !device.getStatus().name().equalsIgnoreCase("unavailable"),
                 isNextKeeperValid = nextKeeper != null && !request.getNextKeeper().trim().equalsIgnoreCase(device.getOwner().getUserName()),
@@ -624,6 +674,7 @@ public class RequestService implements IRequestService {
         }
     }
 
+    @Async
     private void addRequestWhenOrderIsNotTheFirst(List<KeeperOrder> keeperOrderListByDeviceId, SubmitBookingRequestDTO.RequestInput submittedRequestDTO, Request requestData,
                                                   List<RequestFails> requestFails, RequestFails requestFail, List<String> error, List<Request> requestSuccessful) {
         for (KeeperOrder keeperOrder : keeperOrderListByDeviceId) {
