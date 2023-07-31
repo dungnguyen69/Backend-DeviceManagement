@@ -10,6 +10,7 @@ import com.fullstack.Backend.dto.device.*;
 import com.fullstack.Backend.dto.request.ReturnKeepDeviceDTO;
 import com.fullstack.Backend.entities.Device;
 import com.fullstack.Backend.responses.device.DetailDeviceResponse;
+import com.fullstack.Backend.responses.device.UpdateDeviceResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
 import com.fullstack.Backend.responses.device.DropdownValuesResponse;
@@ -17,7 +18,6 @@ import com.fullstack.Backend.responses.device.DropdownValuesResponse;
 import jakarta.servlet.http.HttpServletResponse;
 
 public interface IDeviceService {
-    public CompletableFuture<Optional<Device>> getDeviceById(int deviceId);
 
     public CompletableFuture<ResponseEntity<Object>> showDevicesWithPaging(int pageIndex, int pageSize, String sortBy, String sortDir, FilterDeviceDTO dto) throws InterruptedException, ExecutionException;
 
@@ -25,7 +25,7 @@ public interface IDeviceService {
 
     public DetailDeviceResponse getDetailDevice(int deviceId) throws InterruptedException, ExecutionException;
 
-    public ResponseEntity<Object> updateDevice(int deviceId, UpdateDeviceDTO device) throws ExecutionException, InterruptedException;
+    public UpdateDeviceResponse updateDevice(int deviceId, UpdateDeviceDTO device) throws ExecutionException, InterruptedException;
 
     public CompletableFuture<ResponseEntity<Object>> deleteDevice(int deviceId) throws ExecutionException, InterruptedException;
 
@@ -40,8 +40,6 @@ public interface IDeviceService {
     public CompletableFuture<ResponseEntity<Object>> getSuggestKeywordDevices(int fieldColumn, String keyword, FilterDeviceDTO dto) throws InterruptedException, ExecutionException;
 
     public CompletableFuture<DropdownValuesResponse> getDropDownValues() throws InterruptedException, ExecutionException;
-
-    public CompletableFuture<Boolean> doesDeviceExist(int deviceId);
 
     public CompletableFuture<ResponseEntity<Object>> getSuggestKeywordOwnedDevices(int ownerId, int fieldColumn, String keyword, FilterDeviceDTO dto) throws InterruptedException, ExecutionException;
 

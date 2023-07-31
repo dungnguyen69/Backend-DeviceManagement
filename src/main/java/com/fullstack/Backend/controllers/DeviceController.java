@@ -2,6 +2,7 @@ package com.fullstack.Backend.controllers;
 
 import com.fullstack.Backend.dto.request.ReturnKeepDeviceDTO;
 import com.fullstack.Backend.responses.device.DetailDeviceResponse;
+import com.fullstack.Backend.responses.device.UpdateDeviceResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.IOException;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import static com.fullstack.Backend.constant.constant.*;
+import static org.springframework.http.HttpStatus.*;
 
 import com.fullstack.Backend.dto.device.AddDeviceDTO;
 import com.fullstack.Backend.dto.device.FilterDeviceDTO;
@@ -25,9 +27,11 @@ import com.fullstack.Backend.responses.device.DropdownValuesResponse;
 import com.fullstack.Backend.services.IDeviceService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
 @RestController
 @RequestMapping("/api/devices")
+@EnableWebMvc
 public class DeviceController {
 
     @Autowired
@@ -46,13 +50,18 @@ public class DeviceController {
 
     @GetMapping("/warehouse/{id}")
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")
-    public DetailDeviceResponse getDetailDevice(
+    public ResponseEntity<Object> getDetailDevice(
             @PathVariable(value = "id") int deviceId)
             throws InterruptedException, ExecutionException {
-        return _deviceService.getDetailDevice(deviceId);
+        DetailDeviceResponse detailDeviceResponse = _deviceService.getDetailDevice(deviceId);
+
+        if (detailDeviceResponse.getDetailDevice() == null)
+            return new ResponseEntity<>(detailDeviceResponse, BAD_REQUEST);
+
+        return new ResponseEntity<>(detailDeviceResponse, OK);
     }
 
-    @PostMapping("/warehouse")
+    @PostMapping(value = "/warehouse", consumes = {"application/json"}, produces = {"application/json"})
     @ResponseBody
     @PreAuthorize("hasRole('MODERATOR') or hasRole('ADMIN')")
     public CompletableFuture<ResponseEntity<Object>> addANewDevice(
@@ -64,10 +73,15 @@ public class DeviceController {
     @PutMapping("/warehouse/{id}")
     @ResponseBody
     @PreAuthorize("hasRole('MODERATOR') or hasRole('ADMIN')")
-    public CompletableFuture<ResponseEntity<Object>> updateDevice(
+    public ResponseEntity<Object> updateDevice(
             @PathVariable(value = "id") int deviceId,
             @Valid @RequestBody UpdateDeviceDTO device) throws InterruptedException, ExecutionException {
-        return _deviceService.updateDevice(deviceId, device);
+
+        UpdateDeviceResponse detailDeviceResponse = _deviceService.updateDevice(deviceId, device);
+        if (detailDeviceResponse.getErrors() != null) {
+            return new ResponseEntity<>(detailDeviceResponse, BAD_REQUEST);
+        }
+        return new ResponseEntity<>(detailDeviceResponse, OK);
     }
 
     @GetMapping("/warehouse/suggestion")

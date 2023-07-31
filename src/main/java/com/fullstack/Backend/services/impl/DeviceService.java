@@ -87,20 +87,12 @@ public class DeviceService implements IDeviceService {
     @Autowired
     DeviceMapper deviceMapper;
 
-
-    @Async
-    @Override
-    public CompletableFuture<Optional<Device>> getDeviceById(int deviceId) {
-        log.info("Info: " + deviceId);
-        return CompletableFuture.completedFuture(_deviceRepository.findById(deviceId));
-    }
-
     @Async
     @Override
     public CompletableFuture<ResponseEntity<Object>> showDevicesWithPaging(int pageIndex, int pageSize, String sortBy, String sortDir, FilterDeviceDTO deviceFilter) throws InterruptedException, ExecutionException {
         Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
         List<Device> devices = _deviceRepository.findAll(sort);
-        List<DeviceDTO> deviceList = getAllDevices(devices, deviceFilter).get();
+        List<DeviceDTO> deviceList = getAllDevices(devices, deviceFilter);
         /* Return lists for filtering purposes*/
         List<String> statusList = deviceList.stream().map(DeviceDTO::getStatus).distinct().collect(Collectors.toList());
         List<String> originList = deviceList.stream().map(DeviceDTO::getOrigin).distinct().collect(Collectors.toList());
@@ -109,18 +101,12 @@ public class DeviceService implements IDeviceService {
         List<String> keeperNumberOptions = List.of(new String[]{"LESS THAN 3", "EQUAL TO 3"});
         /* */
         int totalElements = deviceList.size();
-        deviceList = getPage(deviceList, pageIndex, pageSize).get(); /*Pagination*/
+        deviceList = getPage(deviceList, pageIndex, pageSize); /*Pagination*/
         /* Return the desired response*/
         DeviceInWarehouseResponse deviceResponse = new DeviceInWarehouseResponse(
                 deviceList, statusList, originList, projectList, itemTypeList, keeperNumberOptions,
                 pageIndex, pageSize, totalElements, getTotalPages(pageSize, totalElements));
         return CompletableFuture.completedFuture(new ResponseEntity<>(deviceResponse, OK));
-    }
-
-    @Async
-    @Override
-    public CompletableFuture<Boolean> doesDeviceExist(int deviceId) {
-        return CompletableFuture.completedFuture(!_deviceRepository.existsById((long) deviceId));
     }
 
     @Async
@@ -151,7 +137,7 @@ public class DeviceService implements IDeviceService {
     public DetailDeviceResponse getDetailDevice(int deviceId) throws InterruptedException, ExecutionException {
         System.out.print("fetching from DB! \n");
         DetailDeviceResponse response = new DetailDeviceResponse();
-        Optional<Device> deviceDetail = getDeviceById(deviceId).get();
+        Optional<Device> deviceDetail = getDeviceById(deviceId);
 
         if (deviceDetail.isEmpty())
             return response;
@@ -177,33 +163,35 @@ public class DeviceService implements IDeviceService {
     }
 
     @Override
-    @CachePut(key = "#dto.id")
+    @CacheEvict(value = "detail_device", key = "#deviceId")
     @Transactional
-    public ResponseEntity<Object> updateDevice(int deviceId, UpdateDeviceDTO dto) throws ExecutionException, InterruptedException {
+    public UpdateDeviceResponse updateDevice(int deviceId, UpdateDeviceDTO dto) throws ExecutionException, InterruptedException {
         UpdateDeviceResponse detailDeviceResponse = new UpdateDeviceResponse();
         List<ErrorMessage> errors = new ArrayList<>();
-        Optional<Device> deviceDetail = getDeviceById(deviceId).get();
+        ErrorMessage error = new ErrorMessage(NOT_FOUND,
+                "Device does not exist",
+                new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
+        Optional<Device> deviceDetail = getDeviceById(deviceId);
         if (deviceDetail.isEmpty()) {
-            ErrorMessage error = new ErrorMessage(NOT_FOUND,
-                    "Device does not exist",
-                    new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
             errors.add(error);
-            return new ResponseEntity<>(errors, NOT_ACCEPTABLE);
+            detailDeviceResponse.setErrors(errors);
+            return detailDeviceResponse;
         }
         checkFieldsWhenUpdatingDevice(errors, dto, deviceId);
-        if (errors.size() > 0)
-            return new ResponseEntity<>(errors, NOT_ACCEPTABLE);
+        if (errors.size() > 0) {
+            detailDeviceResponse.setErrors(errors);
+            return detailDeviceResponse;
+        }
 
         CompletableFuture<User> owner = _employeeService.findByUsername(dto.getOwner());
         int ownerId;
         deviceDetail = deviceMapper.updateDtoToDevice(deviceDetail.get(), dto);
         if (deviceDetail.isEmpty()) {
-            ErrorMessage error = new ErrorMessage(NOT_FOUND,
-                    "Device does not exist",
-                    new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
             errors.add(error);
-            return new ResponseEntity<>(errors, NOT_ACCEPTABLE);
+            detailDeviceResponse.setErrors(errors);
+            return detailDeviceResponse;
         }
+
         if (owner != null) {
             ownerId = owner.get().getId();
         } else {
@@ -213,7 +201,7 @@ public class DeviceService implements IDeviceService {
 
         _deviceRepository.save(deviceDetail.get());
         detailDeviceResponse.setUpdatedDevice(deviceDetail.get());
-        return new ResponseEntity<>(detailDeviceResponse, OK);
+        return detailDeviceResponse;
     }
 
     @Async
@@ -223,7 +211,7 @@ public class DeviceService implements IDeviceService {
     public CompletableFuture<ResponseEntity<Object>> deleteDevice(int deviceId) throws ExecutionException, InterruptedException {
         DeleteDeviceResponse response = new DeleteDeviceResponse();
 
-        if (doesDeviceExist(deviceId).get()) {
+        if (doesDeviceExist(deviceId)) {
             response.setErrorMessage("Device is not existent");
             return CompletableFuture.completedFuture(new ResponseEntity<>(response, NOT_FOUND));
         }
@@ -261,7 +249,7 @@ public class DeviceService implements IDeviceService {
         String headerValue = "attachment; filename=ExportDevices_" + currentDateTime + ".xlsx";
         response.setHeader(headerKey, headerValue);
         List<Device> devices = _deviceRepository.findAll();
-        List<DeviceDTO> deviceList = convertEntityToDTO(devices).get();
+        List<DeviceDTO> deviceList = convertEntityToDTO(devices);
         DeviceExcelExporter excelExporter = new DeviceExcelExporter(deviceList);
         excelExporter.export(response);
     }
@@ -277,7 +265,7 @@ public class DeviceService implements IDeviceService {
         response.setHeader(headerKey, headerValue);
         Sort sort = Sort.by("id").ascending();
         List<Device> devices = _deviceRepository.findByOwnerId(ownerId, sort);
-        List<DeviceDTO> deviceList = convertEntityToDTO(devices).get();
+        List<DeviceDTO> deviceList = convertEntityToDTO(devices);
         DeviceExcelExporter excelExporter = new DeviceExcelExporter(deviceList);
         excelExporter.export(response);
     }
@@ -371,8 +359,8 @@ public class DeviceService implements IDeviceService {
             return CompletableFuture.completedFuture(ResponseEntity.status(NOT_FOUND).body("Keyword must be non-null"));
 
         List<Device> devices = _deviceRepository.findAll();
-        List<DeviceDTO> deviceList = getAllDevices(devices, deviceFilter).get();
-        Set<String> keywordList = selectColumnForKeywordSuggestion(deviceList, keyword, fieldColumn).get();
+        List<DeviceDTO> deviceList = getAllDevices(devices, deviceFilter);
+        Set<String> keywordList = selectColumnForKeywordSuggestion(deviceList, keyword, fieldColumn);
         KeywordSuggestionResponse response = new KeywordSuggestionResponse();
         response.setKeywordList(keywordList);
         return CompletableFuture.completedFuture(new ResponseEntity<>(response, OK));
@@ -386,9 +374,9 @@ public class DeviceService implements IDeviceService {
         CompletableFuture<List<PlatformList>> platformList = _platformService.fetchPlatform();
         CompletableFuture<List<ScreenList>> screenList = _screenService.fetchScreen();
         CompletableFuture<List<StorageList>> storageList = _storageService.fetchStorage();
-        List<StatusList> statusList = getStatusList().get();
-        List<ProjectList> projectList = getProjectList().get();
-        List<OriginList> originList = getOriginList().get();
+        List<StatusList> statusList = getStatusList();
+        List<ProjectList> projectList = getProjectList();
+        List<OriginList> originList = getOriginList();
         DropdownValuesResponse response = new DropdownValuesResponse();
         response.setItemTypeList(itemTypeList.get());
         response.setRamList(ramList.get());
@@ -499,7 +487,7 @@ public class DeviceService implements IDeviceService {
         if (!doesUserExist.get())
             return CompletableFuture.completedFuture(new ResponseEntity<>("User does not exist", NOT_FOUND));
 
-        List<DeviceDTO> deviceList = getDevicesOfOwner(ownerId, deviceFilter, sortBy, sortDir).get();
+        List<DeviceDTO> deviceList = getDevicesOfOwner(ownerId, deviceFilter, sortBy, sortDir);
         /* Return lists for filtering purposes*/
         List<String> statusList = deviceList.stream().map(DeviceDTO::getStatus).distinct().collect(Collectors.toList());
         List<String> originList = deviceList.stream().map(DeviceDTO::getOrigin).distinct().collect(Collectors.toList());
@@ -509,7 +497,7 @@ public class DeviceService implements IDeviceService {
 
         /* */
         int totalElements = deviceList.size();
-        deviceList = getPage(deviceList, pageIndex, pageSize).get(); /*Pagination*/
+        deviceList = getPage(deviceList, pageIndex, pageSize); /*Pagination*/
         /* Return the desired response*/
         OwnedDeviceResponse response = new OwnedDeviceResponse();
         response.setDevicesList(deviceList);
@@ -534,14 +522,17 @@ public class DeviceService implements IDeviceService {
             return CompletableFuture.completedFuture(new ResponseEntity<>("User does not exist", NOT_FOUND));
 
         KeepingDeviceResponse response = new KeepingDeviceResponse();
-        List<KeepingDeviceDTO> keepingDeviceList = getDevicesOfKeeper(keeperId, deviceFilter).get();
+        List<KeepingDeviceDTO> keepingDeviceList = getDevicesOfKeeper(keeperId, deviceFilter);
+        if (keepingDeviceList == null) {
+            return CompletableFuture.completedFuture(new ResponseEntity<>(response, OK));
+        }
         List<String> statusList = keepingDeviceList.stream().map(KeepingDeviceDTO::getStatus).distinct().toList();
         List<String> originList = keepingDeviceList.stream().map(KeepingDeviceDTO::getOrigin).distinct().toList();
         List<String> projectList = keepingDeviceList.stream().map(KeepingDeviceDTO::getProject).distinct().toList();
         List<String> itemTypeList = keepingDeviceList.stream().map(KeepingDeviceDTO::getItemType).distinct().toList();
         List<String> keeperNumberOptions = List.of(new String[]{"LESS THAN 3", "EQUAL TO 3"});
         int totalElements = keepingDeviceList.size();
-        keepingDeviceList = getPageForKeepingDevices(keepingDeviceList, pageIndex, pageSize).get(); /*Pagination*/
+        keepingDeviceList = getPageForKeepingDevices(keepingDeviceList, pageIndex, pageSize); /*Pagination*/
         /* Return the desired response*/
         response.setDevicesList(keepingDeviceList);
         response.setPageNo(pageIndex);
@@ -562,8 +553,8 @@ public class DeviceService implements IDeviceService {
         if (isKeywordInvalid(keyword))
             return CompletableFuture.completedFuture(ResponseEntity.status(NOT_FOUND).body("Keyword must be non-null"));
 
-        List<DeviceDTO> deviceList = getDevicesOfOwner(ownerId, deviceFilter, "id", "asc").get();
-        Set<String> keywordList = selectColumnForKeywordSuggestion(deviceList, keyword, fieldColumn).get();
+        List<DeviceDTO> deviceList = getDevicesOfOwner(ownerId, deviceFilter, "id", "asc");
+        Set<String> keywordList = selectColumnForKeywordSuggestion(deviceList, keyword, fieldColumn);
 
         KeywordSuggestionResponse response = new KeywordSuggestionResponse();
         response.setKeywordList(keywordList);
@@ -576,37 +567,34 @@ public class DeviceService implements IDeviceService {
         if (isKeywordInvalid(keyword))
             return CompletableFuture.completedFuture(ResponseEntity.status(NOT_FOUND).body("Keyword must be non-null"));
 
-        List<KeepingDeviceDTO> deviceList = getDevicesOfKeeper(keeperId, deviceFilter).get();
-        Set<String> keywordList = selectColumnForKeepingDevicesKeywordSuggestion(deviceList, keyword, fieldColumn).get();
+        List<KeepingDeviceDTO> deviceList = getDevicesOfKeeper(keeperId, deviceFilter);
+        Set<String> keywordList = selectColumnForKeepingDevicesKeywordSuggestion(deviceList, keyword, fieldColumn);
 
         KeywordSuggestionResponse response = new KeywordSuggestionResponse();
         response.setKeywordList(keywordList);
         return CompletableFuture.completedFuture(new ResponseEntity<>(response, OK));
     }
 
-    @Async
-    private CompletableFuture<List<DeviceDTO>> getAllDevices(List<Device> devices, FilterDeviceDTO deviceFilter) throws ExecutionException, InterruptedException {
+    private List<DeviceDTO> getAllDevices(List<Device> devices, FilterDeviceDTO deviceFilter) throws ExecutionException, InterruptedException {
         formatFilter(deviceFilter); /* Remove spaces and make input text become lowercase*/
-        devices = fetchFilteredDevice(deviceFilter, devices).get(); // List of devices after filtering
-        List<DeviceDTO> deviceList = convertEntityToDTO(devices).get();
-        deviceList = applyFilterBookingAndReturnDateForDevices(deviceFilter, deviceList).get(); /*Apply booking date and return date filter after adding keeper orders to devices*/
-        return CompletableFuture.completedFuture(deviceList);
+        devices = fetchFilteredDevice(deviceFilter, devices); // List of devices after filtering
+        List<DeviceDTO> deviceList = convertEntityToDTO(devices);
+        deviceList = applyFilterBookingAndReturnDateForDevices(deviceFilter, deviceList); /*Apply booking date and return date filter after adding keeper orders to devices*/
+        return deviceList;
     }
 
-    @Async
-    private CompletableFuture<List<DeviceDTO>> getPage(List<DeviceDTO> sourceList, int pageIndex, int pageSize) {
+    private List<DeviceDTO> getPage(List<DeviceDTO> sourceList, int pageIndex, int pageSize) {
         final boolean isPageInvalid = pageSize <= 0 || pageIndex <= 0;
-        if (isPageInvalid) CompletableFuture.completedFuture(Collections.emptyList());
+        if (isPageInvalid) return Collections.emptyList();
 
         int fromIndex = (pageIndex - 1) * pageSize;
 
         if (sourceList == null || sourceList.size() <= fromIndex)
-            return CompletableFuture.completedFuture(Collections.emptyList());
+            return Collections.emptyList();
 
-        return CompletableFuture.completedFuture(sourceList.subList(fromIndex, Math.min(fromIndex + pageSize, sourceList.size())));
+        return sourceList.subList(fromIndex, Math.min(fromIndex + pageSize, sourceList.size()));
     }
 
-    @Async
     private int getTotalPages(int pageSize, int listSize) {
         if (listSize == 0) return 1;
 
@@ -615,7 +603,6 @@ public class DeviceService implements IDeviceService {
         return (listSize / pageSize) + 1;
     }
 
-    @Async
     private void formatFilter(FilterDeviceDTO deviceFilterDTO) {
         if (deviceFilterDTO.getName() != null) deviceFilterDTO.setName(deviceFilterDTO.getName().trim().toLowerCase());
 
@@ -649,8 +636,7 @@ public class DeviceService implements IDeviceService {
             deviceFilterDTO.setKeeperNo(deviceFilterDTO.getKeeperNo().trim().toLowerCase());
     }
 
-    @Async
-    private CompletableFuture<List<Device>> fetchFilteredDevice(FilterDeviceDTO deviceFilter, List<Device> devices) {
+    private List<Device> fetchFilteredDevice(FilterDeviceDTO deviceFilter, List<Device> devices) {
         if (deviceFilter.getName() != null)
             devices = devices.stream().filter(device -> device.getName().toLowerCase().equals(deviceFilter.getName())).collect(Collectors.toList());
         if (deviceFilter.getStatus() != null)
@@ -677,11 +663,10 @@ public class DeviceService implements IDeviceService {
             devices = devices.stream().filter(device -> device.getSerialNumber().toLowerCase().equals(deviceFilter.getSerialNumber())).collect(Collectors.toList());
         if (deviceFilter.getProject() != null)
             devices = devices.stream().filter(device -> device.getProject().name().equalsIgnoreCase(deviceFilter.getProject())).collect(Collectors.toList());
-        return CompletableFuture.completedFuture(devices);
+        return devices;
     }
 
-    @Async
-    private CompletableFuture<List<StatusList>> getStatusList() {
+    private List<StatusList> getStatusList() {
         Status[] statusCode = Status.values();
         List<StatusList> statusList = new ArrayList<>();
 
@@ -690,11 +675,10 @@ public class DeviceService implements IDeviceService {
             statusList.add(item);
         }
 
-        return CompletableFuture.completedFuture(statusList);
+        return statusList;
     }
 
-    @Async
-    private CompletableFuture<List<ProjectList>> getProjectList() {
+    private List<ProjectList> getProjectList() {
         Project[] projectCode = Project.values();
         List<ProjectList> projectList = new ArrayList<>();
 
@@ -703,11 +687,10 @@ public class DeviceService implements IDeviceService {
             projectList.add(item);
         }
 
-        return CompletableFuture.completedFuture(projectList);
+        return projectList;
     }
 
-    @Async
-    private CompletableFuture<List<OriginList>> getOriginList() {
+    private List<OriginList> getOriginList() {
         Origin[] originCode = Origin.values();
 
         List<OriginList> originList = new ArrayList<>();
@@ -716,27 +699,24 @@ public class DeviceService implements IDeviceService {
             originList.add(item);
         }
 
-        return CompletableFuture.completedFuture(originList);
+        return originList;
     }
 
-    @Async
-    private CompletableFuture<List<DeviceDTO>> getDevicesOfOwner(int ownerId, FilterDeviceDTO deviceFilter, String sortBy, String sortDir) throws ExecutionException, InterruptedException {
+    private List<DeviceDTO> getDevicesOfOwner(int ownerId, FilterDeviceDTO deviceFilter, String sortBy, String sortDir) throws ExecutionException, InterruptedException {
         formatFilter(deviceFilter); /* Remove spaces and make input text become lowercase*/
         Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
         List<Device> devices = _deviceRepository.findByOwnerId(ownerId, sort);
-        devices = fetchFilteredDevice(deviceFilter, devices).get(); /* List of devices after filtering */
-        List<DeviceDTO> deviceList = convertEntityToDTO(devices).get();
-        deviceList = applyFilterBookingAndReturnDateForDevices(deviceFilter, deviceList).get(); /*Apply booking date and return date filter after adding keeper orders to devices*/
-        return CompletableFuture.completedFuture(deviceList);
+        devices = fetchFilteredDevice(deviceFilter, devices); /* List of devices after filtering */
+        List<DeviceDTO> deviceList = convertEntityToDTO(devices);
+        deviceList = applyFilterBookingAndReturnDateForDevices(deviceFilter, deviceList); /*Apply booking date and return date filter after adding keeper orders to devices*/
+        return deviceList;
     }
 
-    @Async
     private boolean isKeywordInvalid(String keyword) {
         return keyword.trim().isBlank();
     }
 
-    @Async
-    private CompletableFuture<List<DeviceDTO>> applyFilterBookingAndReturnDateForDevices(FilterDeviceDTO deviceFilter, List<DeviceDTO> devices) {
+    private List<DeviceDTO> applyFilterBookingAndReturnDateForDevices(FilterDeviceDTO deviceFilter, List<DeviceDTO> devices) {
         if (deviceFilter.getBookingDate() != null)
             devices = devices.stream()
                     .filter(device -> device.getBookingDate() != null)
@@ -762,11 +742,10 @@ public class DeviceService implements IDeviceService {
                         .filter(device -> device.getKeeperNumber() == 3 && device.getStatus().equalsIgnoreCase("OCCUPIED"))
                         .collect(Collectors.toList());
         }
-        return CompletableFuture.completedFuture(devices);
+        return devices;
     }
 
-    @Async
-    private CompletableFuture<Set<String>> selectColumnForKeywordSuggestion(List<DeviceDTO> deviceList, String keyword, int fieldColumn) {
+    private Set<String> selectColumnForKeywordSuggestion(List<DeviceDTO> deviceList, String keyword, int fieldColumn) {
         Set<String> keywordList = new HashSet<>();
         Stream<String> mappedDeviceList = null;
         switch (fieldColumn) { /*Fetch only one column*/
@@ -796,11 +775,10 @@ public class DeviceService implements IDeviceService {
                     .limit(20)
                     .collect(Collectors.toSet());
         }
-        return CompletableFuture.completedFuture(keywordList);
+        return keywordList;
     }
 
-    @Async
-    private CompletableFuture<Set<String>> selectColumnForKeepingDevicesKeywordSuggestion(List<KeepingDeviceDTO> deviceList, String keyword, int fieldColumn) {
+    private Set<String> selectColumnForKeepingDevicesKeywordSuggestion(List<KeepingDeviceDTO> deviceList, String keyword, int fieldColumn) {
         Set<String> keywordList = new HashSet<>();
         Stream<String> mappedDeviceList = null;
         switch (fieldColumn) { /*Fetch only one column*/
@@ -831,66 +809,54 @@ public class DeviceService implements IDeviceService {
                     .limit(20)
                     .collect(Collectors.toSet());
         }
-        return CompletableFuture.completedFuture(keywordList);
+        return keywordList;
     }
 
-    @Async
-    private CompletableFuture<Boolean> useNonExistent(String owner) throws ExecutionException, InterruptedException {
-        return CompletableFuture.completedFuture(_employeeService.findByUsername(owner).get() == null);
+    private Boolean useNonExistent(String owner) throws ExecutionException, InterruptedException {
+        return _employeeService.findByUsername(owner).get() == null;
     }
 
-    @Async
-    private CompletableFuture<Boolean> isSerialNumberExistent(String serialNumber) {
-        return CompletableFuture.completedFuture(_deviceRepository.findBySerialNumber(serialNumber) != null);
+    private Boolean isSerialNumberExistent(String serialNumber) {
+        return _deviceRepository.findBySerialNumber(serialNumber) != null;
     }
 
-    @Async
-    private CompletableFuture<Boolean> isSerialNumberExistentExceptUpdatedDevice(int deviceId, String serialNumber) {
-        return CompletableFuture.completedFuture(_deviceRepository.findBySerialNumberExceptUpdatedDevice(deviceId, serialNumber) != null);
+    private Boolean isSerialNumberExistentExceptUpdatedDevice(int deviceId, String serialNumber) {
+        return _deviceRepository.findBySerialNumberExceptUpdatedDevice(deviceId, serialNumber) != null;
     }
 
-    @Async
-    private CompletableFuture<Boolean> isItemTypeInvalid(int itemTypeId) throws ExecutionException, InterruptedException {
-        return CompletableFuture.completedFuture(!_itemTypeService.doesItemTypeExist(itemTypeId).get());
+    private Boolean isItemTypeInvalid(int itemTypeId) throws ExecutionException, InterruptedException {
+        return !_itemTypeService.doesItemTypeExist(itemTypeId).get();
     }
 
-    @Async
-    private CompletableFuture<Boolean> isRamInvalid(int ramId) throws ExecutionException, InterruptedException {
-        return CompletableFuture.completedFuture(!_ramService.doesRamExist(ramId).get());
+    private Boolean isRamInvalid(int ramId) throws ExecutionException, InterruptedException {
+        return !_ramService.doesRamExist(ramId).get();
     }
 
-    @Async
-    private CompletableFuture<Boolean> isStorageInvalid(int storageId) throws ExecutionException, InterruptedException {
-        return CompletableFuture.completedFuture(!_storageService.doesStorageExist(storageId).get());
+    private Boolean isStorageInvalid(int storageId) throws ExecutionException, InterruptedException {
+        return !_storageService.doesStorageExist(storageId).get();
     }
 
-    @Async
-    private CompletableFuture<Boolean> isScreenInvalid(int screenId) throws ExecutionException, InterruptedException {
-        return CompletableFuture.completedFuture(!_screenService.doesScreenExist(screenId).get());
+    private Boolean isScreenInvalid(int screenId) throws ExecutionException, InterruptedException {
+        return !_screenService.doesScreenExist(screenId).get();
     }
 
-    @Async
-    private CompletableFuture<Boolean> isPlatformInvalid(int platformId) throws ExecutionException, InterruptedException {
-        return CompletableFuture.completedFuture(!_platformService.doesPlatformExist(platformId).get());
+    private Boolean isPlatformInvalid(int platformId) throws ExecutionException, InterruptedException {
+        return !_platformService.doesPlatformExist(platformId).get();
     }
 
-    @Async
-    private CompletableFuture<Boolean> isStatusInvalid(int statusId) {
-        return CompletableFuture.completedFuture(Status.findByNumber(statusId).isEmpty());
+    private Boolean isStatusInvalid(int statusId) {
+        return Status.findByNumber(statusId).isEmpty();
     }
 
-    @Async
-    private CompletableFuture<Boolean> isOriginInvalid(int originId) {
-        return CompletableFuture.completedFuture(Origin.findByNumber(originId).isEmpty());
+    private Boolean isOriginInvalid(int originId) {
+        return Origin.findByNumber(originId).isEmpty();
     }
 
-    @Async
-    private CompletableFuture<Boolean> isProjectInvalid(int projectId) {
-        return CompletableFuture.completedFuture(Project.findByNumber(projectId).isEmpty());
+    private Boolean isProjectInvalid(int projectId) {
+        return Project.findByNumber(projectId).isEmpty();
     }
 
-    @Async
-    private CompletableFuture<List<DeviceDTO>> convertEntityToDTO(List<Device> devices) throws ExecutionException, InterruptedException {
+    private List<DeviceDTO> convertEntityToDTO(List<Device> devices) throws ExecutionException, InterruptedException {
         List<DeviceDTO> deviceList = new ArrayList<>();
         for (Device device : devices) {
             DeviceDTO deviceDTO = deviceMapper.deviceToDeviceDto(device);  /* Convert fields that have an id value to a readable value */
@@ -909,29 +875,27 @@ public class DeviceService implements IDeviceService {
             deviceDTO.setReturnDate(keeperOrder.get().getDueDate());
             deviceList.add(deviceDTO);
         }
-        return CompletableFuture.completedFuture(deviceList);
+        return deviceList;
     }
 
-    @Async
-    private CompletableFuture<List<KeepingDeviceDTO>> getPageForKeepingDevices(List<KeepingDeviceDTO> sourceList, int pageIndex, int pageSize) {
+    private List<KeepingDeviceDTO> getPageForKeepingDevices(List<KeepingDeviceDTO> sourceList, int pageIndex, int pageSize) {
         if (pageSize <= 0 || pageIndex <= 0) throw new IllegalArgumentException("invalid page size: " + pageSize);
 
         int fromIndex = (pageIndex - 1) * pageSize;
 
         if (sourceList == null || sourceList.size() <= fromIndex)
-            return CompletableFuture.completedFuture(Collections.emptyList());
+            return Collections.emptyList();
 
-        return CompletableFuture.completedFuture(sourceList.subList(fromIndex, Math.min(fromIndex + pageSize, sourceList.size())));
+        return sourceList.subList(fromIndex, Math.min(fromIndex + pageSize, sourceList.size()));
     }
 
-    @Async
-    private CompletableFuture<List<KeepingDeviceDTO>> getDevicesOfKeeper(int keeperId, FilterDeviceDTO deviceFilter) throws ExecutionException, InterruptedException {
+    private List<KeepingDeviceDTO> getDevicesOfKeeper(int keeperId, FilterDeviceDTO deviceFilter) throws ExecutionException, InterruptedException {
         formatFilter(deviceFilter); /* Remove spaces and make input text become lowercase*/
         List<KeeperOrder> keeperOrderList = _keeperOrderService.findByKeeperId(keeperId).get();
         List<KeepingDeviceDTO> keepingDeviceList = new ArrayList<>();
 
         if (keeperOrderList == null)
-            return CompletableFuture.completedFuture(null);
+            return null;
 
         for (KeeperOrder keeperOrder : keeperOrderList) {
             Optional<Device> device = _deviceRepository.findById(keeperOrder.getDevice().getId());
@@ -961,12 +925,11 @@ public class DeviceService implements IDeviceService {
 
             keepingDeviceList.add(keepingDevice);
         }
-        keepingDeviceList = fetchFilteredKeepingDevice(deviceFilter, keepingDeviceList).get();
-        return CompletableFuture.completedFuture(keepingDeviceList);
+        keepingDeviceList = fetchFilteredKeepingDevice(deviceFilter, keepingDeviceList);
+        return keepingDeviceList;
     }
 
-    @Async
-    private CompletableFuture<List<KeepingDeviceDTO>> fetchFilteredKeepingDevice(FilterDeviceDTO deviceFilter, List<KeepingDeviceDTO> devices) {
+    private List<KeepingDeviceDTO> fetchFilteredKeepingDevice(FilterDeviceDTO deviceFilter, List<KeepingDeviceDTO> devices) {
         if (deviceFilter.getName() != null)
             devices = devices.stream().filter(device -> device.getDeviceName().toLowerCase().equals(deviceFilter.getName())).collect(Collectors.toList());
         if (deviceFilter.getStatus() != null)
@@ -1005,103 +968,100 @@ public class DeviceService implements IDeviceService {
             else
                 devices = devices.stream().filter(device -> device.getKeeperNo() == 3 && device.getStatus().equalsIgnoreCase("OCCUPIED")).collect(Collectors.toList());
         }
-        return CompletableFuture.completedFuture(devices);
+        return devices;
     }
 
-    @Async
     private void checkFieldsWhenAddingDevice(List<ErrorMessage> errors, AddDeviceDTO dto) throws ExecutionException, InterruptedException {
         String serverTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date());
-        if (useNonExistent(dto.getOwner()).get()) {
+        if (useNonExistent(dto.getOwner())) {
             ErrorMessage error = new ErrorMessage(NOT_FOUND, "Owner does not exist", serverTime);
             errors.add(error);
         }
-        if (isSerialNumberExistent(dto.getSerialNumber()).get()) {
+        if (isSerialNumberExistent(dto.getSerialNumber())) {
             ErrorMessage error = new ErrorMessage(BAD_REQUEST, "Serial number value of this device is already existed", serverTime);
             errors.add(error);
         }
-        if (isItemTypeInvalid(dto.getItemTypeId()).get()) {
+        if (isItemTypeInvalid(dto.getItemTypeId())) {
             ErrorMessage error = new ErrorMessage(NOT_FOUND, "Item type value of this device is non existent", serverTime);
             errors.add(error);
         }
-        if (isRamInvalid(dto.getRamId()).get()) {
+        if (isRamInvalid(dto.getRamId())) {
             ErrorMessage error = new ErrorMessage(NOT_FOUND, "Ram value of this device is non existent", serverTime);
             errors.add(error);
         }
-        if (isStorageInvalid(dto.getStorageId()).get()) {
+        if (isStorageInvalid(dto.getStorageId())) {
             ErrorMessage error = new ErrorMessage(NOT_FOUND, "Storage value of this device is non existent", serverTime);
             errors.add(error);
         }
-        if (isScreenInvalid(dto.getScreenId()).get()) {
+        if (isScreenInvalid(dto.getScreenId())) {
             ErrorMessage error = new ErrorMessage(NOT_FOUND, "Screen value of this device is non existent", serverTime);
             error.setMessage("Screen value of this device is non existent");
             errors.add(error);
         }
-        if (isPlatformInvalid(dto.getPlatformId()).get()) {
+        if (isPlatformInvalid(dto.getPlatformId())) {
             ErrorMessage error = new ErrorMessage(NOT_FOUND, "Platform value of this device is non existent", serverTime);
             errors.add(error);
         }
-        if (isStatusInvalid(dto.getStatusId()).get()) {
+        if (isStatusInvalid(dto.getStatusId())) {
             ErrorMessage error = new ErrorMessage(NOT_FOUND, "Status value of this device is non existent", serverTime);
             errors.add(error);
         }
-        if (isOriginInvalid(dto.getOriginId()).get()) {
+        if (isOriginInvalid(dto.getOriginId())) {
             ErrorMessage error = new ErrorMessage(NOT_FOUND, "Origin value of this device is non existent", serverTime);
             errors.add(error);
         }
-        if (isProjectInvalid(dto.getProjectId()).get()) {
+        if (isProjectInvalid(dto.getProjectId())) {
             ErrorMessage error = new ErrorMessage(NOT_FOUND,
                     "Project value of this device is non existent", serverTime);
             errors.add(error);
         }
     }
 
-    @Async
     private void checkFieldsWhenUpdatingDevice(List<ErrorMessage> errors, UpdateDeviceDTO dto, int deviceId) throws ExecutionException, InterruptedException {
         String serverTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date());
-        if (useNonExistent(dto.getOwner()).get()) {
+        if (useNonExistent(dto.getOwner())) {
             ErrorMessage error = new ErrorMessage(NOT_FOUND, "Owner does not exist", serverTime);
             errors.add(error);
         }
-        if (isSerialNumberExistentExceptUpdatedDevice(deviceId, dto.getSerialNumber()).get()) {
+        if (isSerialNumberExistentExceptUpdatedDevice(deviceId, dto.getSerialNumber())) {
             ErrorMessage error = new ErrorMessage(BAD_REQUEST, "Serial number value of this device is already existed", serverTime);
             errors.add(error);
         }
-        if (isItemTypeInvalid(dto.getItemTypeId()).get()) {
+        if (isItemTypeInvalid(dto.getItemTypeId())) {
             ErrorMessage error = new ErrorMessage(NOT_FOUND, "Item type value of this device is non existent", serverTime);
             errors.add(error);
         }
-        if (isRamInvalid(dto.getRamId()).get()) {
+        if (isRamInvalid(dto.getRamId())) {
             ErrorMessage error = new ErrorMessage(NOT_FOUND, "Ram value of this device is non existent", serverTime);
             errors.add(error);
         }
-        if (isStorageInvalid(dto.getStorageId()).get()) {
+        if (isStorageInvalid(dto.getStorageId())) {
             ErrorMessage error = new ErrorMessage(NOT_FOUND, "Storage value of this device is non existent", serverTime);
             errors.add(error);
         }
-        if (isScreenInvalid(dto.getScreenId()).get()) {
+        if (isScreenInvalid(dto.getScreenId())) {
             ErrorMessage error = new ErrorMessage(NOT_FOUND, "Screen value of this device is non existent", serverTime);
             error.setMessage("Screen value of this device is non existent");
             errors.add(error);
         }
-        if (isPlatformInvalid(dto.getPlatformId()).get()) {
+        if (isPlatformInvalid(dto.getPlatformId())) {
             ErrorMessage error = new ErrorMessage(NOT_FOUND, "Platform value of this device is non existent", serverTime);
             errors.add(error);
         }
-        if (isStatusInvalid(dto.getStatusId()).get()) {
+        if (isStatusInvalid(dto.getStatusId())) {
             ErrorMessage error = new ErrorMessage(NOT_FOUND, "Status value of this device is non existent", serverTime);
             errors.add(error);
         }
-        if (isOriginInvalid(dto.getOriginId()).get()) {
+        if (isOriginInvalid(dto.getOriginId())) {
             ErrorMessage error = new ErrorMessage(NOT_FOUND, "Origin value of this device is non existent", serverTime);
             errors.add(error);
         }
-        if (isProjectInvalid(dto.getProjectId()).get()) {
+        if (isProjectInvalid(dto.getProjectId())) {
             ErrorMessage error = new ErrorMessage(NOT_FOUND, "Project value of this device is non existent", serverTime);
             errors.add(error);
         }
     }
 
-    @Async
     private void checkImportAndAddToList(int ownerId, List<Device> deviceList, List<String> errors, int numberOfRows, XSSFSheet sheet)
             throws ExecutionException, InterruptedException {
         for (int rowIndex = 1; rowIndex <= numberOfRows; rowIndex++) {
@@ -1183,5 +1143,14 @@ public class DeviceService implements IDeviceService {
             existDevice.setUpdatedDate(new Date());
             deviceList.add(existDevice);
         }
+    }
+
+    private Optional<Device> getDeviceById(int deviceId) {
+        log.info("Info: " + deviceId);
+        return _deviceRepository.findById(deviceId);
+    }
+
+    private Boolean doesDeviceExist(int deviceId) {
+        return !_deviceRepository.existsById((long) deviceId);
     }
 }
