@@ -1,6 +1,5 @@
 package com.fullstack.Backend.utils;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ThreadPoolExecutor;
 
 import com.fullstack.Backend.exception.CustomAsyncExceptionHandler;
 import org.springframework.aop.interceptor.AsyncUncaughtExceptionHandler;
@@ -19,8 +18,8 @@ public class SpringAsyncConfig implements AsyncConfigurer {
     @Override
     public Executor getAsyncExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(1000);
-        executor.setMaxPoolSize(1000);
+        executor.setCorePoolSize(100);
+        executor.setMaxPoolSize(100);
         executor.initialize();
         return executor;
     }
