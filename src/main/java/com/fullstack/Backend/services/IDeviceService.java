@@ -25,7 +25,7 @@ public interface IDeviceService {
 
     public DetailDeviceResponse getDetailDevice(int deviceId) throws InterruptedException, ExecutionException;
 
-    public CompletableFuture<ResponseEntity<Object>> updateDevice(int deviceId, UpdateDeviceDTO device) throws ExecutionException, InterruptedException;
+    public ResponseEntity<Object> updateDevice(int deviceId, UpdateDeviceDTO device) throws ExecutionException, InterruptedException;
 
     public CompletableFuture<ResponseEntity<Object>> deleteDevice(int deviceId) throws ExecutionException, InterruptedException;
 

@@ -1,9 +1,7 @@
 package com.fullstack.Backend.entities;
 
-import java.util.Date;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fullstack.Backend.dto.device.AddDeviceDTO;
 import com.fullstack.Backend.enums.Origin;
 import com.fullstack.Backend.enums.Project;
 import com.fullstack.Backend.enums.Status;
@@ -15,7 +13,6 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.ForeignKey;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
@@ -23,7 +20,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.Builder;
-import org.springframework.format.annotation.DateTimeFormat;
 
 @Getter
 @Setter

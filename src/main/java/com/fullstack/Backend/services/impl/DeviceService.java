@@ -22,6 +22,7 @@ import com.fullstack.Backend.responses.device.*;
 import com.fullstack.Backend.services.*;
 import com.fullstack.Backend.utils.*;
 import jakarta.transaction.Transactional;
+import lombok.extern.java.Log;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -53,6 +54,7 @@ import jakarta.servlet.http.HttpServletResponse;
 
 @Service
 @CacheConfig(cacheNames = {"device"})
+@Log
 public class DeviceService implements IDeviceService {
 
     @Autowired
@@ -85,9 +87,11 @@ public class DeviceService implements IDeviceService {
     @Autowired
     DeviceMapper deviceMapper;
 
+
     @Async
     @Override
     public CompletableFuture<Optional<Device>> getDeviceById(int deviceId) {
+        log.info("Info: " + deviceId);
         return CompletableFuture.completedFuture(_deviceRepository.findById(deviceId));
     }
 
@@ -126,15 +130,22 @@ public class DeviceService implements IDeviceService {
         List<ErrorMessage> errors = new ArrayList<>();
         checkFieldsWhenAddingDevice(errors, dto);
         if (errors.size() > 0)
-            return CompletableFuture.completedFuture(new ResponseEntity<>(errors, NOT_ACCEPTABLE));
+            return CompletableFuture.completedFuture(new ResponseEntity<>(errors, BAD_REQUEST));
         Device newDevice = deviceMapper.addDeviceDtoToDevice(dto);
         newDevice.setOwnerId(_employeeService.findByUsername(dto.getOwner()).get().getId());
         _deviceRepository.save(newDevice);
         AddDeviceResponse addDeviceResponse = new AddDeviceResponse(newDevice, true);
-        return CompletableFuture.completedFuture(new ResponseEntity<>(addDeviceResponse, OK));
+        return CompletableFuture.supplyAsync(() -> new ResponseEntity<>(addDeviceResponse, OK));
     }
 
-    @Async
+    private void doLongRunningTask() {
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
     @Override
     @Cacheable(value = "detail_device", key = "#deviceId")
     public DetailDeviceResponse getDetailDevice(int deviceId) throws InterruptedException, ExecutionException {
@@ -165,12 +176,10 @@ public class DeviceService implements IDeviceService {
         return response;
     }
 
-
-    @Async
     @Override
     @CachePut(key = "#dto.id")
     @Transactional
-    public CompletableFuture<ResponseEntity<Object>> updateDevice(int deviceId, UpdateDeviceDTO dto) throws ExecutionException, InterruptedException {
+    public ResponseEntity<Object> updateDevice(int deviceId, UpdateDeviceDTO dto) throws ExecutionException, InterruptedException {
         UpdateDeviceResponse detailDeviceResponse = new UpdateDeviceResponse();
         List<ErrorMessage> errors = new ArrayList<>();
         Optional<Device> deviceDetail = getDeviceById(deviceId).get();
@@ -179,29 +188,32 @@ public class DeviceService implements IDeviceService {
                     "Device does not exist",
                     new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
             errors.add(error);
-            return CompletableFuture.completedFuture(new ResponseEntity<>(errors, NOT_ACCEPTABLE));
+            return new ResponseEntity<>(errors, NOT_ACCEPTABLE);
         }
         checkFieldsWhenUpdatingDevice(errors, dto, deviceId);
         if (errors.size() > 0)
-            return CompletableFuture.completedFuture(new ResponseEntity<>(errors, NOT_ACCEPTABLE));
+            return new ResponseEntity<>(errors, NOT_ACCEPTABLE);
 
-        deviceDetail.get().setName(dto.getName().trim());
-        deviceDetail.get().setStatus(Status.values()[dto.getStatusId()]);
-        deviceDetail.get().setSerialNumber(dto.getSerialNumber().trim());
-        deviceDetail.get().setInventoryNumber(dto.getInventoryNumber().trim());
-        deviceDetail.get().setProject(Project.values()[dto.getProjectId()]);
-        deviceDetail.get().setOrigin(Origin.values()[dto.getOriginId()]);
-        deviceDetail.get().setPlatformId(dto.getPlatformId());
-        deviceDetail.get().setRamId(dto.getRamId());
-        deviceDetail.get().setItemTypeId(dto.getItemTypeId());
-        deviceDetail.get().setStorageId(dto.getStorageId());
-        deviceDetail.get().setScreenId(dto.getScreenId());
-        deviceDetail.get().setComments(dto.getComments());
-        deviceDetail.get().setOwnerId(_employeeService.findByUsername(dto.getOwner()).get().getId());
-        deviceDetail.get().setUpdatedDate(new Date());
+        CompletableFuture<User> owner = _employeeService.findByUsername(dto.getOwner());
+        int ownerId;
+        deviceDetail = deviceMapper.updateDtoToDevice(deviceDetail.get(), dto);
+        if (deviceDetail.isEmpty()) {
+            ErrorMessage error = new ErrorMessage(NOT_FOUND,
+                    "Device does not exist",
+                    new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
+            errors.add(error);
+            return new ResponseEntity<>(errors, NOT_ACCEPTABLE);
+        }
+        if (owner != null) {
+            ownerId = owner.get().getId();
+        } else {
+            ownerId = -1;
+        }
+        deviceDetail.get().setOwnerId(ownerId);
+
         _deviceRepository.save(deviceDetail.get());
         detailDeviceResponse.setUpdatedDevice(deviceDetail.get());
-        return CompletableFuture.completedFuture(new ResponseEntity<>(detailDeviceResponse, OK));
+        return new ResponseEntity<>(detailDeviceResponse, OK);
     }
 
     @Async
@@ -366,7 +378,7 @@ public class DeviceService implements IDeviceService {
         return CompletableFuture.completedFuture(new ResponseEntity<>(response, OK));
     }
 
-    @Async()
+    @Async
     @Override
     public CompletableFuture<DropdownValuesResponse> getDropDownValues() throws InterruptedException, ExecutionException {
         CompletableFuture<List<ItemTypeList>> itemTypeList = _itemTypeService.fetchItemTypes();
@@ -584,7 +596,7 @@ public class DeviceService implements IDeviceService {
     @Async
     private CompletableFuture<List<DeviceDTO>> getPage(List<DeviceDTO> sourceList, int pageIndex, int pageSize) {
         final boolean isPageInvalid = pageSize <= 0 || pageIndex <= 0;
-        if (isPageInvalid) throw new IllegalArgumentException("invalid page size: " + pageSize);
+        if (isPageInvalid) CompletableFuture.completedFuture(Collections.emptyList());
 
         int fromIndex = (pageIndex - 1) * pageSize;
 

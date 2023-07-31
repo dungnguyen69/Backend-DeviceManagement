@@ -2,6 +2,7 @@ package com.fullstack.Backend.mappers;
 
 import com.fullstack.Backend.dto.device.AddDeviceDTO;
 import com.fullstack.Backend.dto.device.DeviceDTO;
+import com.fullstack.Backend.dto.device.UpdateDeviceDTO;
 import com.fullstack.Backend.entities.Device;
 import com.fullstack.Backend.enums.Origin;
 import com.fullstack.Backend.enums.Project;
@@ -9,6 +10,7 @@ import com.fullstack.Backend.enums.Status;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
+import java.util.Optional;
 
 @Component
 public class DeviceMapperImp implements DeviceMapper {
@@ -55,5 +57,23 @@ public class DeviceMapperImp implements DeviceMapper {
         device.setOrigin(Origin.values()[dto.getOriginId()]);
         device.setCreatedDate(new Date());
         return device;
+    }
+
+    @Override
+    public Optional<Device> updateDtoToDevice(Device deviceDetail, UpdateDeviceDTO dto) {
+        deviceDetail.setName(dto.getName().trim());
+        deviceDetail.setStatus(Status.values()[dto.getStatusId()]);
+        deviceDetail.setSerialNumber(dto.getSerialNumber().trim());
+        deviceDetail.setInventoryNumber(dto.getInventoryNumber().trim());
+        deviceDetail.setProject(Project.values()[dto.getProjectId()]);
+        deviceDetail.setOrigin(Origin.values()[dto.getOriginId()]);
+        deviceDetail.setPlatformId(dto.getPlatformId());
+        deviceDetail.setRamId(dto.getRamId());
+        deviceDetail.setItemTypeId(dto.getItemTypeId());
+        deviceDetail.setStorageId(dto.getStorageId());
+        deviceDetail.setScreenId(dto.getScreenId());
+        deviceDetail.setComments(dto.getComments());
+        deviceDetail.setUpdatedDate(new Date());
+        return Optional.of(deviceDetail);
     }
 }

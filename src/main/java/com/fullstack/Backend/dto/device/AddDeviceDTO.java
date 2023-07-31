@@ -3,13 +3,13 @@ package com.fullstack.Backend.dto.device;
 import java.util.Date;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 @Getter
 @Setter
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder(toBuilder = true)
 public class AddDeviceDTO {
 	private String deviceName;
 	private int statusId;
