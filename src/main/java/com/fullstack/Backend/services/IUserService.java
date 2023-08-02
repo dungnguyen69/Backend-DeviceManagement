@@ -26,8 +26,6 @@ public interface IUserService {
 
     public CompletableFuture<User> findByUsername(String username);
 
-    public CompletableFuture<List<UserDTO>> getUserList(FilterUserDTO dto) throws ExecutionException, InterruptedException;
-
     public CompletableFuture<ResponseEntity<Object>> authenticateUser(LoginDTO loginRequest, Authentication
             authentication);
 
@@ -42,31 +40,15 @@ public interface IUserService {
     public CompletableFuture<ResponseEntity<Object>> showUsersWithPaging(int pageIndex, int pageSize, String
             sortBy, String sortDir, FilterUserDTO dto) throws ExecutionException, InterruptedException;
 
-    void save(User user);
-
-    public void createVerificationToken(User user, String token);
-
-    public CompletableFuture<VerificationToken> getVerificationToken(String VerificationToken);
-
-    public PasswordResetToken getResetPasswordToken(String token);
-
-    public CompletableFuture<VerificationToken> generateNewVerificationToken(final String existingVerificationToken) throws ExecutionException, InterruptedException;
-
     public CompletableFuture<ResponseEntity<Object>> resendRegistrationToken(String siteURL, String existingToken) throws ExecutionException, InterruptedException, MessagingException;
 
     public CompletableFuture<ResponseEntity<Object>> sendResetPasswordEmail(String siteURL, String userEmail) throws ExecutionException, InterruptedException, MessagingException;
 
-    public CompletableFuture<User> findByEmail(String email);
-
-    public CompletableFuture<PasswordResetToken> findUserFromResetPasswordToken(User user);
 
     public CompletableFuture<ResponseEntity<Object>> saveResetPassword(ResetPasswordDTO dto) throws ExecutionException, InterruptedException, MessagingException;
 
-    public CompletableFuture<User> findByToken(String token);
-
     public CompletableFuture<ResponseEntity<Object>> saveForgotPassword(ForgotPasswordDTO dto) throws ExecutionException, InterruptedException, MessagingException;
 
-    @Async
     CompletableFuture<ResponseEntity<Object>> verifyPasswordToken(String token);
 
     public CompletableFuture<ResponseEntity<Object>> getSuggestKeywordUsers(int fieldColumn, String keyword, FilterUserDTO filter) throws InterruptedException, ExecutionException;

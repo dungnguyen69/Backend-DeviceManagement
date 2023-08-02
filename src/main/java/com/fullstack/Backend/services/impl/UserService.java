@@ -105,16 +105,6 @@ public class UserService implements IUserService, UserDetailsService {
 
     @Async
     @Override
-    public CompletableFuture<List<UserDTO>> getUserList(FilterUserDTO dto) throws ExecutionException, InterruptedException {
-        formatFilter(dto);
-        List<User> users = _userRepository.findAll();
-        users = fetchFilteredUsers(dto, users).get();
-        List<UserDTO> usersList = users.stream().map(UserDTO::new).collect(Collectors.toList());
-        return CompletableFuture.completedFuture(usersList);
-    }
-
-    @Async
-    @Override
     public CompletableFuture<ResponseEntity<Object>> authenticateUser(LoginDTO loginRequest, Authentication authentication) {
         SecurityContextHolder.getContext().setAuthentication(authentication);
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
@@ -201,8 +191,8 @@ public class UserService implements IUserService, UserDetailsService {
     @Async
     @Override
     @Transactional
-    public CompletableFuture<ResponseEntity<Object>> verify(String verificationCode) throws ExecutionException, InterruptedException {
-        final VerificationToken verificationToken = getVerificationToken(verificationCode).get();
+    public CompletableFuture<ResponseEntity<Object>> verify(String verificationCode) {
+        final VerificationToken verificationToken = getVerificationToken(verificationCode);
         MessageResponse messageResponse;
         if (verificationToken == null || verificationToken.getUser().isEnabled()) {
             messageResponse = new MessageResponse("Sorry, we could not verify account. It maybe already verified," +
@@ -232,10 +222,10 @@ public class UserService implements IUserService, UserDetailsService {
     @Async
     @Override
     public CompletableFuture<ResponseEntity<Object>> showUsersWithPaging(int pageIndex, int pageSize, String sortBy, String sortDir, FilterUserDTO dto) throws ExecutionException, InterruptedException {
-        List<UserDTO> usersList = getUserList(dto).get();
+        List<UserDTO> usersList = getUserList(dto);
         List<String> projectList = usersList.stream().map(UserDTO::getProject).distinct().toList();
         int totalElements = usersList.size();
-        usersList = getPage(usersList, pageIndex, pageSize).get();
+        usersList = getPage(usersList, pageIndex, pageSize);
         UsersResponse response = new UsersResponse();
         response.setUsersList(usersList);
         response.setPageNo(pageIndex);
@@ -243,70 +233,13 @@ public class UserService implements IUserService, UserDetailsService {
         response.setTotalElements(totalElements);
         response.setTotalPages(getTotalPages(pageSize, totalElements));
         response.setProjectList(projectList);
-        return CompletableFuture.completedFuture(new ResponseEntity<Object>(response, OK));
-    }
-
-    @Async
-    @Override
-    @Transactional
-    public void save(User user) {
-        _userRepository.save(user);
-    }
-
-    @Async
-    @Override
-    public void createVerificationToken(User user, String token) {
-        VerificationToken myToken = new VerificationToken(token, user);
-        _tokenRepository.save(myToken);
-    }
-
-    @Async
-    @Override
-    public CompletableFuture<VerificationToken> getVerificationToken(String VerificationToken) {
-        return CompletableFuture.completedFuture(_tokenRepository.findByToken(VerificationToken));
-    }
-
-    @Async
-    @Override
-    public PasswordResetToken getResetPasswordToken(String token) {
-        return _passwordResetTokenRepository.findByToken(token);
-    }
-
-    @Async
-    @Override
-    public CompletableFuture<User> findByEmail(String email) {
-        return CompletableFuture.completedFuture(_userRepository.findByEmail(email));
-    }
-
-    @Async
-    @Override
-    public CompletableFuture<User> findByToken(String token) {
-        if (_passwordResetTokenRepository.findByToken(token) == null) {
-            return null;
-        }
-        return CompletableFuture.completedFuture(_passwordResetTokenRepository.findByToken(token).getUser());
-    }
-
-    @Async
-    @Override
-    public CompletableFuture<PasswordResetToken> findUserFromResetPasswordToken(User user) {
-        return CompletableFuture.completedFuture(_passwordResetTokenRepository.findByUser(user));
-    }
-
-    @Async
-    @Override
-    @Transactional
-    public CompletableFuture<VerificationToken> generateNewVerificationToken(String existingVerificationToken) throws ExecutionException, InterruptedException {
-        VerificationToken vToken = getVerificationToken(existingVerificationToken).get();
-        vToken.updateToken(RandomString.make(64));
-        _tokenRepository.save(vToken);
-        return CompletableFuture.completedFuture(vToken);
+        return CompletableFuture.completedFuture(new ResponseEntity<>(response, OK));
     }
 
     @Async
     @Override
     public CompletableFuture<ResponseEntity<Object>> resendRegistrationToken(String siteURL, String existingToken) throws ExecutionException, InterruptedException, MessagingException {
-        VerificationToken newToken = generateNewVerificationToken(existingToken).get();
+        VerificationToken newToken = generateNewVerificationToken(existingToken);
         User user = newToken.getUser();
         String verifyURL = baseUrl + "/email-verification?token=" + newToken.getToken();
         resendVerificationEmail(user, verifyURL);
@@ -318,24 +251,24 @@ public class UserService implements IUserService, UserDetailsService {
     @Transactional
     public CompletableFuture<ResponseEntity<Object>> sendResetPasswordEmail(String siteURL, String userEmail) throws ExecutionException, InterruptedException, MessagingException {
         String token = RandomString.make(64);
-        CompletableFuture<User> user = findByEmail(userEmail);
+        User user = findByEmail(userEmail);
 
-        if (user.get() == null)
+        if (user == null)
             return CompletableFuture.completedFuture(ResponseEntity
                     .badRequest()
                     .body(new MessageResponse("Email is not valid!")));
 
-        PasswordResetToken existingToken = findUserFromResetPasswordToken(user.get()).get();
+        PasswordResetToken existingToken = findUserFromResetPasswordToken(user);
         if (existingToken != null) {
             String newToken = generateResetPasswordToken(existingToken.getToken()); /* Change old token to new token and return it */
             String verifyURL = baseUrl + "/receive-forgot-password?token=" + newToken;
-            sendResetPasswordEmail(user.get(), verifyURL);
+            sendResetPasswordEmail(user, verifyURL);
             return CompletableFuture.completedFuture(ResponseEntity.ok(new MessageResponse("Sent successfully!")));
         }
-        PasswordResetToken myToken = new PasswordResetToken(token, user.get());
+        PasswordResetToken myToken = new PasswordResetToken(token, user);
         _passwordResetTokenRepository.save(myToken);
         String verifyURL = baseUrl + "/receive-forgot-password?token=" + myToken.getToken();
-        sendResetPasswordEmail(user.get(), verifyURL);
+        sendResetPasswordEmail(user, verifyURL);
         return CompletableFuture.completedFuture(ResponseEntity.ok(new MessageResponse("Sent successfully!")));
     }
 
@@ -369,7 +302,7 @@ public class UserService implements IUserService, UserDetailsService {
     @Override
     @Transactional
     public CompletableFuture<ResponseEntity<Object>> saveForgotPassword(ForgotPasswordDTO dto) throws ExecutionException, InterruptedException, MessagingException {
-        CompletableFuture<User> user = findByToken(dto.getToken());
+        User user = findByToken(dto.getToken());
         if (user == null)
             return CompletableFuture.completedFuture(ResponseEntity
                     .badRequest()
@@ -386,7 +319,7 @@ public class UserService implements IUserService, UserDetailsService {
                     .badRequest()
                     .body(new MessageResponse("Password must be identical to confirm password")));
 
-        changeUserPassword(user.get(), dto.getNewPassword());
+        changeUserPassword(user, dto.getNewPassword());
         _passwordResetTokenRepository.delete(token);
         return CompletableFuture.completedFuture(ResponseEntity
                 .ok(new MessageResponse("Changed successfully!")));
@@ -430,8 +363,8 @@ public class UserService implements IUserService, UserDetailsService {
             return CompletableFuture.completedFuture(ResponseEntity.status(NOT_FOUND).body("Keyword must be non-null"));
 
         List<User> users = _userRepository.findAll();
-        List<UserDTO> deviceList = getAllUser(users, filter).get();
-        Set<String> keywordList = selectColumnForKeywordSuggestion(deviceList, keyword, fieldColumn).get();
+        List<UserDTO> deviceList = getAllUser(users, filter);
+        Set<String> keywordList = selectColumnForKeywordSuggestion(deviceList, keyword, fieldColumn);
         KeywordSuggestionResponse response = new KeywordSuggestionResponse();
         response.setKeywordList(keywordList);
         return CompletableFuture.completedFuture(new ResponseEntity<>(response, OK));
@@ -469,22 +402,17 @@ public class UserService implements IUserService, UserDetailsService {
         return CompletableFuture.completedFuture(ResponseEntity.ok(new MessageResponse("UPDATED SUCCESSFULLY!")));
     }
 
-    @Async
-    private CompletableFuture<List<UserDTO>> getAllUser(List<User> users, FilterUserDTO filter) throws ExecutionException, InterruptedException {
+    private List<UserDTO> getAllUser(List<User> users, FilterUserDTO filter) {
         formatFilter(filter); /* Remove spaces and make input text become lowercase*/
-        users = fetchFilteredUsers(filter, users).get(); /*List of devices after filtering*/
-        List<UserDTO> deviceList = convertEntityToDTO(users).get();
-        return CompletableFuture.completedFuture(deviceList);
+        users = fetchFilteredUsers(filter, users); /*List of devices after filtering*/
+        return convertEntityToDTO(users);
     }
 
-    @Async
-    private CompletableFuture<List<UserDTO>> convertEntityToDTO(List<User> users) throws ExecutionException, InterruptedException {
-        List<UserDTO> userList = users.stream().map(UserDTO::new).collect(Collectors.toList());
-        return CompletableFuture.completedFuture(userList);
+    private List<UserDTO> convertEntityToDTO(List<User> users) {
+        return users.stream().map(UserDTO::new).collect(Collectors.toList());
     }
 
-    @Async
-    private CompletableFuture<Set<String>> selectColumnForKeywordSuggestion(List<UserDTO> userList, String keyword, int fieldColumn) {
+    private Set<String> selectColumnForKeywordSuggestion(List<UserDTO> userList, String keyword, int fieldColumn) {
         Set<String> keywordList = new HashSet<>();
         Stream<String> mappedDeviceList = null;
         switch (fieldColumn) { /*Fetch only one column*/
@@ -507,27 +435,24 @@ public class UserService implements IUserService, UserDetailsService {
                     .limit(20)
                     .collect(Collectors.toSet());
         }
-        return CompletableFuture.completedFuture(keywordList);
+        return keywordList;
     }
 
-    @Async
-    private CompletableFuture<List<UserDTO>> getPage(List<UserDTO> sourceList, int pageIndex, int pageSize) {
+    private List<UserDTO> getPage(List<UserDTO> sourceList, int pageIndex, int pageSize) {
         if (pageSize <= 0 || pageIndex <= 0) throw new IllegalArgumentException("invalid page size: " + pageSize);
 
         int fromIndex = (pageIndex - 1) * pageSize;
 
         if (sourceList == null || sourceList.size() <= fromIndex)
-            return CompletableFuture.completedFuture(Collections.emptyList());
+            return Collections.emptyList();
 
-        return CompletableFuture.completedFuture(sourceList.subList(fromIndex, Math.min(fromIndex + pageSize, sourceList.size())));
+        return sourceList.subList(fromIndex, Math.min(fromIndex + pageSize, sourceList.size()));
     }
 
-    @Async
     private boolean emailExists(String email) {
         return _userRepository.existsByEmail(email);
     }
 
-    @Async
     private void formatFilter(FilterUserDTO dto) {
         if (dto.getBadgeId() != null) dto.setBadgeId(dto.getBadgeId().trim().toLowerCase());
 
@@ -550,12 +475,10 @@ public class UserService implements IUserService, UserDetailsService {
 
     }
 
-    @Async
     private boolean nameExists(String email) {
         return _userRepository.existsByUserName(email);
     }
 
-    @Async
     private int getTotalPages(int pageSize, int listSize) {
         if (listSize == 0) return 1;
 
@@ -564,7 +487,6 @@ public class UserService implements IUserService, UserDetailsService {
         return (listSize / pageSize) + 1;
     }
 
-    @Async
     private void resendVerificationEmail(User user, String verifyURL) throws MessagingException {
         String toAddress = user.getEmail();
         String subject = "Resend Verification Email";
@@ -584,7 +506,6 @@ public class UserService implements IUserService, UserDetailsService {
         mailSender.send(message);
     }
 
-    @Async
     private String generateResetPasswordToken(String existingToken) throws ExecutionException, InterruptedException {
         PasswordResetToken rpToken = getResetPasswordToken(existingToken);
         if (rpToken == null)
@@ -595,21 +516,18 @@ public class UserService implements IUserService, UserDetailsService {
         return rpToken.getToken();
     }
 
-    @Async
     @Transactional
     private void changeUserPassword(User user, String password) {
         user.setPassword(encoder.encode(password));
         _userRepository.save(user);
     }
 
-    @Async
     @Transactional
     private void createPasswordResetTokenForUser(User user, String token) {
         PasswordResetToken myToken = new PasswordResetToken(token, user);
         _passwordResetTokenRepository.save(myToken);
     }
 
-    @Async
     private void sendResetPasswordEmail(User user, String verifyURL) throws MessagingException {
         String toAddress = user.getEmail();
         String subject = "Reset password";
@@ -627,7 +545,6 @@ public class UserService implements IUserService, UserDetailsService {
         mailSender.send(message);
     }
 
-    @Async
     private String generateBadgeId() {
         char[] chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".toCharArray();
         Random random = new Random();
@@ -637,8 +554,7 @@ public class UserService implements IUserService, UserDetailsService {
         return sb.toString();
     }
 
-    @Async
-    private CompletableFuture<List<User>> fetchFilteredUsers(FilterUserDTO dto, List<User> users) {
+    private List<User> fetchFilteredUsers(FilterUserDTO dto, List<User> users) {
         if (dto.getBadgeId() != null)
             users = users.stream().filter(user -> user.getBadgeId().equalsIgnoreCase(dto.getBadgeId())).collect(Collectors.toList());
         if (dto.getUserName() != null)
@@ -653,6 +569,55 @@ public class UserService implements IUserService, UserDetailsService {
             users = users.stream().filter(user -> user.getPhoneNumber().equalsIgnoreCase(dto.getPhoneNumber())).collect(Collectors.toList());
         if (dto.getProject() != null)
             users = users.stream().filter(user -> user.getProject().equalsIgnoreCase(dto.getProject())).collect(Collectors.toList());
-        return CompletableFuture.completedFuture(users);
+        return users;
+    }
+
+    @Transactional
+    private void save(User user) {
+        _userRepository.save(user);
+    }
+
+    @Transactional
+    private void createVerificationToken(User user, String token) {
+        VerificationToken myToken = new VerificationToken(token, user);
+        _tokenRepository.save(myToken);
+    }
+
+    private VerificationToken getVerificationToken(String VerificationToken) {
+        return _tokenRepository.findByToken(VerificationToken);
+    }
+
+    private PasswordResetToken getResetPasswordToken(String token) {
+        return _passwordResetTokenRepository.findByToken(token);
+    }
+
+    private User findByEmail(String email) {
+        return _userRepository.findByEmail(email);
+    }
+
+    private User findByToken(String token) {
+        if (_passwordResetTokenRepository.findByToken(token) == null) {
+            return null;
+        }
+        return _passwordResetTokenRepository.findByToken(token).getUser();
+    }
+
+    private PasswordResetToken findUserFromResetPasswordToken(User user) {
+        return _passwordResetTokenRepository.findByUser(user);
+    }
+
+    private List<UserDTO> getUserList(FilterUserDTO dto) {
+        formatFilter(dto);
+        List<User> users = _userRepository.findAll();
+        users = fetchFilteredUsers(dto, users);
+        return users.stream().map(UserDTO::new).collect(Collectors.toList());
+    }
+
+    @Transactional
+    private VerificationToken generateNewVerificationToken(String existingVerificationToken) {
+        VerificationToken vToken = getVerificationToken(existingVerificationToken);
+        vToken.updateToken(RandomString.make(64));
+        _tokenRepository.save(vToken);
+        return vToken;
     }
 }
