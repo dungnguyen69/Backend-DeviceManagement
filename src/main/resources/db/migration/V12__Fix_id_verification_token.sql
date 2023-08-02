@@ -1,1 +1,0 @@
-ALTER TABLE verification_token MODIFY id BIGINT AUTO_INCREMENT;

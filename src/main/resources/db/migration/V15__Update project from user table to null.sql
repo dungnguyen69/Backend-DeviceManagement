@@ -1,1 +1,0 @@
-ALTER TABLE users MODIFY project VARCHAR(255) NULL;

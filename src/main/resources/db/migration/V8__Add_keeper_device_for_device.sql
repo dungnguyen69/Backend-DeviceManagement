@@ -1,3 +1,0 @@
-ALTER TABLE devices ADD keeper_id INT NULL;
-
-ALTER TABLE devices ADD CONSTRAINT KEEPER_DEVICE_ID_FK FOREIGN KEY (keeper_id) REFERENCES users (id);
