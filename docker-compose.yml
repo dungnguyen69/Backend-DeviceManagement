@@ -1,0 +1,28 @@
+version: "3"
+services:
+  springboot-app:
+    container_name: spring-app
+    restart: always
+    image: app
+    ports:
+      - 8080:8080
+    environment:
+      MYSQL_HOST: mysqldb
+      MYSQL_USER: root
+      MYSQL_PASSWORD: 123456789
+      MYSQL_PORT: 3306
+
+  mysqldb:
+    container_name: mysqldb
+    image: mysql
+    volumes:
+      - myvol:/var/lib/mysql
+    ports:
+      - 3307:3306
+    environment:
+      MYSQL_DATABASE: devicemanagementdb
+      MYSQL_ROOT_PASSWORD: 123456789
+
+volumes:
+  myvol:
+    external: false
