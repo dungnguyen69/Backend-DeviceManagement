@@ -5,7 +5,7 @@ import java.util.concurrent.CompletableFuture;
 import com.fullstack.Backend.entities.Screen;
 import com.fullstack.Backend.utils.dropdowns.ScreenList;
 
-public interface IScreenService {
+public interface ScreenService {
 	public CompletableFuture<Screen> findBySize(String size);
 	public CompletableFuture<Boolean> doesScreenExist(int id);
 

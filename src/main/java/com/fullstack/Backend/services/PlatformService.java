@@ -6,7 +6,7 @@ import java.util.concurrent.CompletableFuture;
 import com.fullstack.Backend.entities.Platform;
 import com.fullstack.Backend.utils.dropdowns.PlatformList;
 
-public interface IPlatformService {
+public interface PlatformService {
 	public CompletableFuture<List<String>> getPlatformNameList();
 
 	public CompletableFuture<List<String>> getPlatformVersionList();

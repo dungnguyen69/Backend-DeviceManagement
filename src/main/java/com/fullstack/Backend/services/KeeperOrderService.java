@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
-public interface IKeeperOrderService {
+public interface KeeperOrderService {
     public CompletableFuture<List<KeeperOrder>> getListByDeviceId(int deviceId)
             throws InterruptedException, ExecutionException;
 

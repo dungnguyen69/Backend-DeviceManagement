@@ -3,7 +3,7 @@ package com.fullstack.Backend.controllers;
 import com.fullstack.Backend.dto.request.*;
 import com.fullstack.Backend.responses.device.KeywordSuggestionResponse;
 import com.fullstack.Backend.responses.request.SubmitBookingResponse;
-import com.fullstack.Backend.services.IRequestService;
+import com.fullstack.Backend.services.RequestService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -22,7 +22,7 @@ import static org.springframework.http.HttpStatus.*;
 @RequestMapping("/api/requests")
 public class RequestController {
     @Autowired
-    IRequestService _requestService;
+    RequestService _requestService;
 
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")

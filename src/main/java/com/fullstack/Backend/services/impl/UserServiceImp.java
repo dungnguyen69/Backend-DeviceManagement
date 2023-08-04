@@ -40,7 +40,7 @@ import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import com.fullstack.Backend.repositories.interfaces.UserRepository;
-import com.fullstack.Backend.services.IUserService;
+import com.fullstack.Backend.services.UserService;
 
 import static com.fullstack.Backend.constant.constant.*;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
@@ -49,7 +49,7 @@ import static org.springframework.http.HttpStatus.OK;
 
 @Service
 @CacheConfig(cacheNames = {"user"})
-public class UserService implements IUserService, UserDetailsService {
+public class UserServiceImp implements UserService, UserDetailsService {
     @Autowired
     private JwtUtils jwtUtils;
 

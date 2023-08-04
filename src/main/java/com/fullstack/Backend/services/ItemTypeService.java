@@ -6,7 +6,7 @@ import java.util.concurrent.CompletableFuture;
 import com.fullstack.Backend.entities.ItemType;
 import com.fullstack.Backend.utils.dropdowns.ItemTypeList;
 
-public interface IItemTypeService {
+public interface ItemTypeService {
 	public CompletableFuture<ItemType> findByName(String name);
 	public CompletableFuture<Boolean> doesItemTypeExist(int id);
 

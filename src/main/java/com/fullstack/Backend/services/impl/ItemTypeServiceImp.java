@@ -11,12 +11,12 @@ import org.springframework.stereotype.Service;
 
 import com.fullstack.Backend.entities.ItemType;
 import com.fullstack.Backend.repositories.interfaces.ItemTypeRepository;
-import com.fullstack.Backend.services.IItemTypeService;
+import com.fullstack.Backend.services.ItemTypeService;
 import com.fullstack.Backend.utils.dropdowns.ItemTypeList;
 
 @Service
 @CacheConfig(cacheNames = {"itemType"})
-public class ItemTypeService implements IItemTypeService {
+public class ItemTypeServiceImp implements ItemTypeService {
 	@Autowired
     ItemTypeRepository _itemTypeRepository;
 

@@ -11,12 +11,12 @@ import org.springframework.stereotype.Service;
 
 import com.fullstack.Backend.entities.Ram;
 import com.fullstack.Backend.repositories.interfaces.RamRepository;
-import com.fullstack.Backend.services.IRamService;
+import com.fullstack.Backend.services.RamService;
 import com.fullstack.Backend.utils.dropdowns.RamList;
 
 @Service
 @CacheConfig(cacheNames = {"ram"})
-public class RamService implements IRamService {
+public class RamServiceImp implements RamService {
 
     @Autowired
     RamRepository _ramRepository;

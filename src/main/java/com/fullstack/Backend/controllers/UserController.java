@@ -1,7 +1,7 @@
 package com.fullstack.Backend.controllers;
 
 import com.fullstack.Backend.dto.users.*;
-    import com.fullstack.Backend.services.IUserService;
+    import com.fullstack.Backend.services.UserService;
 import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -29,7 +29,7 @@ public class UserController {
     AuthenticationManager authenticationManager;
 
     @Autowired
-    IUserService _userService;
+    UserService _userService;
 
     @PostMapping("/login")
     public CompletableFuture<ResponseEntity<Object>> authenticateUser(@Valid @RequestBody LoginDTO loginRequest) {

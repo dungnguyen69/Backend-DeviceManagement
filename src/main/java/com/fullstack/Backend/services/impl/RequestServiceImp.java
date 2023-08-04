@@ -17,7 +17,6 @@ import com.fullstack.Backend.services.*;
 import com.fullstack.Backend.utils.RequestFails;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Caching;
@@ -37,13 +36,13 @@ import static com.fullstack.Backend.constant.constant.*;
 import static org.springframework.http.HttpStatus.*;
 
 @Service
-public class RequestService implements IRequestService {
+public class RequestServiceImp implements RequestService {
     @Autowired
     RequestRepository _requestRepository;
     @Autowired
-    IUserService _employeeService;
+    UserService _employeeService;
     @Autowired
-    IKeeperOrderService _keeperOrderService;
+    KeeperOrderService _keeperOrderService;
     @Autowired
     DeviceRepository _deviceRepository;
 

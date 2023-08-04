@@ -55,34 +55,34 @@ import jakarta.servlet.http.HttpServletResponse;
 @Service
 @CacheConfig(cacheNames = {"device"})
 @Log
-public class DeviceService implements IDeviceService {
+public class DeviceServiceImp implements DeviceService {
 
     @Autowired
     DeviceRepository _deviceRepository;
 
     @Autowired
-    IItemTypeService _itemTypeService;
+    ItemTypeService _itemTypeService;
 
     @Autowired
-    IRamService _ramService;
+    RamService _ramService;
 
     @Autowired
-    IPlatformService _platformService;
+    PlatformService _platformService;
 
     @Autowired
-    IScreenService _screenService;
+    ScreenService _screenService;
 
     @Autowired
-    IStorageService _storageService;
+    StorageService _storageService;
 
     @Autowired
-    IUserService _employeeService;
+    UserService _employeeService;
 
     @Autowired
-    IKeeperOrderService _keeperOrderService;
+    KeeperOrderService _keeperOrderService;
 
     @Autowired
-    IRequestService _requestService;
+    RequestService _requestService;
 
     @Autowired
     DeviceMapper deviceMapper;

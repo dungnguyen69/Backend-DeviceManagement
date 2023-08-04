@@ -2,7 +2,7 @@ package com.fullstack.Backend.services.impl;
 
 import com.fullstack.Backend.entities.KeeperOrder;
 import com.fullstack.Backend.repositories.interfaces.KeeperOrderRepository;
-import com.fullstack.Backend.services.IKeeperOrderService;
+import com.fullstack.Backend.services.KeeperOrderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -12,7 +12,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 @Service
-public class KeeperOrderService implements IKeeperOrderService {
+public class KeeperOrderServiceImp implements KeeperOrderService {
     @Autowired
     KeeperOrderRepository _keeperOrderRepository;
 

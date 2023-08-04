@@ -11,12 +11,12 @@ import org.springframework.stereotype.Service;
 
 import com.fullstack.Backend.entities.Screen;
 import com.fullstack.Backend.repositories.interfaces.ScreenRepository;
-import com.fullstack.Backend.services.IScreenService;
+import com.fullstack.Backend.services.ScreenService;
 import com.fullstack.Backend.utils.dropdowns.ScreenList;
 
 @Service
 @CacheConfig(cacheNames = {"screen"})
-public class ScreenService implements IScreenService {
+public class ScreenServiceImp implements ScreenService {
 
 	@Autowired
     ScreenRepository _screenRepository;

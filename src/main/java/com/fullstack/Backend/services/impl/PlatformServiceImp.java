@@ -11,12 +11,12 @@ import org.springframework.stereotype.Service;
 
 import com.fullstack.Backend.entities.Platform;
 import com.fullstack.Backend.repositories.interfaces.PlatformRepository;
-import com.fullstack.Backend.services.IPlatformService;
+import com.fullstack.Backend.services.PlatformService;
 import com.fullstack.Backend.utils.dropdowns.PlatformList;
 
 @Service
 @CacheConfig(cacheNames = {"platform"})
-public class PlatformService implements IPlatformService {
+public class PlatformServiceImp implements PlatformService {
 
 	@Autowired
     PlatformRepository _platformRepository;

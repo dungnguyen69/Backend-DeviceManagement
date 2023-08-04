@@ -1,45 +1,10 @@
 package com.fullstack.Backend;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
-import com.fullstack.Backend.controllers.DeviceController;
-import com.fullstack.Backend.dto.device.AddDeviceDTO;
-import com.fullstack.Backend.dto.device.DeviceDTO;
-import com.fullstack.Backend.dto.device.FilterDeviceDTO;
-import com.fullstack.Backend.entities.Device;
-import com.fullstack.Backend.mappers.DeviceMapper;
-import com.fullstack.Backend.mappers.DeviceMapperImp;
-import com.fullstack.Backend.responses.device.AddDeviceResponse;
-import com.fullstack.Backend.responses.device.DeviceInWarehouseResponse;
-import com.fullstack.Backend.services.impl.DeviceService;
-import org.junit.Before;
-import org.junit.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
-import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.refEq;
-import static org.mockito.Mockito.*;
-import static org.springframework.http.HttpStatus.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 
 

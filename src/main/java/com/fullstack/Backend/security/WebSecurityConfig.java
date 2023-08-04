@@ -1,6 +1,5 @@
 package com.fullstack.Backend.security;
 
-import com.fullstack.Backend.services.impl.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;

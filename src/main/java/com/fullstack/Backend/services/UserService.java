@@ -1,25 +1,18 @@
 package com.fullstack.Backend.services;
 
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
-import com.fullstack.Backend.dto.device.FilterDeviceDTO;
 import com.fullstack.Backend.dto.users.*;
-import com.fullstack.Backend.entities.PasswordResetToken;
 import com.fullstack.Backend.entities.User;
-import com.fullstack.Backend.entities.VerificationToken;
 import jakarta.mail.MessagingException;
-import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.ResponseEntity;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 @Service
-public interface IUserService {
+public interface UserService {
     public CompletableFuture<User> findById(int id);
 
     public CompletableFuture<Boolean> doesUserExist(int id);

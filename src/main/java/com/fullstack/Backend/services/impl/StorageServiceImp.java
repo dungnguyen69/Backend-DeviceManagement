@@ -11,12 +11,12 @@ import org.springframework.stereotype.Service;
 
 import com.fullstack.Backend.entities.Storage;
 import com.fullstack.Backend.repositories.interfaces.StorageRepository;
-import com.fullstack.Backend.services.IStorageService;
+import com.fullstack.Backend.services.StorageService;
 import com.fullstack.Backend.utils.dropdowns.StorageList;
 
 @Service
 @CacheConfig(cacheNames = {"storage"})
-public class StorageService implements IStorageService {
+public class StorageServiceImp implements StorageService {
 
 	@Autowired
     StorageRepository _storageRepository;

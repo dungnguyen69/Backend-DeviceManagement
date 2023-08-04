@@ -24,7 +24,7 @@ import com.fullstack.Backend.dto.device.AddDeviceDTO;
 import com.fullstack.Backend.dto.device.FilterDeviceDTO;
 import com.fullstack.Backend.dto.device.UpdateDeviceDTO;
 import com.fullstack.Backend.responses.device.DropdownValuesResponse;
-import com.fullstack.Backend.services.IDeviceService;
+import com.fullstack.Backend.services.DeviceService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
@@ -35,7 +35,7 @@ import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 public class DeviceController {
 
     @Autowired
-    IDeviceService _deviceService;
+    DeviceService _deviceService;
 
     @GetMapping("/warehouse")
     @PreAuthorize("hasRole('USER') or hasRole('MODERATOR') or hasRole('ADMIN')")

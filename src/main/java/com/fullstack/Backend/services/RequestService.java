@@ -13,7 +13,7 @@ import com.fullstack.Backend.responses.device.KeywordSuggestionResponse;
 import com.fullstack.Backend.responses.request.SubmitBookingResponse;
 import org.springframework.http.ResponseEntity;
 
-public interface IRequestService {
+public interface RequestService {
     public CompletableFuture<SubmitBookingResponse> submitBookingRequest(SubmitBookingRequestDTO requests)
             throws InterruptedException, ExecutionException;
 
