@@ -121,7 +121,7 @@ public class DeviceServiceImp implements DeviceService {
         newDevice.setOwnerId(_employeeService.findByUsername(dto.getOwner()).get().getId());
         _deviceRepository.save(newDevice);
         AddDeviceResponse addDeviceResponse = new AddDeviceResponse(newDevice, true);
-        return CompletableFuture.supplyAsync(() -> new ResponseEntity<>(addDeviceResponse, OK));
+        return CompletableFuture.completedFuture(new ResponseEntity<>(addDeviceResponse, OK));
     }
 
     private void doLongRunningTask() {
@@ -150,9 +150,11 @@ public class DeviceServiceImp implements DeviceService {
 
         CompletableFuture<List<KeeperOrder>> keeperOrderList = _keeperOrderService.getListByDeviceId(deviceDetail.get().getId()); /* Get a list of keeper orders of a device*/
         List<KeeperOrderListDTO> showKeeperList = keeperOrderList.get().stream().map(KeeperOrderListDTO::new).toList();
+
         dto.loadFromEntity(deviceDetail.get(), showKeeperList);
         if (!keeperOrderList.get().isEmpty()) {/* Should a list be empty, we set a keeper value is a device's owner */
-            Optional<KeeperOrder> keeperOrder = keeperOrderList.get().stream().max(Comparator.comparing(KeeperOrder::getKeeperNo)); /* Get the latest keeper order of a device*/
+            Optional<KeeperOrder> keeperOrder = keeperOrderList.get().stream()
+                    .max(Comparator.comparing(KeeperOrder::getKeeperNo)); /* Get the latest keeper order of a device*/
             dto.setKeeper(keeperOrder.get().getKeeper().getUserName()); /* Add keeper order information to devices*/
             dto.setBookingDate(keeperOrder.get().getBookingDate());
             dto.setReturnDate(keeperOrder.get().getDueDate());
@@ -208,7 +210,7 @@ public class DeviceServiceImp implements DeviceService {
     @Override
     @Caching(evict = {@CacheEvict(value = "detail_device", key = "#deviceId")})
     @Transactional
-    public CompletableFuture<ResponseEntity<Object>> deleteDevice(int deviceId) throws ExecutionException, InterruptedException {
+    public CompletableFuture<ResponseEntity<Object>> deleteDevice(int deviceId) {
         DeleteDeviceResponse response = new DeleteDeviceResponse();
 
         if (doesDeviceExist(deviceId)) {
@@ -417,7 +419,8 @@ public class DeviceServiceImp implements DeviceService {
             return CompletableFuture.completedFuture(new ResponseEntity<>(response, NOT_FOUND));
 
         for (KeeperOrder keeperOrder : keeperOrderReturnList) {
-            Request occupiedRequest = _requestService.findAnOccupiedRequest(keeperOrder.getKeeper().getId(), input.getDeviceId()).get();
+            Request occupiedRequest = _requestService.findAnOccupiedRequest(keeperOrder.getKeeper().getId(),
+                    input.getDeviceId()).get();
             occupiedRequest.setCurrentKeeper_Id(input.getCurrentKeeperId());
             occupiedRequest.setRequestStatus(RETURNED);
             keeperOrder.setIsReturned(true);
@@ -637,32 +640,86 @@ public class DeviceServiceImp implements DeviceService {
     }
 
     private List<Device> fetchFilteredDevice(FilterDeviceDTO deviceFilter, List<Device> devices) {
-        if (deviceFilter.getName() != null)
-            devices = devices.stream().filter(device -> device.getName().toLowerCase().equals(deviceFilter.getName())).collect(Collectors.toList());
+        if (deviceFilter.getName() != null) devices = devices.stream ()
+                .filter (device -> device.getName ()
+                        .toLowerCase ()
+                        .equals (deviceFilter.getName ()))
+                .collect (Collectors.toList ());
         if (deviceFilter.getStatus() != null)
-            devices = devices.stream().filter(device -> device.getStatus().name().equalsIgnoreCase(deviceFilter.getStatus())).collect(Collectors.toList());
-        if (deviceFilter.getPlatformName() != null)
-            devices = devices.stream().filter(device -> device.getPlatform().getName().toLowerCase().equals(deviceFilter.getPlatformName())).collect(Collectors.toList());
-        if (deviceFilter.getPlatformVersion() != null)
-            devices = devices.stream().filter(device -> device.getPlatform().getVersion().toLowerCase().equals(deviceFilter.getPlatformVersion())).collect(Collectors.toList());
-        if (deviceFilter.getItemType() != null)
-            devices = devices.stream().filter(device -> device.getItemType().getName().equalsIgnoreCase(deviceFilter.getItemType())).collect(Collectors.toList());
-        if (deviceFilter.getRam() != null)
-            devices = devices.stream().filter(device -> device.getRam().getSize().equalsIgnoreCase(deviceFilter.getRam())).collect(Collectors.toList());
-        if (deviceFilter.getScreen() != null)
-            devices = devices.stream().filter(device -> device.getScreen().getSize().equalsIgnoreCase(deviceFilter.getScreen())).collect(Collectors.toList());
-        if (deviceFilter.getStorage() != null)
-            devices = devices.stream().filter(device -> device.getStorage().getSize().equalsIgnoreCase(deviceFilter.getStorage())).collect(Collectors.toList());
-        if (deviceFilter.getOwner() != null)
-            devices = devices.stream().filter(device -> device.getOwner().getUserName().toLowerCase().equals(deviceFilter.getOwner())).collect(Collectors.toList());
-        if (deviceFilter.getOrigin() != null)
-            devices = devices.stream().filter(device -> device.getOrigin().name().equalsIgnoreCase(deviceFilter.getOrigin())).collect(Collectors.toList());
-        if (deviceFilter.getInventoryNumber() != null)
-            devices = devices.stream().filter(device -> device.getInventoryNumber().toLowerCase().equals(deviceFilter.getInventoryNumber())).collect(Collectors.toList());
-        if (deviceFilter.getSerialNumber() != null)
-            devices = devices.stream().filter(device -> device.getSerialNumber().toLowerCase().equals(deviceFilter.getSerialNumber())).collect(Collectors.toList());
-        if (deviceFilter.getProject() != null)
-            devices = devices.stream().filter(device -> device.getProject().name().equalsIgnoreCase(deviceFilter.getProject())).collect(Collectors.toList());
+            devices = devices.stream ()
+                    .filter (device -> device.getStatus ()
+                            .name ()
+                            .equalsIgnoreCase (deviceFilter.getStatus ()))
+                    .collect (Collectors.toList ());
+        if (deviceFilter.getPlatformName () != null)
+            devices = devices.stream ()
+                    .filter (device -> device.getPlatform ()
+                            .getName ()
+                            .toLowerCase ()
+                            .equals (deviceFilter.getPlatformName ()))
+                    .collect (Collectors.toList ());
+        if (deviceFilter.getPlatformVersion () != null)
+            devices = devices.stream ()
+                    .filter (device -> device.getPlatform ()
+                            .getVersion ()
+                            .toLowerCase ()
+                            .equals (deviceFilter.getPlatformVersion ()))
+                    .collect (Collectors.toList ());
+        if (deviceFilter.getItemType () != null)
+            devices = devices.stream ()
+                    .filter (device -> device.getItemType ()
+                            .getName ()
+                            .equalsIgnoreCase (deviceFilter.getItemType ()))
+                    .collect (Collectors.toList ());
+        if (deviceFilter.getRam () != null)
+            devices = devices.stream ()
+                    .filter (device -> device.getRam ()
+                            .getSize ()
+                            .equalsIgnoreCase (deviceFilter.getRam ()))
+                    .collect (Collectors.toList ());
+        if (deviceFilter.getScreen () != null)
+            devices = devices.stream ()
+                    .filter (device -> device.getScreen ()
+                            .getSize ()
+                            .equalsIgnoreCase (deviceFilter.getScreen ()))
+                    .collect (Collectors.toList ());
+        if (deviceFilter.getStorage () != null)
+            devices = devices.stream ()
+                    .filter (device -> device.getStorage ()
+                            .getSize ()
+                            .equalsIgnoreCase (deviceFilter.getStorage ()))
+                    .collect (Collectors.toList ());
+        if (deviceFilter.getOwner () != null)
+            devices = devices.stream ()
+                    .filter (device -> device.getOwner ()
+                            .getUserName ()
+                            .toLowerCase ()
+                            .equals (deviceFilter.getOwner ()))
+                    .collect (Collectors.toList ());
+        if (deviceFilter.getOrigin () != null)
+            devices = devices.stream ()
+                    .filter (device -> device.getOrigin ()
+                            .name ()
+                            .equalsIgnoreCase (deviceFilter.getOrigin ()))
+                    .collect (Collectors.toList ());
+        if (deviceFilter.getInventoryNumber () != null)
+            devices = devices.stream ()
+                    .filter (device -> device.getInventoryNumber ()
+                            .toLowerCase ()
+                            .equals (deviceFilter.getInventoryNumber ()))
+                    .collect (Collectors.toList ());
+        if (deviceFilter.getSerialNumber () != null)
+            devices = devices.stream ()
+                    .filter (device -> device.getSerialNumber ()
+                            .toLowerCase ()
+                            .equals (deviceFilter.getSerialNumber ()))
+                    .collect (Collectors.toList ());
+        if (deviceFilter.getProject () != null)
+            devices = devices.stream ()
+                    .filter (device -> device.getProject ()
+                            .name ()
+                            .equalsIgnoreCase (deviceFilter.getProject ()))
+                    .collect (Collectors.toList ());
         return devices;
     }
 
@@ -733,14 +790,19 @@ public class DeviceServiceImp implements DeviceService {
                     .collect(Collectors.toList());
 
         if (deviceFilter.getKeeperNo() != null) { //"LESS THAN 3", "EQUAL TO 3"
-            if (deviceFilter.getKeeperNo().equalsIgnoreCase("less than 3"))
-                devices = devices.stream()
-                        .filter(device -> device.getKeeperNumber() < 3 && (device.getStatus().equalsIgnoreCase("OCCUPIED") || device.getStatus().equalsIgnoreCase("VACANT")))
-                        .collect(Collectors.toList());
+            if (deviceFilter.getKeeperNo ()
+                    .equalsIgnoreCase ("less than 3"))
+                devices = devices.stream ()
+                        .filter (device -> device.getKeeperNumber () < 3 && (device.getStatus ()
+                                .equalsIgnoreCase ("OCCUPIED") || device.getStatus ()
+                                .equalsIgnoreCase ("VACANT")
+                        ))
+                        .collect (Collectors.toList ());
             else
-                devices = devices.stream()
-                        .filter(device -> device.getKeeperNumber() == 3 && device.getStatus().equalsIgnoreCase("OCCUPIED"))
-                        .collect(Collectors.toList());
+                devices = devices.stream ()
+                        .filter (device -> device.getKeeperNumber () == 3 && device.getStatus ()
+                                .equalsIgnoreCase ("OCCUPIED"))
+                        .collect (Collectors.toList ());
         }
         return devices;
     }
@@ -771,9 +833,14 @@ public class DeviceServiceImp implements DeviceService {
                     .map(DeviceDTO::getKeeper);
         }
         if (mappedDeviceList != null) {
-            keywordList = mappedDeviceList.filter(element -> element.toLowerCase().contains(keyword.strip().toLowerCase()))
-                    .limit(20)
-                    .collect(Collectors.toSet());
+            keywordList = mappedDeviceList
+                    .filter (element -> element
+                            .toLowerCase ()
+                            .contains (keyword
+                                    .strip ()
+                                    .toLowerCase ()))
+                    .limit (20)
+                    .collect (Collectors.toSet ());
         }
         return keywordList;
     }
@@ -805,7 +872,11 @@ public class DeviceServiceImp implements DeviceService {
         }
         if (mappedDeviceList != null) {
             keywordList = mappedDeviceList
-                    .filter(element -> element.toLowerCase().contains(keyword.strip().toLowerCase()))
+                    .filter(element -> element
+                            .toLowerCase()
+                            .contains(keyword
+                                    .strip()
+                                    .toLowerCase()))
                     .limit(20)
                     .collect(Collectors.toSet());
         }
@@ -860,7 +931,9 @@ public class DeviceServiceImp implements DeviceService {
         List<DeviceDTO> deviceList = new ArrayList<>();
         for (Device device : devices) {
             DeviceDTO deviceDTO = deviceMapper.deviceToDeviceDto(device);  /* Convert fields that have an id value to a readable value */
-            CompletableFuture<List<KeeperOrder>> keeperOrderList = _keeperOrderService.getListByDeviceId(device.getId()); /* Get a list of keeper orders of a device*/
+            CompletableFuture<List<KeeperOrder>>
+                    keeperOrderList =
+                    _keeperOrderService.getListByDeviceId(device.getId()); /* Get a list of keeper orders of a device*/
 
             if (keeperOrderList.get().isEmpty()) { /* Were a list empty, we would set a keeper value is a device's owner */
                 deviceDTO.setKeeper(device.getOwner().getUserName());
@@ -868,7 +941,8 @@ public class DeviceServiceImp implements DeviceService {
                 continue;
             }
 
-            Optional<KeeperOrder> keeperOrder = keeperOrderList.get().stream().max(Comparator.comparing(KeeperOrder::getKeeperNo)); /* Get the latest keeper order of a device*/
+            Optional<KeeperOrder> keeperOrder = keeperOrderList.get().stream()
+                    .max(Comparator.comparing(KeeperOrder::getKeeperNo)); /* Get the latest keeper order of a device*/
             deviceDTO.setKeeper(keeperOrder.get().getKeeper().getUserName()); /* Add keeper order information to devices*/
             deviceDTO.setKeeperNumber(keeperOrder.get().getKeeperNo());
             deviceDTO.setBookingDate(keeperOrder.get().getBookingDate());
@@ -902,9 +976,26 @@ public class DeviceServiceImp implements DeviceService {
             if (device.isEmpty()) {
                 break;
             }
-            List<KeeperOrder> allKeeperOrderList = _keeperOrderService.getListByDeviceId(keeperOrder.getDevice().getId()).get();
-            KeeperOrder latestOrder = allKeeperOrderList.stream().max(Comparator.comparing(KeeperOrder::getKeeperNo)).orElse(null); /* Get the latest keeper order of a device*/
-            KeeperOrder previousOrder = allKeeperOrderList.stream().filter(k -> k.getKeeperNo() == keeperOrder.getKeeperNo() - 1).findFirst().orElse(null);
+            List<KeeperOrder>
+                    allKeeperOrderList =
+                    _keeperOrderService
+                            .getListByDeviceId(keeperOrder
+                                    .getDevice()
+                                    .getId())
+                            .get();
+            KeeperOrder
+                    latestOrder =
+                    allKeeperOrderList
+                            .stream()
+                            .max(Comparator.comparing(KeeperOrder::getKeeperNo))
+                            .orElse(null); /* Get the latest keeper order of a device*/
+            KeeperOrder
+                    previousOrder =
+                    allKeeperOrderList
+                            .stream()
+                            .filter(k -> k.getKeeperNo() == keeperOrder.getKeeperNo() - 1)
+                            .findFirst()
+                            .orElse(null);
             KeepingDeviceDTO keepingDevice = new KeepingDeviceDTO(device.get(), keeperOrder);
 
             /* Set max extending date for keepers */
@@ -930,89 +1021,257 @@ public class DeviceServiceImp implements DeviceService {
     }
 
     private List<KeepingDeviceDTO> fetchFilteredKeepingDevice(FilterDeviceDTO deviceFilter, List<KeepingDeviceDTO> devices) {
-        if (deviceFilter.getName() != null)
-            devices = devices.stream().filter(device -> device.getDeviceName().toLowerCase().equals(deviceFilter.getName())).collect(Collectors.toList());
-        if (deviceFilter.getStatus() != null)
-            devices = devices.stream().filter(device -> device.getStatus().equalsIgnoreCase(deviceFilter.getStatus())).collect(Collectors.toList());
-        if (deviceFilter.getPlatformName() != null)
-            devices = devices.stream().filter(device -> device.getPlatformName().toLowerCase().equals(deviceFilter.getPlatformName())).collect(Collectors.toList());
-        if (deviceFilter.getPlatformVersion() != null)
-            devices = devices.stream().filter(device -> device.getPlatformVersion().toLowerCase().equals(deviceFilter.getPlatformVersion())).collect(Collectors.toList());
-        if (deviceFilter.getItemType() != null)
-            devices = devices.stream().filter(device -> device.getItemType().toLowerCase().equals(deviceFilter.getItemType())).collect(Collectors.toList());
-        if (deviceFilter.getRam() != null)
-            devices = devices.stream().filter(device -> device.getRamSize().toLowerCase().equals(deviceFilter.getRam())).collect(Collectors.toList());
-        if (deviceFilter.getScreen() != null)
-            devices = devices.stream().filter(device -> device.getStorageSize().toLowerCase().equals(deviceFilter.getScreen())).collect(Collectors.toList());
-        if (deviceFilter.getStorage() != null)
-            devices = devices.stream().filter(device -> device.getStorageSize().toLowerCase().equals(deviceFilter.getStorage())).collect(Collectors.toList());
-        if (deviceFilter.getOwner() != null)
-            devices = devices.stream().filter(device -> device.getOwner().toLowerCase().equals(deviceFilter.getOwner())).collect(Collectors.toList());
-        if (deviceFilter.getKeeper() != null)
-            devices = devices.stream().filter(device -> device.getKeeper().toLowerCase().equals(deviceFilter.getKeeper())).collect(Collectors.toList());
-        if (deviceFilter.getOrigin() != null)
-            devices = devices.stream().filter(device -> device.getOrigin().equalsIgnoreCase(deviceFilter.getOrigin())).collect(Collectors.toList());
-        if (deviceFilter.getInventoryNumber() != null)
-            devices = devices.stream().filter(device -> device.getInventoryNumber().toLowerCase().equals(deviceFilter.getInventoryNumber())).collect(Collectors.toList());
-        if (deviceFilter.getSerialNumber() != null)
-            devices = devices.stream().filter(device -> device.getSerialNumber().toLowerCase().equals(deviceFilter.getSerialNumber())).collect(Collectors.toList());
-        if (deviceFilter.getProject() != null)
-            devices = devices.stream().filter(device -> device.getProject().equalsIgnoreCase(deviceFilter.getProject())).collect(Collectors.toList());
-        if (deviceFilter.getBookingDate() != null)
-            devices = devices.stream().filter(device -> device.getBookingDate() != null).filter(device -> device.getBookingDate().after(deviceFilter.getBookingDate())).collect(Collectors.toList());
-        if (deviceFilter.getReturnDate() != null)
-            devices = devices.stream().filter(device -> device.getReturnDate() != null).filter(device -> device.getReturnDate().before(deviceFilter.getReturnDate())).collect(Collectors.toList());
-        if (deviceFilter.getKeeperNo() != null) { //"LESS THAN 3", "EQUAL TO 3"
-            if (deviceFilter.getKeeperNo().equalsIgnoreCase("less than 3"))
-                devices = devices.stream().filter(device -> device.getKeeperNo() < 3 && (device.getStatus().equalsIgnoreCase("OCCUPIED") || device.getStatus().equalsIgnoreCase("VACANT"))).collect(Collectors.toList());
+        if ( deviceFilter.getName() != null )
+            devices =
+                    devices
+                            .stream()
+                            .filter(device -> device
+                                    .getDeviceName()
+                                    .toLowerCase()
+                                    .equals(deviceFilter.getName()))
+                            .collect(Collectors.toList());
+        if ( deviceFilter.getStatus() != null )
+            devices =
+                    devices
+                            .stream()
+                            .filter(device -> device
+                                    .getStatus()
+                                    .equalsIgnoreCase(deviceFilter.getStatus()))
+                            .collect(Collectors.toList());
+        if ( deviceFilter.getPlatformName() != null )
+            devices =
+                    devices
+                            .stream()
+                            .filter(device -> device
+                                    .getPlatformName()
+                                    .toLowerCase()
+                                    .equals(deviceFilter.getPlatformName()))
+                            .collect(Collectors.toList());
+        if ( deviceFilter.getPlatformVersion() != null )
+            devices =
+                    devices
+                            .stream()
+                            .filter(device -> device
+                                    .getPlatformVersion()
+                                    .toLowerCase()
+                                    .equals(deviceFilter.getPlatformVersion()))
+                            .collect(Collectors.toList());
+        if ( deviceFilter.getItemType() != null )
+            devices =
+                    devices
+                            .stream()
+                            .filter(device -> device
+                                    .getItemType()
+                                    .toLowerCase()
+                                    .equals(deviceFilter.getItemType()))
+                            .collect(Collectors.toList());
+        if ( deviceFilter.getRam() != null )
+            devices =
+                    devices
+                            .stream()
+                            .filter(device -> device
+                                    .getRamSize()
+                                    .toLowerCase()
+                                    .equals(deviceFilter.getRam()))
+                            .collect(Collectors.toList());
+        if ( deviceFilter.getScreen() != null )
+            devices =
+                    devices
+                            .stream()
+                            .filter(device -> device
+                                    .getStorageSize()
+                                    .toLowerCase()
+                                    .equals(deviceFilter.getScreen()))
+                            .collect(Collectors.toList());
+        if ( deviceFilter.getStorage() != null )
+            devices =
+                    devices
+                            .stream()
+                            .filter(device -> device
+                                    .getStorageSize()
+                                    .toLowerCase()
+                                    .equals(deviceFilter.getStorage()))
+                            .collect(Collectors.toList());
+        if ( deviceFilter.getOwner() != null )
+            devices =
+                    devices
+                            .stream()
+                            .filter(device -> device
+                                    .getOwner()
+                                    .toLowerCase()
+                                    .equals(deviceFilter.getOwner()))
+                            .collect(Collectors.toList());
+        if ( deviceFilter.getKeeper() != null )
+            devices =
+                    devices
+                            .stream()
+                            .filter(device -> device
+                                    .getKeeper()
+                                    .toLowerCase()
+                                    .equals(deviceFilter.getKeeper()))
+                            .collect(Collectors.toList());
+        if ( deviceFilter.getOrigin() != null )
+            devices =
+                    devices
+                            .stream()
+                            .filter(device -> device
+                                    .getOrigin()
+                                    .equalsIgnoreCase(deviceFilter.getOrigin()))
+                            .collect(Collectors.toList());
+        if ( deviceFilter.getInventoryNumber() != null )
+            devices =
+                    devices
+                            .stream()
+                            .filter(device -> device
+                                    .getInventoryNumber()
+                                    .toLowerCase()
+                                    .equals(deviceFilter.getInventoryNumber()))
+                            .collect(Collectors.toList());
+        if ( deviceFilter.getSerialNumber() != null )
+            devices =
+                    devices
+                            .stream()
+                            .filter(device -> device
+                                    .getSerialNumber()
+                                    .toLowerCase()
+                                    .equals(deviceFilter.getSerialNumber()))
+                            .collect(Collectors.toList());
+        if ( deviceFilter.getProject() != null )
+            devices =
+                    devices
+                            .stream()
+                            .filter(device -> device
+                                    .getProject()
+                                    .equalsIgnoreCase(deviceFilter.getProject()))
+                            .collect(Collectors.toList());
+        if ( deviceFilter.getBookingDate() != null )
+            devices =
+                    devices
+                            .stream()
+                            .filter(device -> device.getBookingDate() != null)
+                            .filter(device -> device
+                                    .getBookingDate()
+                                    .after(deviceFilter.getBookingDate()))
+                            .collect(Collectors.toList());
+        if ( deviceFilter.getReturnDate() != null )
+            devices =
+                    devices
+                            .stream()
+                            .filter(device -> device.getReturnDate() != null)
+                            .filter(device -> device
+                                    .getReturnDate()
+                                    .before(deviceFilter.getReturnDate()))
+                            .collect(Collectors.toList());
+        if ( deviceFilter.getKeeperNo() != null ) { //"LESS THAN 3", "EQUAL TO 3"
+            if ( deviceFilter
+                    .getKeeperNo()
+                    .equalsIgnoreCase("less than 3") )
+                devices =
+                        devices
+                                .stream()
+                                .filter(device -> device.getKeeperNo() < 3 &&
+                                        (device
+                                                .getStatus()
+                                                .equalsIgnoreCase("OCCUPIED") ||
+                                                device
+                                                        .getStatus()
+                                                        .equalsIgnoreCase("VACANT")
+                                        ))
+                                .collect(Collectors.toList());
             else
-                devices = devices.stream().filter(device -> device.getKeeperNo() == 3 && device.getStatus().equalsIgnoreCase("OCCUPIED")).collect(Collectors.toList());
+                devices =
+                        devices
+                                .stream()
+                                .filter(device -> device.getKeeperNo() == 3 &&
+                                        device
+                                                .getStatus()
+                                                .equalsIgnoreCase("OCCUPIED"))
+                                .collect(Collectors.toList());
         }
         return devices;
     }
 
     private void checkFieldsWhenAddingDevice(List<ErrorMessage> errors, AddDeviceDTO dto) throws ExecutionException, InterruptedException {
         String serverTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date());
-        if (useNonExistent(dto.getOwner())) {
-            ErrorMessage error = new ErrorMessage(NOT_FOUND, "Owner does not exist", serverTime);
+        if( useNonExistent(dto.getOwner()) ) {
+            ErrorMessage
+                    error
+                    = new ErrorMessage(NOT_FOUND,
+                    "Owner does not exist",
+                    serverTime);
             errors.add(error);
         }
-        if (isSerialNumberExistent(dto.getSerialNumber())) {
-            ErrorMessage error = new ErrorMessage(BAD_REQUEST, "Serial number value of this device is already existed", serverTime);
+        if( isSerialNumberExistent(dto.getSerialNumber()) ) {
+            ErrorMessage
+                    error
+                    = new ErrorMessage(BAD_REQUEST,
+                    "Serial number value of this device is already existed",
+                    serverTime);
             errors.add(error);
         }
-        if (isItemTypeInvalid(dto.getItemTypeId())) {
-            ErrorMessage error = new ErrorMessage(NOT_FOUND, "Item type value of this device is non existent", serverTime);
+        if( isItemTypeInvalid(dto.getItemTypeId()) ) {
+            ErrorMessage
+                    error
+                    = new ErrorMessage(NOT_FOUND,
+                    "Item type value of this device is non existent",
+                    serverTime);
             errors.add(error);
         }
-        if (isRamInvalid(dto.getRamId())) {
-            ErrorMessage error = new ErrorMessage(NOT_FOUND, "Ram value of this device is non existent", serverTime);
+        if( isRamInvalid(dto.getRamId()) ) {
+            ErrorMessage
+                    error
+                    = new ErrorMessage(NOT_FOUND,
+                    "Ram value of this device is non existent",
+                    serverTime);
             errors.add(error);
         }
-        if (isStorageInvalid(dto.getStorageId())) {
-            ErrorMessage error = new ErrorMessage(NOT_FOUND, "Storage value of this device is non existent", serverTime);
+        if( isStorageInvalid(dto.getStorageId()) ) {
+            ErrorMessage
+                    error
+                    = new ErrorMessage(NOT_FOUND,
+                    "Storage value of this device is non existent",
+                    serverTime);
             errors.add(error);
         }
-        if (isScreenInvalid(dto.getScreenId())) {
-            ErrorMessage error = new ErrorMessage(NOT_FOUND, "Screen value of this device is non existent", serverTime);
+        if( isScreenInvalid(dto.getScreenId()) ) {
+            ErrorMessage
+                    error
+                    = new ErrorMessage(NOT_FOUND,
+                    "Screen value of this device is non existent",
+                    serverTime);
             error.setMessage("Screen value of this device is non existent");
             errors.add(error);
         }
-        if (isPlatformInvalid(dto.getPlatformId())) {
-            ErrorMessage error = new ErrorMessage(NOT_FOUND, "Platform value of this device is non existent", serverTime);
+        if( isPlatformInvalid(dto.getPlatformId()) ) {
+            ErrorMessage
+                    error
+                    = new ErrorMessage(NOT_FOUND,
+                    "Platform value of this device is non existent",
+                    serverTime);
             errors.add(error);
         }
-        if (isStatusInvalid(dto.getStatusId())) {
-            ErrorMessage error = new ErrorMessage(NOT_FOUND, "Status value of this device is non existent", serverTime);
+        if( isStatusInvalid(dto.getStatusId()) ) {
+            ErrorMessage
+                    error
+                    = new ErrorMessage(NOT_FOUND,
+                    "Status value of this device is non existent",
+                    serverTime);
             errors.add(error);
         }
-        if (isOriginInvalid(dto.getOriginId())) {
-            ErrorMessage error = new ErrorMessage(NOT_FOUND, "Origin value of this device is non existent", serverTime);
+        if( isOriginInvalid(dto.getOriginId()) ) {
+            ErrorMessage
+                    error
+                    = new ErrorMessage(NOT_FOUND,
+                    "Origin value of this device is non existent",
+                    serverTime);
             errors.add(error);
         }
-        if (isProjectInvalid(dto.getProjectId())) {
-            ErrorMessage error = new ErrorMessage(NOT_FOUND,
-                    "Project value of this device is non existent", serverTime);
+        if( isProjectInvalid(dto.getProjectId()) ) {
+            ErrorMessage
+                    error
+                    = new ErrorMessage(NOT_FOUND,
+                    "Project value of this device is non existent",
+                    serverTime);
             errors.add(error);
         }
     }
@@ -1066,20 +1325,49 @@ public class DeviceServiceImp implements DeviceService {
             throws ExecutionException, InterruptedException {
         for (int rowIndex = 1; rowIndex <= numberOfRows; rowIndex++) {
             Row currentRow = sheet.getRow(rowIndex);
-            String[] platformString = currentRow.getCell(DEVICE_PLATFORM).toString().split(",");
-            String name = String.valueOf(currentRow.getCell(DEVICE_NAME)),
-                    inventoryNumber = String.valueOf(currentRow.getCell(DEVICE_INVENTORY_NUMBER)),
-                    serialNumber = String.valueOf(currentRow.getCell(DEVICE_SERIAL_NUMBER)),
-                    comments = String.valueOf(currentRow.getCell(DEVICE_COMMENTS));
-            CompletableFuture<ItemType> itemType = _itemTypeService.findByName(String.valueOf(currentRow.getCell(DEVICE_ITEM_TYPE)));
-            CompletableFuture<Ram> ram = _ramService.findBySize(String.valueOf(currentRow.getCell(DEVICE_RAM)));
-            CompletableFuture<Screen> screen = _screenService.findBySize(String.valueOf(currentRow.getCell(DEVICE_SCREEN)));
-            CompletableFuture<Storage> storage = _storageService.findBySize(String.valueOf(currentRow.getCell(DEVICE_STORAGE)));
-            CompletableFuture<User> owner = _employeeService.findById(ownerId);
-            String statusString = String.valueOf(currentRow.getCell(DEVICE_STATUS)),
-                    originString = String.valueOf(currentRow.getCell(DEVICE_ORIGIN)),
-                    projectString = String.valueOf(currentRow.getCell(DEVICE_PROJECT));
-            Device existDevice = _deviceRepository.findBySerialNumber(serialNumber);
+            String[]
+                    platformString
+                    = currentRow
+                    .getCell(DEVICE_PLATFORM)
+                    .toString()
+                    .split(",");
+            String
+                    name
+                    = String.valueOf(currentRow.getCell(DEVICE_NAME)),
+                    inventoryNumber
+                            = String.valueOf(currentRow.getCell(DEVICE_INVENTORY_NUMBER)),
+                    serialNumber
+                            = String.valueOf(currentRow.getCell(DEVICE_SERIAL_NUMBER)),
+                    comments
+                            = String.valueOf(currentRow.getCell(DEVICE_COMMENTS));
+
+            CompletableFuture<ItemType>
+                    itemType
+                    = _itemTypeService.findByName(String.valueOf(currentRow.getCell(DEVICE_ITEM_TYPE)));
+            CompletableFuture<Ram>
+                    ram
+                    = _ramService.findBySize(String.valueOf(currentRow.getCell(DEVICE_RAM)));
+            CompletableFuture<Screen>
+                    screen
+                    = _screenService.findBySize(String.valueOf(currentRow.getCell(DEVICE_SCREEN)));
+            CompletableFuture<Storage>
+                    storage
+                    = _storageService.findBySize(String.valueOf(currentRow.getCell(DEVICE_STORAGE)));
+            CompletableFuture<User>
+                    owner
+                    = _employeeService.findById(ownerId);
+
+            String
+                    statusString
+                    = String.valueOf(currentRow.getCell(DEVICE_STATUS)),
+                    originString
+                            = String.valueOf(currentRow.getCell(DEVICE_ORIGIN)),
+                    projectString
+                            = String.valueOf(currentRow.getCell(DEVICE_PROJECT));
+            Device
+                    existDevice
+                    = _deviceRepository.findBySerialNumber(serialNumber);
+
             int rowInExcel = rowIndex + 1; /* Ignore the headers */
 
             if (platformString.length != 2) {
