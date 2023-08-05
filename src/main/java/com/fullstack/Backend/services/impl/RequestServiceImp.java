@@ -141,10 +141,25 @@ public class RequestServiceImp implements RequestService {
         Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
         List<Request> requests = _requestRepository.findAllRequest(employeeId, sort);
         requests = getAllRequests(employeeId, requestFilter, requests);
-        List<String> requestStatusList = requests.stream().map(c -> RequestStatus.fromNumber(c.getRequestStatus()).get().toString()).distinct().collect(Collectors.toList());
+        List<String>
+                requestStatusList
+                = requests
+                .stream()
+                .map(c -> RequestStatus
+                        .fromNumber(c.getRequestStatus())
+                        .get()
+                        .toString())
+                .distinct()
+                .collect(Collectors.toList());
         int totalElements = requests.size();
         requests = getPage(requests, pageIndex, pageSize);
-        List<RequestDTO> requestList = requests.stream().map(request -> new RequestDTO(request, employeeId)).collect(Collectors.toList());
+        List<RequestDTO>
+                requestList
+                = requests
+                .stream()
+                .map(request -> new RequestDTO(request,
+                        employeeId))
+                .collect(Collectors.toList());
         ShowRequestsResponse response = new ShowRequestsResponse();
         response.setRequestsList(requestList);
         response.setPageNo(pageIndex);
@@ -180,8 +195,13 @@ public class RequestServiceImp implements RequestService {
         }
 
         if (mappedDeviceList != null) {
-            keywordList = mappedDeviceList
-                    .filter(element -> element.toLowerCase().contains(keyword.strip().toLowerCase()))
+            keywordList
+                    = mappedDeviceList
+                    .filter(element -> element
+                            .toLowerCase()
+                            .contains(keyword
+                                    .strip()
+                                    .toLowerCase()))
                     .limit(20)
                     .collect(Collectors.toSet());
         }
@@ -204,7 +224,14 @@ public class RequestServiceImp implements RequestService {
         /* If the SUBMITTED request's status has the same value to the request in the DATABASE and request status must NOT be EXTENDING
             EX: Status in database = APPROVED, Submitted status = APPROVED => wrong
          */
-        boolean isRequestStatusInvalid = request.get().getRequestStatus() == requestDTO.getRequestStatus() && requestDTO.getRequestStatus() != EXTENDING;
+        boolean
+                isRequestStatusInvalid
+                = request
+                .get()
+                .getRequestStatus() ==
+                requestDTO.getRequestStatus() &&
+                requestDTO.getRequestStatus() !=
+                        EXTENDING;
         if (isRequestStatusInvalid)
             return CompletableFuture.completedFuture(new ResponseEntity<>(false, NOT_ACCEPTABLE));
 
@@ -222,7 +249,14 @@ public class RequestServiceImp implements RequestService {
             case TRANSFERRED -> {
                 request.get().setTransferredDate(new Date());
                 changeStatus(request.get(), TRANSFERRED);
-                List<KeeperOrder> keeperOrderList = _keeperOrderService.getListByDeviceId(request.get().getDevice().getId()).get();
+                List<KeeperOrder>
+                        keeperOrderList
+                        = _keeperOrderService
+                        .getListByDeviceId(request
+                                .get()
+                                .getDevice()
+                                .getId())
+                        .get();
                 int keeperNo = returnKeeperNo(keeperOrderList);
                 KeeperOrder keeperOrder = new KeeperOrder();
                 keeperOrder.setDevice_Id(request.get().getDevice().getId());
@@ -242,9 +276,18 @@ public class RequestServiceImp implements RequestService {
                 changeStatus(request.get(), TRANSFERRED);
                 changeOldRequest(request.get());
                 /* UPDATE order's due date */
-                KeeperOrder keeperOrder = _keeperOrderService.findByDeviceIdAndKeeperId(
-                        request.get().getDevice().getId(),
-                        request.get().getNextKeeper_Id()).get();
+                KeeperOrder
+                        keeperOrder
+                        = _keeperOrderService
+                        .findByDeviceIdAndKeeperId(
+                                request
+                                        .get()
+                                        .getDevice()
+                                        .getId(),
+                                request
+                                        .get()
+                                        .getNextKeeper_Id())
+                        .get();
                 keeperOrder.setDueDate(request.get().getReturnDate());
                 keeperOrder.setUpdatedDate(new Date());
                 cancelRelatedExtendingRequest(request.get());
@@ -360,35 +403,122 @@ public class RequestServiceImp implements RequestService {
     }
 
     private List<Request> fetchFilteredRequest(RequestFilterDTO requestFilter, List<Request> requests) {
-        if (requestFilter.getRequestId() != null)
-            requests = requests.stream().filter(request -> request.getRequestId().equals(requestFilter.getRequestId())).collect(Collectors.toList());
+        if (requestFilter.getRequestId() !=
+            null)
+            requests =
+                    requests
+                            .stream()
+                            .filter(request -> request
+                                    .getRequestId()
+                                    .equals(requestFilter.getRequestId()))
+                            .collect(Collectors.toList());
 
-        if (requestFilter.getDevice() != null)
-            requests = requests.stream().filter(request -> request.getDevice().getName().toLowerCase().equals(requestFilter.getDevice())).collect(Collectors.toList());
+        if (requestFilter.getDevice() !=
+            null)
+            requests =
+                    requests
+                            .stream()
+                            .filter(request -> request
+                                    .getDevice()
+                                    .getName()
+                                    .toLowerCase()
+                                    .equals(requestFilter.getDevice()))
+                            .collect(Collectors.toList());
 
-        if (requestFilter.getSerialNumber() != null)
-            requests = requests.stream().filter(request -> request.getDevice().getSerialNumber().toLowerCase().equals(requestFilter.getSerialNumber())).collect(Collectors.toList());
+        if (requestFilter.getSerialNumber() !=
+            null)
+            requests =
+                    requests
+                            .stream()
+                            .filter(request -> request
+                                    .getDevice()
+                                    .getSerialNumber()
+                                    .toLowerCase()
+                                    .equals(requestFilter.getSerialNumber()))
+                            .collect(Collectors.toList());
 
-        if (requestFilter.getApprover() != null)
-            requests = requests.stream().filter(request -> request.getAccepter().getUserName().toLowerCase().equals(requestFilter.getApprover())).collect(Collectors.toList());
+        if (requestFilter.getApprover() !=
+            null)
+            requests =
+                    requests
+                            .stream()
+                            .filter(request -> request
+                                    .getAccepter()
+                                    .getUserName()
+                                    .toLowerCase()
+                                    .equals(requestFilter.getApprover()))
+                            .collect(Collectors.toList());
 
-        if (requestFilter.getRequester() != null)
-            requests = requests.stream().filter(request -> request.getRequester().getUserName().toLowerCase().equals(requestFilter.getRequester())).collect(Collectors.toList());
+        if (requestFilter.getRequester() !=
+            null)
+            requests =
+                    requests
+                            .stream()
+                            .filter(request -> request
+                                    .getRequester()
+                                    .getUserName()
+                                    .toLowerCase()
+                                    .equals(requestFilter.getRequester()))
+                            .collect(Collectors.toList());
 
-        if (requestFilter.getCurrentKeeper() != null)
-            requests = requests.stream().filter(request -> request.getCurrentKeeper().getUserName().toLowerCase().equals(requestFilter.getCurrentKeeper())).collect(Collectors.toList());
+        if (requestFilter.getCurrentKeeper() !=
+            null)
+            requests =
+                    requests
+                            .stream()
+                            .filter(request -> request
+                                    .getCurrentKeeper()
+                                    .getUserName()
+                                    .toLowerCase()
+                                    .equals(requestFilter.getCurrentKeeper()))
+                            .collect(Collectors.toList());
 
-        if (requestFilter.getNextKeeper() != null)
-            requests = requests.stream().filter(request -> request.getNextKeeper().getUserName().toLowerCase().equals(requestFilter.getNextKeeper())).collect(Collectors.toList());
+        if (requestFilter.getNextKeeper() !=
+            null)
+            requests =
+                    requests
+                            .stream()
+                            .filter(request -> request
+                                    .getNextKeeper()
+                                    .getUserName()
+                                    .toLowerCase()
+                                    .equals(requestFilter.getNextKeeper()))
+                            .collect(Collectors.toList());
 
-        if (requestFilter.getRequestStatus() != null)
-            requests = requests.stream().filter(request -> request.getRequestStatus() == RequestStatus.valueOf(requestFilter.getRequestStatus()).ordinal()).collect(Collectors.toList());
+        if (requestFilter.getRequestStatus() !=
+            null)
+            requests =
+                    requests
+                            .stream()
+                            .filter(request -> request.getRequestStatus() ==
+                                               RequestStatus
+                                                       .valueOf(requestFilter.getRequestStatus())
+                                                       .ordinal())
+                            .collect(Collectors.toList());
 
-        if (requestFilter.getBookingDate() != null)
-            requests = requests.stream().filter(device -> device.getBookingDate() != null).filter(request -> request.getBookingDate().after(requestFilter.getBookingDate())).collect(Collectors.toList());
+        if (requestFilter.getBookingDate() !=
+            null)
+            requests =
+                    requests
+                            .stream()
+                            .filter(device -> device.getBookingDate() !=
+                                              null)
+                            .filter(request -> request
+                                    .getBookingDate()
+                                    .after(requestFilter.getBookingDate()))
+                            .collect(Collectors.toList());
 
-        if (requestFilter.getReturnDate() != null)
-            requests = requests.stream().filter(device -> device.getReturnDate() != null).filter(request -> request.getReturnDate().before(requestFilter.getReturnDate())).collect(Collectors.toList());
+        if (requestFilter.getReturnDate() !=
+            null)
+            requests =
+                    requests
+                            .stream()
+                            .filter(device -> device.getReturnDate() !=
+                                              null)
+                            .filter(request -> request
+                                    .getReturnDate()
+                                    .before(requestFilter.getReturnDate()))
+                            .collect(Collectors.toList());
 
         return requests;
     }
@@ -423,14 +553,27 @@ public class RequestServiceImp implements RequestService {
     private List<Request> getAllRequests(int employeeId, RequestFilterDTO requestFilter, List<Request> requests) throws ExecutionException, InterruptedException {
         formatFilter(requestFilter);
         requests = fetchFilteredRequest(requestFilter, requests);
-        requests = requests.stream()
-                .filter(request -> isExtendingRequestViewableForNonAcceptorRequester(request, employeeId))
+        requests
+                = requests
+                .stream()
+                .filter(request -> isExtendingRequestViewableForNonAcceptorRequester(request,
+                        employeeId))
                 .collect(Collectors.toList());
         return requests;
     }
 
     private boolean isExtendingRequestViewableForNonAcceptorRequester(Request request, int employeeId) {
-        return !(request.getRequestStatus() == EXTENDING && employeeId == request.getRequester().getId() && employeeId != request.getAccepter().getId());
+        return !(request.getRequestStatus() ==
+                 EXTENDING &&
+                 employeeId ==
+                 request
+                         .getRequester()
+                         .getId() &&
+                 employeeId !=
+                 request
+                         .getAccepter()
+                         .getId()
+        );
     }
 
     private boolean isRequestListInvalid(List<Request> requestList) {
@@ -440,7 +583,14 @@ public class RequestServiceImp implements RequestService {
     /* The old transferred request's status will be changed to CANCELLED for EXTENDING CASE */
     @Transactional
     private void changeOldRequest(Request request) {
-        List<Request> preExtendDurationRequest = _requestRepository.findDeviceRelatedApprovedRequest(request.getId(), request.getCurrentKeeper_Id(), request.getDevice().getId(), TRANSFERRED);
+        List<Request>
+                preExtendDurationRequest
+                = _requestRepository.findDeviceRelatedApprovedRequest(request.getId(),
+                request.getCurrentKeeper_Id(),
+                request
+                        .getDevice()
+                        .getId(),
+                TRANSFERRED);
         if (isRequestListInvalid(preExtendDurationRequest)) {
             for (Request relatedRequest : preExtendDurationRequest) {
                 relatedRequest.setRequestStatus(CANCELLED);
@@ -452,7 +602,7 @@ public class RequestServiceImp implements RequestService {
 
     /* Change device status to OCCUPIED when a request is approved */
     @Transactional
-    private void changeDeviceStatusToOccupied(Request request) throws ExecutionException, InterruptedException {
+    private void changeDeviceStatusToOccupied(Request request) {
         Optional<Device> device = _deviceRepository.findById(request.getDevice().getId());
         if (device.isEmpty()) {
             return;
@@ -465,13 +615,25 @@ public class RequestServiceImp implements RequestService {
 
     /* Get the latest keeper order's number */
     private int returnKeeperNo(List<KeeperOrder> keeperOrderList) {
-        return keeperOrderList.size() > 0 ? keeperOrderList.stream().max(Comparator.comparing(KeeperOrder::getKeeperNo)).map(KeeperOrder::getKeeperNo).get() : 0;
+        return keeperOrderList.size() >
+               0 ? keeperOrderList
+                .stream()
+                .max(Comparator.comparing(KeeperOrder::getKeeperNo))
+                .map(KeeperOrder::getKeeperNo)
+                .get() : 0;
     }
 
     /* Cancel all related pending requests except the SUBMITTED request */
     @Transactional
     private void cancelRelatedPendingRequest(Request request) {
-        List<Request> relatedRequests = _requestRepository.findDeviceRelatedApprovedRequest(request.getId(), request.getCurrentKeeper_Id(), request.getDevice().getId(), PENDING);
+        List<Request>
+                relatedRequests
+                = _requestRepository.findDeviceRelatedApprovedRequest(request.getId(),
+                request.getCurrentKeeper_Id(),
+                request
+                        .getDevice()
+                        .getId(),
+                PENDING);
         if (isRequestListInvalid(relatedRequests)) {
             for (Request relatedRequest : relatedRequests) {
                 relatedRequest.setRequestStatus(CANCELLED);
@@ -484,7 +646,14 @@ public class RequestServiceImp implements RequestService {
     /* Cancel all related extending requests except the SUBMITTED request */
     @Transactional
     private void cancelRelatedExtendingRequest(Request request) {
-        List<Request> relatedRequests = _requestRepository.findDeviceRelatedApprovedRequest(request.getId(), request.getCurrentKeeper_Id(), request.getDevice().getId(), EXTENDING);
+        List<Request>
+                relatedRequests
+                = _requestRepository.findDeviceRelatedApprovedRequest(request.getId(),
+                request.getCurrentKeeper_Id(),
+                request
+                        .getDevice()
+                        .getId(),
+                EXTENDING);
         if (isRequestListInvalid(relatedRequests)) {
             for (Request relatedRequest : relatedRequests) {
                 relatedRequest.setRequestStatus(CANCELLED);
@@ -550,7 +719,15 @@ public class RequestServiceImp implements RequestService {
     }
 
     private boolean doesReturnDateExceedLimitation(ExtendDurationRequestDTO newRequest, List<KeeperOrder> keeperOrderList, int currentOrderNumber) {
-        KeeperOrder previousKeeperOrder = keeperOrderList.stream().filter(k -> k.getKeeperNo() == currentOrderNumber - 1).findFirst().get();
+        KeeperOrder
+                previousKeeperOrder
+                = keeperOrderList
+                .stream()
+                .filter(k -> k.getKeeperNo() ==
+                             currentOrderNumber -
+                             1)
+                .findFirst()
+                .get();
         return newRequest.getReturnDate().after(previousKeeperOrder.getDueDate());
     }
 
@@ -570,11 +747,20 @@ public class RequestServiceImp implements RequestService {
     }
 
     private boolean isSubmittedRequestExistentInDatabase(int requesterId, int ownerId, int nextKeeperId, int deviceId) {
-        return _requestRepository.findRepetitiveRequest(requesterId, ownerId, nextKeeperId, deviceId) != null;
+        return _requestRepository.findRepetitiveRequest(requesterId,
+                ownerId,
+                nextKeeperId,
+                deviceId) !=
+               null;
     }
 
     private boolean areSubmittedRequestIdentical(Request oldRequest, Request newRequest) {
-        return oldRequest.getDevice_Id() == newRequest.getDevice_Id() && oldRequest.getRequester_Id() == newRequest.getRequester_Id() && oldRequest.getNextKeeper_Id() == newRequest.getNextKeeper_Id();
+        return oldRequest.getDevice_Id() ==
+               newRequest.getDevice_Id() &&
+               oldRequest.getRequester_Id() ==
+               newRequest.getRequester_Id() &&
+               oldRequest.getNextKeeper_Id() ==
+               newRequest.getNextKeeper_Id();
     }
 
     private boolean areDeviceIdenticalWhenSubmitting(Request oldRequest, Request newRequest) {
@@ -615,11 +801,41 @@ public class RequestServiceImp implements RequestService {
     }
 
     private void validateRequestInput(List<String> error, Device device, User requester, User nextKeeper, SubmitBookingRequestDTO.RequestInput request) {
-        boolean isDeviceUsable = !device.getStatus().name().equalsIgnoreCase("broken") && !device.getStatus().name().equalsIgnoreCase("unavailable"),
-                isNextKeeperValid = nextKeeper != null && !request.getNextKeeper().trim().equalsIgnoreCase(device.getOwner().getUserName()),
-                areDatesInvalid = (request.getBookingDate() == null || request.getBookingDate().toString().isEmpty())
-                        || (request.getReturnDate() == null || request.getReturnDate().toString().isEmpty()),
-                isRequesterInvalid = requester == null;
+        boolean
+                isDeviceUsable =
+                !device
+                        .getStatus()
+                        .name()
+                        .equalsIgnoreCase("broken") &&
+                !device
+                        .getStatus()
+                        .name()
+                        .equalsIgnoreCase("unavailable"),
+                isNextKeeperValid =
+                        nextKeeper !=
+                        null &&
+                        !request
+                                .getNextKeeper()
+                                .trim()
+                                .equalsIgnoreCase(device
+                                        .getOwner()
+                                        .getUserName()),
+                areDatesInvalid =
+                        (request.getBookingDate() ==
+                         null ||
+                         request
+                                 .getBookingDate()
+                                 .toString()
+                                 .isEmpty()) ||
+                        (request.getReturnDate() ==
+                         null ||
+                         request
+                                 .getReturnDate()
+                                 .toString()
+                                 .isEmpty()),
+                isRequesterInvalid =
+                        requester ==
+                        null;
 
         if (!isDeviceUsable) {
             error.add("The device you submitted is unusable");
@@ -642,9 +858,17 @@ public class RequestServiceImp implements RequestService {
     private void addRequestWhenOrderIsNotTheFirst(List<KeeperOrder> keeperOrderListByDeviceId, SubmitBookingRequestDTO.RequestInput submittedRequestDTO, Request requestData,
                                                   List<RequestFails> requestFails, RequestFails requestFail, List<String> error, List<Request> requestSuccessful) {
         for (KeeperOrder keeperOrder : keeperOrderListByDeviceId) {
-            boolean areDatesInDuration = submittedRequestDTO.getBookingDate().before(submittedRequestDTO.getReturnDate()) &&
-                    submittedRequestDTO.getBookingDate().after(keeperOrder.getBookingDate()) &&
-                    submittedRequestDTO.getReturnDate().before(keeperOrder.getDueDate());
+            boolean
+                    areDatesInDuration =
+                    submittedRequestDTO
+                            .getBookingDate()
+                            .before(submittedRequestDTO.getReturnDate()) &&
+                    submittedRequestDTO
+                            .getBookingDate()
+                            .after(keeperOrder.getBookingDate()) &&
+                    submittedRequestDTO
+                            .getReturnDate()
+                            .before(keeperOrder.getDueDate());
 
             if (requestData.getNextKeeper_Id() == keeperOrder.getKeeper().getId()) {
                 /* B borrowed A's
@@ -664,7 +888,13 @@ public class RequestServiceImp implements RequestService {
                 error.add("The booking date and/or return date are out of keeper order's date range");
             }
 
-            if (isSubmittedRequestExistentInDatabase(requestData.getRequester_Id(), keeperOrder.getKeeper().getId(), requestData.getNextKeeper_Id(), requestData.getDevice_Id())) {
+            if(isSubmittedRequestExistentInDatabase(requestData.getRequester_Id(),
+                    keeperOrder
+                            .getKeeper()
+                            .getId(),
+                    requestData.getNextKeeper_Id(),
+                    requestData.getDevice_Id()))
+            {
                 error.add("The submitted request is already existent in the database");
             }
 
