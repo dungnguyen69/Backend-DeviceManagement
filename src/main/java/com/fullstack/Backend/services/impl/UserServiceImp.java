@@ -430,10 +430,15 @@ public class UserServiceImp implements UserService, UserDetailsService {
                     .map(UserDTO::getPhoneNumber);
         }
         if (mappedDeviceList != null) {
-            keywordList = mappedDeviceList
-                    .filter(element -> element.toLowerCase().contains(keyword.strip().toLowerCase()))
-                    .limit(20)
-                    .collect(Collectors.toSet());
+            keywordList =
+                    mappedDeviceList
+                            .filter(element -> element
+                                    .toLowerCase()
+                                    .contains(keyword
+                                            .strip()
+                                            .toLowerCase()))
+                            .limit(20)
+                            .collect(Collectors.toSet());
         }
         return keywordList;
     }
@@ -556,19 +561,61 @@ public class UserServiceImp implements UserService, UserDetailsService {
 
     private List<User> fetchFilteredUsers(FilterUserDTO dto, List<User> users) {
         if (dto.getBadgeId() != null)
-            users = users.stream().filter(user -> user.getBadgeId().equalsIgnoreCase(dto.getBadgeId())).collect(Collectors.toList());
+            users
+                    = users
+                    .stream()
+                    .filter(user -> user
+                            .getBadgeId()
+                            .equalsIgnoreCase(dto.getBadgeId()))
+                    .collect(Collectors.toList());
         if (dto.getUserName() != null)
-            users = users.stream().filter(user -> user.getUserName().equalsIgnoreCase(dto.getUserName())).collect(Collectors.toList());
+            users
+                    = users
+                    .stream()
+                    .filter(user -> user
+                            .getUserName()
+                            .equalsIgnoreCase(dto.getUserName()))
+                    .collect(Collectors.toList());
         if (dto.getFirstName() != null)
-            users = users.stream().filter(user -> user.getFirstName().equalsIgnoreCase(dto.getFirstName())).collect(Collectors.toList());
+            users
+                    = users
+                    .stream()
+                    .filter(user -> user
+                            .getFirstName()
+                            .equalsIgnoreCase(dto.getFirstName()))
+                    .collect(Collectors.toList());
         if (dto.getLastName() != null)
-            users = users.stream().filter(user -> user.getLastName().equalsIgnoreCase(dto.getLastName())).collect(Collectors.toList());
+            users
+                    = users
+                    .stream()
+                    .filter(user -> user
+                            .getLastName()
+                            .equalsIgnoreCase(dto.getLastName()))
+                    .collect(Collectors.toList());
         if (dto.getEmail() != null)
-            users = users.stream().filter(user -> user.getEmail().equalsIgnoreCase(dto.getEmail())).collect(Collectors.toList());
+            users
+                    = users
+                    .stream()
+                    .filter(user -> user
+                            .getEmail()
+                            .equalsIgnoreCase(dto.getEmail()))
+                    .collect(Collectors.toList());
         if (dto.getPhoneNumber() != null)
-            users = users.stream().filter(user -> user.getPhoneNumber().equalsIgnoreCase(dto.getPhoneNumber())).collect(Collectors.toList());
+            users
+                    = users
+                    .stream()
+                    .filter(user -> user
+                            .getPhoneNumber()
+                            .equalsIgnoreCase(dto.getPhoneNumber()))
+                    .collect(Collectors.toList());
         if (dto.getProject() != null)
-            users = users.stream().filter(user -> user.getProject().equalsIgnoreCase(dto.getProject())).collect(Collectors.toList());
+            users
+                    = users
+                    .stream()
+                    .filter(user -> user
+                            .getProject()
+                            .equalsIgnoreCase(dto.getProject()))
+                    .collect(Collectors.toList());
         return users;
     }
 
